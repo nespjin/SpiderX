@@ -1,0 +1,7 @@
+rootProject.name = 'runtime'
+
+include ':core'
+include ':compiler'
+
+project(':core').projectDir = new File('../core')
+project(':compiler').projectDir = new File('../compiler')

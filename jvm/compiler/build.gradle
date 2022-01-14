@@ -1,0 +1,30 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm'/* version '1.6.10'*/
+    id 'java'
+}
+
+group 'com.nesp.fishplugin'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+
+    def kotlin_version = "1.6.10"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+
+    implementation 'com.google.code.gson:gson:2.8.9'
+    implementation 'com.squareup.okhttp3:okhttp:4.10.0-RC1'
+
+    implementation project(":core")
+}
+
+test {
+    useJUnitPlatform()
+}
