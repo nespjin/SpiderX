@@ -2,7 +2,7 @@
  * 小丑鱼影视 Runtime SDK
  */
 
-import Runtime from './runtime';
+import Runtime from './runtime_core';
 
 // Data Struct
 
