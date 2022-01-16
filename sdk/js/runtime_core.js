@@ -102,5 +102,6 @@ function Runtime() {
 
 window.runtime = new Runtime();
 
+// delete line
 export default Runtime;
 
