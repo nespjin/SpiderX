@@ -1,5 +1,6 @@
 package com.nesp.fishplugin.compiler
 
+import com.google.gson.Gson
 import com.nesp.fishplugin.core.Environment
 import com.nesp.fishplugin.core.Result
 import com.nesp.fishplugin.core.data.Page
@@ -97,13 +98,27 @@ object Loader {
                 val parent = plugin.parent!!
                 if (parent is String) {
                     // load parent plugin from ref path.
-                    plugin.parent = if (parent.startsWith("http://", true)
+                    if (parent.startsWith("http://", true)
                         || parent.startsWith("https://", true)
                     ) {
-                        loadPluginFromUrl(parent)
+                        val loadPluginFromUrl = loadPluginFromUrl(parent)
+                        if (loadPluginFromUrl.code != Result.CODE_SUCCESS) {
+                            return loadPluginFromUrl
+                        }
+                        plugin.parent = loadPluginFromUrl.data
                     } else {
-                        loadPluginFromDisk(parent)
+                        val loadPluginFromDisk = loadPluginFromDisk(parent)
+                        if (loadPluginFromDisk.code != Result.CODE_SUCCESS) {
+                            return loadPluginFromDisk
+                        }
+                        plugin.parent = loadPluginFromDisk.data
                     }
+                } else {
+                    val loadParentPluginFromJsonString = loadPluginFromJsonString(parent.toString())
+                    if (loadParentPluginFromJsonString.code != Result.CODE_SUCCESS) {
+                        return loadParentPluginFromJsonString
+                    }
+                    plugin.parent = loadParentPluginFromJsonString.data
                 }
             }
 
@@ -185,7 +200,54 @@ object Loader {
             }
 
             // Device Flags
+            if (jsonPluginRoot.has("${Plugin.FILED_NAME_DEVICE_FLAGS}-$deviceType")
+                && !jsonPluginRoot.isNull("${Plugin.FILED_NAME_DEVICE_FLAGS}-$deviceType")
+            ) {
+                jsonPluginRoot.optInt("${Plugin.FILED_NAME_DEVICE_FLAGS}-$deviceType", -1)
+                    .also { plugin.deviceFlags = it }
+            } else if (jsonPluginRoot.has(Plugin.FILED_NAME_DEVICE_FLAGS)
+                && !jsonPluginRoot.isNull(Plugin.FILED_NAME_DEVICE_FLAGS)
+            ) {
+                jsonPluginRoot.optInt(Plugin.FILED_NAME_DEVICE_FLAGS, -1)
+                    .also { plugin.deviceFlags = it }
+            }
+
+            if (plugin.deviceFlags == -1) {
+                if (jsonPluginRoot.has("${Plugin.FILED_NAME_DEVICE_FLAGS}-$deviceType")
+                    && !jsonPluginRoot.isNull("${Plugin.FILED_NAME_DEVICE_FLAGS}-$deviceType")
+                ) {
+                    jsonPluginRoot.optString("${Plugin.FILED_NAME_DEVICE_FLAGS}-$deviceType", "")
+                        .also {
+                            if (it.isNotEmpty()) plugin.deviceFlags = try {
+                                Integer.valueOf(it, 2)
+                            } catch (e: NumberFormatException) {
+                                -1
+                            }
+                        }
+                } else if (jsonPluginRoot.has(Plugin.FILED_NAME_DEVICE_FLAGS)
+                    && !jsonPluginRoot.isNull(Plugin.FILED_NAME_DEVICE_FLAGS)
+                ) {
+                    jsonPluginRoot.optString(Plugin.FILED_NAME_DEVICE_FLAGS, "").also {
+                        if (it.isNotEmpty()) plugin.deviceFlags = try {
+                            Integer.valueOf(it, 2)
+                        } catch (e: NumberFormatException) {
+                            -1
+                        }
+                    }
+                }
+            }
+
             // Type
+            if (jsonPluginRoot.has("${Plugin.FILED_NAME_TYPE}-$deviceType")
+                && !jsonPluginRoot.isNull("${Plugin.FILED_NAME_TYPE}-$deviceType")
+            ) {
+                jsonPluginRoot.optInt("${Plugin.FILED_NAME_TYPE}-$deviceType", -1)
+                    .also { plugin.type = it }
+            } else if (jsonPluginRoot.has(Plugin.FILED_NAME_TYPE)
+                && !jsonPluginRoot.isNull(Plugin.FILED_NAME_TYPE)
+            ) {
+                jsonPluginRoot.optInt(Plugin.FILED_NAME_TYPE, -1).also { plugin.type = it }
+            }
 
             // Introduction
             if (jsonPluginRoot.has("${Plugin.FILED_NAME_INTRODUCTION}-$deviceType")
@@ -246,10 +308,222 @@ object Loader {
                 }
             }
 
+            // Extensions
+            if (jsonPluginRoot.has("${Plugin.FILED_NAME_EXTENSIONS}-$deviceType")
+                && !jsonPluginRoot.isNull("${Plugin.FILED_NAME_EXTENSIONS}-$deviceType")
+            ) {
+                jsonPluginRoot.optJSONObject("${Plugin.FILED_NAME_EXTENSIONS}-$deviceType")?.also {
+                    val map = it.toMap()
+                    if (map.isNotEmpty()) plugin.extensions = map
+                }
+            } else if (jsonPluginRoot.has(Plugin.FILED_NAME_EXTENSIONS)
+                && !jsonPluginRoot.isNull(Plugin.FILED_NAME_EXTENSIONS)
+            ) {
+                jsonPluginRoot.optJSONObject(Plugin.FILED_NAME_EXTENSIONS)?.also {
+                    val map = it.toMap()
+                    if (map.isNotEmpty()) plugin.extensions = map
+                }
+            }
+
+            if (plugin.parent != null) {
+                // Apply parent's fields
+                val applyParentFieldsErrorMsg = applyParentFields(plugin)
+                if (applyParentFieldsErrorMsg.isNotEmpty()) {
+                    return LoadResult(Result.CODE_FAILED, applyParentFieldsErrorMsg)
+                }
+                // Remove parent if apply parent's fields success
+                plugin.parent = null
+            }
+
             return LoadResult(Result.CODE_SUCCESS, data = plugin)
         } catch (e: JSONException) {
             return LoadResult(Result.CODE_FAILED, "error occurs when parsing plugin")
         }
+    }
+
+    /**
+     * Returns error msg
+     */
+    private fun applyParentFields(plugin: Plugin): String {
+        var parent: Any?
+
+        // name
+        if (plugin.name.isEmpty()) {
+            parent = plugin.parent
+            while (parent != null && parent is Plugin) {
+                if (parent.name.isNotEmpty()) {
+                    plugin.name = parent.name
+                    break
+                }
+                parent = parent.parent
+            }
+        }
+
+        // version
+        if (plugin.version.isEmpty()) {
+            parent = plugin.parent
+            while (parent != null && parent is Plugin) {
+                if (parent.version.isNotEmpty()) {
+                    plugin.version = parent.version
+                    break
+                }
+                parent = parent.parent
+            }
+        }
+
+        // runtime
+        if (plugin.runtime.isEmpty()) {
+            parent = plugin.parent
+            while (parent != null && parent is Plugin) {
+                if (parent.runtime.isNotEmpty()) {
+                    plugin.runtime = parent.runtime
+                    break
+                }
+                parent = parent.parent
+            }
+        }
+
+        // time
+        if (plugin.time.isEmpty()) {
+            parent = plugin.parent
+            while (parent != null && parent is Plugin) {
+                if (parent.time.isNotEmpty()) {
+                    plugin.time = parent.time
+                    break
+                }
+                parent = parent.parent
+            }
+        }
+
+        // tags
+        if (plugin.tags.isEmpty()) {
+            parent = plugin.parent
+            while (parent != null && parent is Plugin) {
+                if (parent.tags.isNotEmpty()) {
+                    plugin.tags = parent.tags
+                    break
+                }
+                parent = parent.parent
+            }
+        }
+
+        // deviceFlags
+        if (plugin.deviceFlags == -1) {
+            parent = plugin.parent
+            while (parent != null && parent is Plugin) {
+                if (parent.deviceFlags != -1) {
+                    plugin.deviceFlags = parent.deviceFlags
+                    break
+                }
+                parent = parent.parent
+            }
+        }
+
+        // deviceFlags
+        if (plugin.type == -1) {
+            parent = plugin.parent
+            while (parent != null && parent is Plugin) {
+                if (parent.type != -1) {
+                    plugin.type = parent.type
+                    break
+                }
+                parent = parent.parent
+            }
+        }
+
+        // introduction
+        if (plugin.introduction.isNullOrEmpty()) {
+            parent = plugin.parent
+            while (parent != null && parent is Plugin) {
+                if (!parent.introduction.isNullOrEmpty()) {
+                    plugin.introduction = parent.introduction
+                    break
+                }
+                parent = parent.parent
+            }
+        }
+
+        // ref
+        parent = plugin.parent
+        val refsMap = hashMapOf<String/* name */, Any>()
+        if (!plugin.ref.isNullOrEmpty()) {
+            for ((name, value) in plugin.ref!!) {
+                if (refsMap.containsKey(name)) return "Duplicate name($name)"
+                refsMap[name] = value
+            }
+        }
+        while (parent != null && parent is Plugin) {
+            if (!plugin.ref.isNullOrEmpty()) {
+                for ((nameOfParent, valueOfValue) in parent.ref!!) {
+                    if (!refsMap.containsKey(nameOfParent)) {
+                        refsMap[nameOfParent] = valueOfValue
+                    }
+                }
+            } else {
+                plugin.ref = parent.ref
+                if (!plugin.ref.isNullOrEmpty()) {
+                    for ((name, value) in plugin.ref!!) {
+                        if (refsMap.containsKey(name)) return "Duplicate name($name)"
+                        refsMap[name] = value
+                    }
+                }
+            }
+            parent = parent.parent
+        }
+        plugin.ref = refsMap
+
+        // pages
+        parent = plugin.parent
+        val pagesMap = hashMapOf<String/* id */, Page>()
+        if (plugin.pages.isNotEmpty()) {
+            for (page in plugin.pages) {
+                if (pagesMap.containsKey(page.id)) return "Duplicate page id(${page.id})"
+                pagesMap[page.id] = page
+            }
+        }
+        while (parent != null && parent is Plugin) {
+            if (plugin.pages.isNotEmpty()) {
+                for (pageOfParent in parent.pages) {
+                    if (!pagesMap.containsKey(pageOfParent.id)) {
+                        pagesMap[pageOfParent.id] = pageOfParent
+                    }
+                }
+            } else {
+                plugin.pages = parent.pages
+                if (plugin.pages.isNotEmpty()) {
+                    for (page in plugin.pages) {
+                        if (pagesMap.containsKey(page.id)) return "Duplicate page id(${page.id})"
+                        pagesMap[page.id] = page
+                    }
+                }
+            }
+            parent = parent.parent
+        }
+        plugin.pages = arrayListOf<Page>().apply { addAll(pagesMap.values) }
+        pagesMap.clear()
+
+        // extensions
+        if (plugin.extensions == null
+            || (plugin.extensions is Map<*, *> && (plugin.extensions as Map<*, *>).isEmpty())
+        ) {
+            parent = plugin.parent
+            while (parent != null && parent is Plugin) {
+                if (parent.extensions != null) {
+                    if (plugin.extensions is Map<*, *>) {
+                        if ((plugin.extensions as Map<*, *>).isNotEmpty()) {
+                            plugin.extensions = parent.extensions
+                            break
+                        }
+                    } else {
+                        plugin.extensions = parent.extensions
+                        break
+                    }
+                }
+                parent = parent.parent
+            }
+        }
+
+        return ""
     }
 
     private fun loadPageFromJsonObject(jsonPageRoot: JSONObject?): LoadPageResult {
@@ -259,23 +533,6 @@ object Loader {
 
         val deviceType = Environment.shared.getDeviceType()
         val page = Page()
-
-        // RefUrl
-        if (jsonPageRoot.has("${Page.FIELD_NAME_REF_URL}-$deviceType")
-            && !jsonPageRoot.isNull("${Page.FIELD_NAME_REF_URL}-$deviceType")
-        ) {
-            (jsonPageRoot.get("${Page.FIELD_NAME_REF_URL}-$deviceType")?.toString()
-                ?: "").also { if (it.isNotEmpty()) page.refUrl = it }
-        } else if (jsonPageRoot.has(Page.FIELD_NAME_REF_URL)
-            && !jsonPageRoot.isNull(Page.FIELD_NAME_REF_URL)
-        ) {
-            (jsonPageRoot.get(Page.FIELD_NAME_REF_URL)?.toString()
-                ?: "").also { if (it.isNotEmpty()) page.refUrl = it }
-        }
-
-        if (page.refUrl.trim().isNotEmpty()) {
-            return loadPageFromUrl(page.refUrl)
-        }
 
         // Id
         if (jsonPageRoot.has(Page.FIELD_NAME_ID)
@@ -315,11 +572,41 @@ object Loader {
         if (jsonPageRoot.has("${Page.FIELD_NAME_DSL}-$deviceType")
             && !jsonPageRoot.isNull("${Page.FIELD_NAME_DSL}-$deviceType")
         ) {
-            page.dsl = jsonPageRoot.get("${Page.FIELD_NAME_DSL}-$deviceType")
+            // String or map
+            val map =
+                jsonPageRoot.optJSONObject("${Page.FIELD_NAME_DSL}-$deviceType")?.toMap()
+            if (map != null) {
+                if (map.isNotEmpty()) page.dsl = map
+            } else {
+                jsonPageRoot.optString("${Page.FIELD_NAME_DSL}-$deviceType", "")?.also {
+                    page.dsl = it
+                }
+            }
         } else if (jsonPageRoot.has(Page.FIELD_NAME_DSL)
             && !jsonPageRoot.isNull(Page.FIELD_NAME_DSL)
         ) {
-            page.dsl = jsonPageRoot.get(Page.FIELD_NAME_DSL)
+            // String or map
+            val map = jsonPageRoot.optJSONObject(Page.FIELD_NAME_DSL)?.toMap()
+            if (map != null) {
+                if (map.isNotEmpty()) page.dsl = map
+            } else {
+                jsonPageRoot.optString(Page.FIELD_NAME_DSL, "")?.also {
+                    if (it.isNotEmpty()) page.dsl = it
+                }
+            }
+        }
+
+        // RefUrl
+        if (jsonPageRoot.has("${Page.FIELD_NAME_REF_URL}-$deviceType")
+            && !jsonPageRoot.isNull("${Page.FIELD_NAME_REF_URL}-$deviceType")
+        ) {
+            (jsonPageRoot.get("${Page.FIELD_NAME_REF_URL}-$deviceType")?.toString()
+                ?: "").also { if (it.isNotEmpty()) page.refUrl = it }
+        } else if (jsonPageRoot.has(Page.FIELD_NAME_REF_URL)
+            && !jsonPageRoot.isNull(Page.FIELD_NAME_REF_URL)
+        ) {
+            (jsonPageRoot.get(Page.FIELD_NAME_REF_URL)?.toString()
+                ?: "").also { if (it.isNotEmpty()) page.refUrl = it }
         }
 
         return LoadPageResult(Result.CODE_SUCCESS, data = page)
@@ -345,11 +632,11 @@ object Loader {
         code: Int = CODE_FAILED,
         message: String = "",
         data: Page? = null
-    ) : Result<Page>(code, message, data)
+    ) : Result<Page>(code, "load page: $message", data)
 
     class LoadResult(
         code: Int = CODE_FAILED,
         message: String = "",
         data: Plugin? = null
-    ) : Result<Plugin>(code, message, data)
+    ) : Result<Plugin>(code, "load plugin: $message", data)
 }

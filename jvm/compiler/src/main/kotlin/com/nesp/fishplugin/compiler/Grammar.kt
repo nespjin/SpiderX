@@ -8,7 +8,7 @@ object Grammar {
      * Checks plugin grammar
      */
     @JvmStatic
-    fun checkGrammar(plugin: Plugin): GrammarCheckResult {
+    fun checkGrammar(plugin: Plugin, isParent: Boolean = false): GrammarCheckResult {
         if (plugin.parent != null) {
             if (plugin.parent !is String && plugin.parent !is Plugin) {
                 return GrammarCheckResult(
@@ -18,19 +18,21 @@ object Grammar {
             }
 
             if (plugin.parent is Plugin) {
-                val checkParentGrammar = checkGrammar(plugin.parent as Plugin)
+                val checkParentGrammar = checkGrammar(plugin.parent as Plugin, true)
                 if (checkParentGrammar.level != GrammarCheckResult.LEVEL_NONE) {
                     return checkParentGrammar
                 }
             }
         }
 
-        if (plugin.name.trim().isEmpty()) {
+        if (plugin.name.trim().isEmpty() && !isParent) {
             return GrammarCheckResult(GrammarCheckResult.LEVEL_ERROR, "name cannot empty")
         }
 
         if (plugin.version.trim().isEmpty()) {
-            return GrammarCheckResult(GrammarCheckResult.LEVEL_ERROR, "version cannot empty")
+            if (!isParent) {
+                return GrammarCheckResult(GrammarCheckResult.LEVEL_ERROR, "version cannot empty")
+            }
         } else {
             val plusCount = plugin.version.count { it == '+' }
             if (plusCount < 0 || plusCount > 1) {
@@ -43,18 +45,20 @@ object Grammar {
             }
         }
 
-        if (plugin.runtime.trim().isEmpty()) {
+        if (plugin.runtime.trim().isEmpty() && !isParent) {
             return GrammarCheckResult(GrammarCheckResult.LEVEL_ERROR, "runtime cannot empty")
         }
 
         // do not check time
         // do not check tag
 
-        if (plugin.deviceFlag !in 0x01..0x07) {
-            return GrammarCheckResult(
-                GrammarCheckResult.LEVEL_ERROR,
-                "deviceFlag(${plugin.deviceFlag}) parse error"
-            )
+        if (plugin.deviceFlags !in 0x01..0x07) {
+            if (!isParent || plugin.deviceFlags != -1) {
+                return GrammarCheckResult(
+                    GrammarCheckResult.LEVEL_ERROR,
+                    "deviceFlags(${plugin.deviceFlags}) parse error"
+                )
+            }
         }
 
         return GrammarCheckResult(GrammarCheckResult.LEVEL_NONE, "Grammar check passed")

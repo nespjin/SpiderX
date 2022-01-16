@@ -2,10 +2,10 @@ package com.nesp.fishplugin.core.data
 
 data class Page(
     var id: String = "",
-    var refUrl: String = "",
+    var refUrl: String? = null,
     var url: String = "",
     var js: String = "",
-    var dsl: Any?/*String? or Map<String, Any>? */ = null,
+    var dsl: Any?/*String? or Map<String, Any>? or DSL entity */ = null,
 ) {
 
     fun getFieldValue(fieldName: String): Any? {

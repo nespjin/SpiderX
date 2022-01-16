@@ -11,7 +11,7 @@ data class Plugin @JvmOverloads constructor(
      * The current plugin is called a child plugin relative to the parent plugin,
      * If a field exists in both the parent plugin and the child plugin, use the field in the child plugin
      * The types:
-     * 1. Plugin
+     * 1. Plugin: Map<String,Any?> or entity
      * 2. Local path, C:/xx/xx/xx/SamplePlugin.json
      * 3. Http path, https://xxx/xxx/SamplePlugin.json
      */
@@ -59,7 +59,7 @@ data class Plugin @JvmOverloads constructor(
      *  For example: the value 00000001 supports mobile phones only,
      *  the value 00000011 supports mobile phones and tablets
      */
-    var deviceFlag: Int = 0,
+    var deviceFlags: Int = -1,
 
     /**
      * Type, see the fields of starts with 'TYPE_'
@@ -84,28 +84,28 @@ data class Plugin @JvmOverloads constructor(
     /**
      * Extend Object
      */
-    var extensions: Any? = null
+    var extensions: Any? /* Map<String,Any?> or entity */ = null
 ) {
 
     /**
      * Whether to support mobile phone
      */
     fun isSupportMobilePhone(): Boolean {
-        return (deviceFlag and 0x01) == 0x01
+        return (deviceFlags and 0x01) == 0x01
     }
 
     /**
      * Whether to support table
      */
     fun isSupportTable(): Boolean {
-        return (deviceFlag and 0x02) == 0x02
+        return (deviceFlags and 0x02) == 0x02
     }
 
     /**
      * Whether to support desktop
      */
     fun isSupportDesktop(): Boolean {
-        return (deviceFlag and 0x04) == 0x04
+        return (deviceFlags and 0x04) == 0x04
     }
 
     /**
@@ -129,7 +129,7 @@ data class Plugin @JvmOverloads constructor(
             FILED_NAME_RUNTIME -> this.runtime
             FILED_NAME_TIME -> this.time
             FILED_NAME_TAGS -> this.tags
-            FILED_NAME_DEVICE_FLAG -> this.deviceFlag
+            FILED_NAME_DEVICE_FLAGS -> this.deviceFlags
             FILED_NAME_TYPE -> this.type
             FILED_NAME_INTRODUCTION -> this.introduction
             FILED_NAME_REF -> this.ref
@@ -160,8 +160,8 @@ data class Plugin @JvmOverloads constructor(
                     this.tags = arrayList
                 }
             }
-            FILED_NAME_DEVICE_FLAG -> {
-                if (fieldValue is Int) this.deviceFlag = fieldValue
+            FILED_NAME_DEVICE_FLAGS -> {
+                if (fieldValue is Int) this.deviceFlags = fieldValue
             }
             FILED_NAME_TYPE -> {
                 if (fieldValue is Int) this.type = fieldValue
@@ -203,7 +203,7 @@ data class Plugin @JvmOverloads constructor(
         const val FILED_NAME_RUNTIME = "runtime"
         const val FILED_NAME_TIME = "time"
         const val FILED_NAME_TAGS = "tags"
-        const val FILED_NAME_DEVICE_FLAG = "deviceFlag"
+        const val FILED_NAME_DEVICE_FLAGS = "deviceFlags"
         const val FILED_NAME_TYPE = "type"
         const val FILED_NAME_INTRODUCTION = "introduction"
         const val FILED_NAME_REF = "ref"

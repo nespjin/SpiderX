@@ -1,6 +1,6 @@
 package com.nesp.fishplugin.compiler
 
-import com.nesp.fishplugin.core.data.DSL
+import com.nesp.fishplugin.core.Result
 import com.nesp.fishplugin.core.data.Page
 import com.nesp.fishplugin.core.data.Plugin
 
@@ -9,26 +9,26 @@ object Compiler {
     fun compileFromDisk(path: String): CompileResult {
         // Load plugin
         val loadResult = Loader.loadPluginFromDisk(path)
-        if (loadResult.state != Loader.LoadResult.STATE_SUCCESS) {
-            return CompileResult(CompileResult.CODE_FAILED, loadResult.message)
+        if (loadResult.code != Result.CODE_SUCCESS) {
+            return CompileResult(Result.CODE_FAILED, loadResult.message)
         }
-        return doCompile(loadResult.plugin!!)
+        return doCompile(loadResult.data!!)
     }
 
     fun compileFromUrl(url: String): CompileResult {
         // Load plugin
         val loadResult = Loader.loadPluginFromUrl(url)
-        if (loadResult.state != Loader.LoadResult.STATE_SUCCESS) {
-            return CompileResult(CompileResult.CODE_FAILED, loadResult.message)
+        if (loadResult.code != Result.CODE_SUCCESS) {
+            return CompileResult(Result.CODE_FAILED, loadResult.message)
         }
-        return doCompile(loadResult.plugin!!)
+        return doCompile(loadResult.data!!)
     }
 
     fun compile(plugin: Plugin): CompileResult {
         // Load plugin
         val loadResult = Loader.load(plugin)
-        if (loadResult.state != Loader.LoadResult.STATE_SUCCESS) {
-            return CompileResult(CompileResult.CODE_FAILED, loadResult.message)
+        if (loadResult.code != Result.CODE_SUCCESS) {
+            return CompileResult(Result.CODE_FAILED, loadResult.message)
         }
         return doCompile(plugin)
     }
@@ -40,13 +40,13 @@ object Compiler {
 
         // Check parent
         if (plugin.parent != null && plugin.parent !is Plugin) {
-            return CompileResult(CompileResult.CODE_FAILED, "prent is not supported")
+            return CompileResult(Result.CODE_FAILED, "prent is not supported")
         }
 
         // Check plugin grammar
         val grammarCheckResult = Grammar.checkGrammar(plugin)
         if (grammarCheckResult.level == Grammar.GrammarCheckResult.LEVEL_ERROR) {
-            return CompileResult(CompileResult.CODE_FAILED, grammarCheckResult.message)
+            return CompileResult(Result.CODE_FAILED, grammarCheckResult.message)
         }
         if (grammarCheckResult.level == Grammar.GrammarCheckResult.LEVEL_WARNING) {
             println("Warning: Grammar Check: " + grammarCheckResult.message)
@@ -55,10 +55,16 @@ object Compiler {
         // Lookup and apply variable
         val lookupAndApplyVariableErrorMsg = lookupAndApplyVariable(plugin)
         if (lookupAndApplyVariableErrorMsg.isNotEmpty()) {
-            return CompileResult(CompileResult.CODE_FAILED, lookupAndApplyVariableErrorMsg)
+            return CompileResult(Result.CODE_FAILED, lookupAndApplyVariableErrorMsg)
         }
 
-        return CompileResult(CompileResult.CODE_SUCCESS)
+        // Remove parent if compile success
+        plugin.parent = null
+
+        // Remove ref if compile success
+        plugin.ref = null
+
+        return CompileResult(Result.CODE_SUCCESS, data = plugin)
     }
 
     /**
@@ -118,35 +124,35 @@ object Compiler {
         val fieldValue = plugin.getFieldValue(fieldName)
 
         if (fieldValue == null || (fieldValue is String && fieldValue.isEmpty())) {
-            return "Not support for field $fieldName"
+//            return "Not support for field $fieldName"
+            return ""
         }
 
-        if (fieldValue !is String) return ""
-
-        val variablesOfField = Grammar.lookupVariables(fieldValue)
-        if (variablesOfField.isNotEmpty()) {
-            if (Variable.exitsVariable(fieldName, variablesOfField)) {
-                return "The $fieldName field contains itself"
-            }
-
-            if (plugin.ref.isNullOrEmpty()) {
-                return "Cant find any variable on $fieldName"
-            }
-
-            for (variable in variablesOfField) {
-                if (variable.name.trim().isEmpty()) {
-                    return "Exits empty variable on $fieldName"
+        if (fieldName == Plugin.FILED_NAME_NAME
+            || fieldName == Plugin.FILED_NAME_VERSION
+            || fieldName == Plugin.FILED_NAME_RUNTIME
+            || fieldName == Plugin.FILED_NAME_TIME
+            || fieldName == Plugin.FILED_NAME_INTRODUCTION
+        ) {
+            if (fieldValue !is String) return ""
+            val variablesOfField = Grammar.lookupVariables(fieldValue)
+            if (variablesOfField.isNotEmpty()) {
+                if (Variable.exitsVariable(fieldName, variablesOfField)) {
+                    return "The $fieldName field contains itself"
                 }
 
-                variable.value = plugin.findRefVariable(variable.name)
-                    ?: return "Variable $fieldName not exits in ref"
+                if (plugin.ref.isNullOrEmpty()) {
+                    return "Cant find any variable on $fieldName"
+                }
 
-                if (fieldName == Plugin.FILED_NAME_NAME
-                    || fieldName == Plugin.FILED_NAME_VERSION
-                    || fieldName == Plugin.FILED_NAME_RUNTIME
-                    || fieldName == Plugin.FILED_NAME_TIME
-                    || fieldName == Plugin.FILED_NAME_INTRODUCTION
-                ) {
+                for (variable in variablesOfField) {
+                    if (variable.name.trim().isEmpty()) {
+                        return "Exits empty variable on $fieldName"
+                    }
+
+                    variable.value = plugin.findRefVariable(variable.name)
+                        ?: return "Variable ${variable.name} not exits in ref"
+
                     if (!Variable.isPrimitiveType(variable.value!!)) {
                         return "Only support primitive type variable for field $fieldName"
                     }
@@ -157,17 +163,21 @@ object Compiler {
                         fieldName,
                         Grammar.applyVariableValue(fieldValue, variableNameAndValue)
                     )
-                } else if (fieldName == Plugin.FILED_NAME_PAGES) {
-                    for (page in plugin.pages) {
-                        lookupAndApplyVariable(plugin, page, Page.FIELD_NAME_REF_URL)
-                        lookupAndApplyVariable(plugin, page, Page.FIELD_NAME_URL)
-                        lookupAndApplyVariable(plugin, page, Page.FIELD_NAME_JS)
-                        lookupAndApplyVariable(plugin, page, Page.FIELD_NAME_DSL)
-                    }
-                } else {
-                    return "Variable in $fieldName is not supported"
                 }
             }
+        } else if (fieldName == Plugin.FILED_NAME_PAGES) {
+            for (page in plugin.pages) {
+                var result = lookupAndApplyVariable(plugin, page, Page.FIELD_NAME_REF_URL)
+                if (result.isNotEmpty()) return result
+                result = lookupAndApplyVariable(plugin, page, Page.FIELD_NAME_URL)
+                if (result.isNotEmpty()) return result
+                result = lookupAndApplyVariable(plugin, page, Page.FIELD_NAME_JS)
+                if (result.isNotEmpty()) return result
+                result = lookupAndApplyVariable(plugin, page, Page.FIELD_NAME_DSL)
+                if (result.isNotEmpty()) return result
+            }
+        } else {
+            return "Variable in $fieldName is not supported"
         }
         return ""
     }
@@ -180,11 +190,11 @@ object Compiler {
         val fieldValue = page.getFieldValue(fieldName)
 
         if (fieldValue == null || (fieldValue is String && fieldValue.isEmpty())) {
-            return "Not support for field $fieldName"
+//            return "Not support for field $fieldName"
+            return ""
         }
 
         if (fieldValue !is String) return ""
-
         val variablesOfField = Grammar.lookupVariables(fieldValue)
         if (variablesOfField.isNotEmpty()) {
             if (Variable.exitsVariable(fieldName, variablesOfField)) {
@@ -201,7 +211,7 @@ object Compiler {
                 }
 
                 variable.value = plugin.findRefVariable(variable.name)
-                    ?: return "Variable $fieldName not exits in ref"
+                    ?: return "Variable ${variable.name} not exits in ref"
 
                 if (fieldName == Page.FIELD_NAME_REF_URL
                     || fieldName == Page.FIELD_NAME_URL
@@ -218,26 +228,22 @@ object Compiler {
                         Grammar.applyVariableValue(fieldValue, variableNameAndValue)
                     )
                 } else if (fieldName == Page.FIELD_NAME_DSL) {
-                    if (variable.value !is DSL) {
-                        return "Only support DSL variable for field $fieldName"
+                    if (variable.value !is Map<*, *>) {
+                        return "Only support Map variable for field $fieldName"
                     }
-                    page.dsl = variable.value!! as Map<String, Any>
+                    val map = variable.value as Map<*, *>?
+                    if (!map.isNullOrEmpty()) page.dsl = map
                 } else {
                     return "Variable in $fieldName is not supported"
                 }
             }
         }
-
         return ""
     }
 
-    data class CompileResult(
-        var code: Int,
-        var message: String = ""
-    ) {
-        companion object {
-            const val CODE_FAILED = -1
-            const val CODE_SUCCESS = 0
-        }
-    }
+    class CompileResult(
+        code: Int,
+        message: String = "",
+        data: Plugin? = null
+    ) : Result<Plugin>(code, message, data)
 }

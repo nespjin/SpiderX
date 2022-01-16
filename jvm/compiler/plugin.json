@@ -1,46 +1,62 @@
 {
-    "name": "",
-    "version": "1.0.0+1",
-    "runtime": "1-3",
-    "time": "2021-11-30 22:00:11,2022-01-01 08:00:11",
-    "tags": [],
-    "deviceFlag": "00000001",   
-    "type": 0,
-    "introduction": "",
+  "parent": {
+    "name": "TestParent",
     "ref": {
-        "commonUrl":"post:http://xxx.xx/a?id=1",
-        "searchUrl":"http://xxxx.xxx/index.php?m=vod-search&wd={{st}}",
-        "detailPageUrl":"",
-        "commonJs":"function a() { }", 
-        "commonJs-2":"../Sample.js",
-        "sampleJs":"https://xxx.xx/sample.js", 
-        "moviesDsl": {
-          "field0": "class.main/tag.div.2/tag.img@href",
-          "field1": "dsl:class.main/tag.div.2/tag.img@href",
-          "field2": "selector:#content_views > p:nth-child(2)@href",
-          "field4": "xpath:/html/body/div[3]/div[1]/main/div[1]/article/div/div[1]/div/div/p[2]/text()[1]", 
-          "field5": "regex:/^(?:Chapter|Section) [1-9][0-9]{0,1}$/", 
-          "field6":"(dsl:class.main/tag.div.2/tag.img).trim()"
-        }
+      "intro": "The simple introduction"
     },
-    "pages": [ 
-        { 
-            "id": "main",
-            "url": "{{commonUrl}}", 
-            "url-2":"",
-            "js": "{{commonJs}}", 
-            "dsl": {}
-        },
-        {
-            "id": "movies",
-            "url": "{{commonUrl}}",
-            "js": "{{commonJs}}", 
-            "dsl": "{{moviesDsl}}" 
-        },
-        {
-            "id":"detail",
-            "refUrl":"{{detailPageUrl}}"
-        }
-    ],
-    "extensions": {}
+    "pages": [
+      {
+        "id": "search",
+        "url": "",
+        "url-0": "{{searchUrl}}",
+        "js": "{{commonJs}}",
+        "dsl": {}
+      }
+    ]
+  },
+  "version": "1.0.0+1",
+  "runtime": "1-3",
+  "time": "2021-11-30 22:00:11,2022-01-01 08:00:11",
+  "tags": [
+    "tag1"
+  ],
+  "deviceFlags": "00000111",
+  "type": 0,
+  "introduction": "{{intro}}",
+  "ref": {
+    "commonUrl": "post:http://xxx.xx/a?id=1",
+    "searchUrl": "http://xxxx.xxx/index.php?m=vod-search&wd={{st}}",
+    "detailPageUrl": "",
+    "commonJs": "function a() { }",
+    "commonJs-2": "../Sample.js",
+    "sampleJs": "https://xxx.xx/sample.js",
+    "moviesDsl": {
+      "field0": "class.main/tag.div.2/tag.img@href",
+      "field1": "dsl:class.main/tag.div.2/tag.img@href",
+      "field2": "selector:#content_views > p:nth-child(2)@href",
+      "field4": "xpath:/html/body/div[3]/div[1]/main/div[1]/article/div/div[1]/div/div/p[2]/text()[1]",
+      "field5": "regex:/^(?:Chapter|Section) [1-9][0-9]{0,1}$/",
+      "field6": "(dsl:class.main/tag.div.2/tag.img).trim()"
+    }
+  },
+  "pages": [
+    {
+      "id": "main",
+      "url": "",
+      "url-0": "{{commonUrl}}",
+      "js": "{{commonJs}}",
+      "dsl": {}
+    },
+    {
+      "id": "movies",
+      "url": "{{commonUrl}}",
+      "js": "{{commonJs}}",
+      "dsl": "{{moviesDsl}}"
+    },
+    {
+      "id": "detail",
+      "refUrl": "{{detailPageUrl}}"
+    }
+  ],
+  "extensions": {}
 }
