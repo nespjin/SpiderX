@@ -1,6 +1,5 @@
 package com.nesp.fishplugin.compiler
 
-import com.google.gson.Gson
 import com.nesp.fishplugin.core.Environment
 import com.nesp.fishplugin.core.Result
 import com.nesp.fishplugin.core.data.Page
@@ -11,6 +10,7 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
+import java.lang.Exception
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 
@@ -605,7 +605,7 @@ object Loader {
         } else if (jsonPageRoot.has(Page.FIELD_NAME_REF_URL)
             && !jsonPageRoot.isNull(Page.FIELD_NAME_REF_URL)
         ) {
-            (jsonPageRoot.get(Page.FIELD_NAME_REF_URL)?.toString()
+            (jsonPageRoot.optString(Page.FIELD_NAME_REF_URL, "")?.toString()
                 ?: "").also { if (it.isNotEmpty()) page.refUrl = it }
         }
 
@@ -616,17 +616,49 @@ object Loader {
      * Load page from url
      */
     fun loadPageFromUrl(url: String): LoadPageResult {
-        val request = Request.Builder().get().url(url).build()
+        val request = try {
+            Request.Builder().get().url(url).build()
+        } catch (e: Exception) {
+            return LoadPageResult(Result.CODE_FAILED, "Load page failed from url:$url")
+        }
         val response = httpClient.newCall(request).execute()
         val code = response.code
-        val responseBody =
-            response.body ?: return LoadPageResult(
-                Result.CODE_FAILED,
-                "Load page failed from url:$url"
-            )
+        val responseBody = response.body
+            ?: return LoadPageResult(Result.CODE_FAILED, "Load page failed from url:$url")
         if (code != 400) return LoadPageResult(Result.CODE_FAILED, "Load page failed from url:$url")
         return loadPageFromJsonObject(JSONObject(responseBody.string()))
     }
+
+    /**
+     * Load Js from disk
+     */
+    fun loadJsFromDisk(path: String): LoadJsResult {
+        val jsFile = File(path)
+        if (!jsFile.exists() || !jsFile.isFile) {
+            return LoadJsResult(Result.CODE_FAILED, "Load failed from path:$path")
+        }
+        val jsString = String(jsFile.readBytes(), StandardCharsets.UTF_8)
+        return LoadJsResult(Result.CODE_SUCCESS, data = jsString)
+    }
+
+    /**
+     * Load js from url
+     */
+    fun loadJsFromUrl(url: String): LoadJsResult {
+        val request = Request.Builder().get().url(url).build()
+        val response = httpClient.newCall(request).execute()
+        val code = response.code
+        val responseBody = response.body
+            ?: return LoadJsResult(Result.CODE_FAILED, "Load failed from url:$url")
+        if (code != 400) return LoadJsResult(Result.CODE_FAILED, "Load plugin failed from url:$url")
+        return LoadJsResult(Result.CODE_SUCCESS, data = responseBody.string())
+    }
+
+    class LoadJsResult(
+        code: Int = CODE_FAILED,
+        message: String = "",
+        data: String? = null
+    ) : Result<String>(code, "load js: $message", data)
 
     class LoadPageResult(
         code: Int = CODE_FAILED,

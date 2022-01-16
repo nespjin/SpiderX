@@ -28,8 +28,8 @@
     "searchUrl": "http://xxxx.xxx/index.php?m=vod-search&wd={{st}}",
     "detailPageUrl": "",
     "commonJs": "function a() { }",
-    "commonJs-2": "../Sample.js",
-    "sampleJs": "https://xxx.xx/sample.js",
+    "commonJs-0": "path:./sample.js",
+    "sampleJs": "url:https://xxx.xx/sample.js",
     "moviesDsl": {
       "field0": "class.main/tag.div.2/tag.img@href",
       "field1": "dsl:class.main/tag.div.2/tag.img@href",

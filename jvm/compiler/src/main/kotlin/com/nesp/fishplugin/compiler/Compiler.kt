@@ -58,6 +58,52 @@ object Compiler {
             return CompileResult(Result.CODE_FAILED, lookupAndApplyVariableErrorMsg)
         }
 
+        // Compile pages
+        if (plugin.pages.isNotEmpty()) {
+            for (page in plugin.pages) {
+                if (!page.refUrl.isNullOrEmpty()) {
+                    val loadPageFromUrl = Loader.loadPageFromUrl(page.refUrl!!)
+                    if (loadPageFromUrl.code != Result.CODE_SUCCESS) {
+                        return CompileResult(Result.CODE_FAILED, loadPageFromUrl.message)
+                    }
+
+                    if (page.id.isEmpty()) {
+                        page.id = loadPageFromUrl.data!!.id
+                    }
+
+                    if (page.url.isEmpty()) {
+                        page.url = loadPageFromUrl.data!!.url
+                    }
+
+                    if (page.js.isEmpty()) {
+                        page.js = loadPageFromUrl.data!!.js
+                    }
+
+                    if (page.dsl == null || (page.dsl is Map<*, *> && (page.dsl as Map<*, *>).isEmpty())) {
+                        page.dsl = loadPageFromUrl.data!!.dsl
+                    }
+                }
+
+                if (page.js.isNotEmpty()) {
+                    if (page.js.startsWith(Page.JS_PATH_PREFIX)) {
+                        val loadJsFromDisk =
+                            Loader.loadJsFromDisk(page.js.substring(Page.JS_PATH_PREFIX.length))
+                        if (loadJsFromDisk.code != Result.CODE_SUCCESS) {
+                            return CompileResult(Result.CODE_FAILED, loadJsFromDisk.message)
+                        }
+                        page.js = loadJsFromDisk.data!!
+                    } else if (page.js.startsWith(Page.JS_URL_PREFIX)) {
+                        val loadJsFromUrl =
+                            Loader.loadJsFromUrl(page.js.substring(Page.JS_URL_PREFIX.length))
+                        if (loadJsFromUrl.code != Result.CODE_SUCCESS) {
+                            return CompileResult(Result.CODE_FAILED, loadJsFromUrl.message)
+                        }
+                        page.js = loadJsFromUrl.data!!
+                    }
+                }
+            }
+        }
+
         // Remove parent if compile success
         plugin.parent = null
 

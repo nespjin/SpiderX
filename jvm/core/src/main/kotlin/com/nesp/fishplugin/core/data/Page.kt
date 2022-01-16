@@ -45,5 +45,8 @@ data class Page(
         const val FIELD_NAME_URL = "url"
         const val FIELD_NAME_JS = "js"
         const val FIELD_NAME_DSL = "dsl"
+
+        const val JS_PATH_PREFIX = "path:"
+        const val JS_URL_PREFIX = "url:"
     }
 }

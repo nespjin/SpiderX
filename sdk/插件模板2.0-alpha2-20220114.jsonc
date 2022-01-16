@@ -59,10 +59,10 @@
         // 2.只能定义一级引用
         "commonUrl":"post:http://xxx.xx/a?id=1", // 字段引用 url 格式，请求类型:地址?统一参数表
         "searchUrl":"http://xxxx.xxx/index.php?m=vod-search&wd={{st}}", // {{st}} 会替换为用户输入的关键字
-        "detailPageUrl":"",
+        "detailPageUrl":"https://www.baidu.com",
         "commonJs":"function a() { }", // js 代码引用
-        "commonJs-2":"../Sample.js", // 本地引用
-        "sampleJs":"https://xxx.xx/sample.js", // 网络引用
+        "commonJs-2":"path:../Sample.js", // 本地引用
+        "sampleJs":"url:https://xxx.xx/sample.js", // 网络引用
         "moviesDsl": {
           // 对象引用，DSL 支持
           // 格式：类型:值
@@ -126,33 +126,99 @@ trimEnd()
 去掉尾部空白
 
 公共js函数:
- 
-// 返回:
-// 设备类型：
-//   0: 手机
-//   1: 平板
-/    2: 桌面
-getDeviceType() 
 
-// 向应用端发送数据
-// 
-// 参数:
-// 
-// type: 数据类型，int
-// 
-// data：数据Object
-sendData(type,data)
+  /**
+      *
+      * @returns {number} Api版本
+      */
+     getApiLevel: function () {
+         return RUNTIME_API_LEVEL_A;
+     },
 
-// 向应用端发送错误消息
-// 
-// 参数:
-// 
-// errorMessage: 错误消息字符串，string
-sendError(errorMessageString)
+     /**
+      *
+      * @returns {number} Runtime 版本号
+      */
+     getVersionCode: function () {
+         return 1;
+     },
 
-// 尝试执行method，catch到异常后自动调用sendError发送错误信息到应用端。
-tryRun(function method(){})
+     /**
+      *
+      * @returns {string} Runtime 版本名
+      */
+     getVersionName: function () {
+         return "1.0";
+     },
 
+     /**
+      *
+      * @returns {string} Runtime build号
+      */
+     getBuild:function () {
+         return "";
+     }
+
+     /**
+      *
+      * @returns {number} 设备类型: 0: 手机 1: 平板 2: 桌面
+      */
+     getDeviceType: function () {
+         return 0;
+     },
+
+     /**
+      *
+      * @returns {boolean} 是否是手机
+      */
+     isMobilePhone: function () {
+         return false;
+     },
+
+     /**
+      *
+      * @returns {boolean} 是否是平板
+      */
+     isTable: function () {
+         return false;
+     },
+
+     /**
+      *
+      * @returns {boolean} 是否是桌面
+      */
+     isDesktop: function () {
+         return false;
+     },
+
+     /**
+      * 向应用端发送数据
+      * @param type {number} 数据类型
+      * @param data {Object} 数据
+      */
+     sendData: function (type, data) {
+     },
+
+     /**
+      * 向应用端发送错误消息
+      * @param errorMsg {string} 错误消息字符串
+      */
+     sendError: function (errorMsg) {
+     },
+
+     /**
+      * 尝试执行method，catch到异常后自动调用sendError发送错误信息到应用端。
+      * @param method {function}
+      */
+     tryRun: function (method) {
+         try {
+             method();
+         } catch (e) {
+             this.sendError(e.toString());
+         }
+     }
+ */
+/**
 小丑鱼影视js函数：
 
 // 创建一个HomePage对象
@@ -164,7 +230,7 @@ createCategoryPage()
 // 创建一个SearchPage对象
 createSearchPage()
 
-// 创建一个detailPage对象
+// 创建一个DetailPage对象
 createDetailPage()
 
 // 向应用端发送主页面数据
