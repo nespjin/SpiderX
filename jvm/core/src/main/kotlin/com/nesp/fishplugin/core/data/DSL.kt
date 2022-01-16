@@ -1,4 +1,4 @@
 package com.nesp.fishplugin.core.data
 
-interface DSL {
+open class DSL {
 }

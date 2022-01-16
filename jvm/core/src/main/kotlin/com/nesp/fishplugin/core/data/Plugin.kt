@@ -115,7 +115,7 @@ data class Plugin @JvmOverloads constructor(
         if (ref.isNullOrEmpty()) return null
         if (variableName.trim().isEmpty()) return null
         if (!ref!!.containsKey(variableName)) return null
-        val deviceType = Environment.default.getDeviceType()
+        val deviceType = Environment.shared.getDeviceType()
         if (ref!!.containsKey("$variableName-$deviceType")) {
             return ref!!["$variableName-$deviceType"]
         }

@@ -8,7 +8,7 @@ object Compiler {
 
     fun compileFromDisk(path: String): CompileResult {
         // Load plugin
-        val loadResult = Loader.loadFromDisk(path)
+        val loadResult = Loader.loadPluginFromDisk(path)
         if (loadResult.state != Loader.LoadResult.STATE_SUCCESS) {
             return CompileResult(CompileResult.CODE_FAILED, loadResult.message)
         }
@@ -17,7 +17,7 @@ object Compiler {
 
     fun compileFromUrl(url: String): CompileResult {
         // Load plugin
-        val loadResult = Loader.loadFromUrl(url)
+        val loadResult = Loader.loadPluginFromUrl(url)
         if (loadResult.state != Loader.LoadResult.STATE_SUCCESS) {
             return CompileResult(CompileResult.CODE_FAILED, loadResult.message)
         }
@@ -221,7 +221,7 @@ object Compiler {
                     if (variable.value !is DSL) {
                         return "Only support DSL variable for field $fieldName"
                     }
-                    page.dsl = variable.value!! as DSL
+                    page.dsl = variable.value!! as Map<String, Any>
                 } else {
                     return "Variable in $fieldName is not supported"
                 }

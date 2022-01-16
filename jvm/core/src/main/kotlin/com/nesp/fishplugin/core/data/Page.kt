@@ -5,7 +5,7 @@ data class Page(
     var refUrl: String = "",
     var url: String = "",
     var js: String = "",
-    var dsl: DSL? = null,
+    var dsl: Any?/*String? or Map<String, Any>? */ = null,
 ) {
 
     fun getFieldValue(fieldName: String): Any? {
@@ -34,7 +34,7 @@ data class Page(
                 if (fieldValue is String) this.js = fieldValue
             }
             FIELD_NAME_DSL -> {
-                if (fieldValue is DSL?) this.dsl = fieldValue
+                if (fieldValue is Map<*, *>?) this.dsl = fieldValue as Map<String, Any>?
             }
         }
     }
