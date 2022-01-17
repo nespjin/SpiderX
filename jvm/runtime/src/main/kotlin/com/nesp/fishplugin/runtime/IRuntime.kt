@@ -4,6 +4,6 @@ import com.nesp.fishplugin.core.data.Page
 
 interface IRuntime {
 
-    fun <T> exec(page: Page): Process<T>
+    fun exec(page: Page): Process
 
 }

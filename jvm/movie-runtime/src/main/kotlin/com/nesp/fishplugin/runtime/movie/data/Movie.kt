@@ -3,53 +3,81 @@ package com.nesp.fishplugin.runtime.movie.data
 import java.io.Serializable
 
 /**
- * 电影
+ * Movie
  */
 open class Movie(
 
     /**
-     * 电影名字
+     * movie name
      */
     var name: String = "",
 
     /**
-     * 标题, 在详情页的电影名字下面显示
-     */
-    var title: String = "",
-
-    /**
-     * 状态
+     * state
      */
     var status: String = "",
 
     /**
-     * 评分
+     * score
      */
     var score: String = "",
 
     /**
-     * 详情, 点击简介显示电影详情
+     * 明星
      */
-    var detail: String = "",
+    var stars: String = "",
 
     /**
-     * 电影源
+     * 导演
+     */
+    var director: String = "",
+
+    /**
+     * 地区
+     */
+    var area: String = "",
+
+    /**
+     * 简介
+     */
+    var introduction: String = "",
+
+    /**
+     * 上映时间
+     */
+    var releaseTime: String = "",
+
+    /**
+     * movie source
      */
     var sourceName: String = "",
 
     /**
-     * 电影详情页地址
+     * Movie details page url
      */
     var detailUrl: String = "",
 
     /**
-     * 电影封面地址
+     * movie cover image url
      */
     var coverImageUrl: String = "",
 
     /**
-     * 播放线路
+     * Play lines
      */
     var playLines: MutableList<PlayLine> = mutableListOf()
 
-) : Serializable
+) : Serializable {
+
+    /**
+     * Returns Title, displayed under the movie name on the detail page
+     */
+    fun getTitle(): String {
+        return ""
+    }
+
+    fun getDetail(): String {
+        return ""
+    }
+
+}

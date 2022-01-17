@@ -3,16 +3,16 @@ package com.nesp.fishplugin.runtime.movie.data
 import java.io.Serializable
 
 /**
- * 播放线路
+ * Play lines
  */
 data class PlayLine(
     /**
-     * 标题
+     * title
      */
     var title: String = "",
 
     /**
-     * 剧集列表
+     * episode list
      */
     var episodes: MutableList<Episode> = mutableListOf()
 ) : Serializable

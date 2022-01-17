@@ -3,9 +3,9 @@ package com.nesp.fishplugin.runtime.movie.data
 import java.io.Serializable
 
 /**
- * 电影分类
+ * Movie classification
  */
-data class MovieClass(
+data class MovieCategory(
     val title: String = "",
     val pageUrl: String = ""
 ) : Serializable

@@ -3,21 +3,21 @@ package com.nesp.fishplugin.runtime.movie.data
 import java.io.Serializable
 
 /**
- * 剧集
+ * episode
  */
 data class Episode(
     /**
-     * 剧集标题
+     * Episode title
      */
     var title: String = "",
 
     /**
-     * 页面地址
+     * page url
      */
     var pageUrl: String = "",
 
     /**
-     * 视频播放地址
+     * Video playback URL
      */
     var playUrl: String = "",
 ) : Serializable

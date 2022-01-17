@@ -86,7 +86,7 @@
     },
     "pages": [ // 页面集, id不可重复
         { 
-            "id": "main", // 不支持字段后缀
+            "id": "home", // 不支持字段后缀
             "url": "{{commonUrl}}", // 引用字段 ref.commonUrl
             "url-2":"", // 在桌面端会使用该字段
             // 若js与dsl同时存在，则使用dsl
@@ -94,7 +94,7 @@
             "dsl": {}
         },
         {
-            "id": "movies",
+            "id": "category",
             "url": "{{commonUrl}}", // 引用字段
             "js": "{{commonJs}}", // 引用Js，在桌面端会使用ref.commonJs-2
             "dsl": "{{moviesDsl}}" // 引用对象 ref.moviesDsl

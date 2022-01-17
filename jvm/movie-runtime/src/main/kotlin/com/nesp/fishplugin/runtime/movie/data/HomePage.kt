@@ -4,36 +4,36 @@ import java.io.Serializable
 
 
 /**
- * 主页面
+ * home page
  */
 class HomePage : Serializable {
     /**
-     * 轮播
+     * carousel
      */
     var slideMovies: MutableList<Movie> = mutableListOf()
 
     /**
-     * 最新播放
+     * latest play
      */
     var newPlay: MutableList<Movie> = mutableListOf()
 
     /**
-     * 最新电影
+     * New Movies
      */
     var newMovie: MutableList<Movie> = mutableListOf()
 
     /**
-     * 最新电视剧
+     * latest TV series
      */
     var newSoap: MutableList<Movie> = mutableListOf()
 
     /**
-     * 最新综艺
+     * latest variety show
      */
     var newVariety: MutableList<Movie> = mutableListOf()
 
     /**
-     * 最新动漫
+     * latest anime
      */
     var newAnim: MutableList<Movie> = mutableListOf()
 }

@@ -3,17 +3,17 @@ package com.nesp.fishplugin.runtime.movie.data
 import java.io.Serializable
 
 /**
- * 搜索页面
+ * search page
  */
 class SearchPage : Serializable {
 
     /**
-     * 电影集合
+     * movie collection
      */
     var movies: MutableList<Movie> = mutableListOf()
 
     /**
-     * 下页地址，如果不存在下一页则为空字符串
+     * The address of the next page, or an empty string if there is no next page
      */
     var nextPageUrl: String = ""
 }

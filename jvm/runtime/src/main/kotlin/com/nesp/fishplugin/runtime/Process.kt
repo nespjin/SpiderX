@@ -2,18 +2,18 @@ package com.nesp.fishplugin.runtime
 
 import com.nesp.fishplugin.core.Result
 
-class Process<T> {
+class Process {
 
     var isDestroy = false
         private set
 
-    val execResult = ExecResult<T>(-1)
+    val execResult = ExecResult(-1)
 
     fun destroy() {
         isDestroy = true
     }
 
-    fun waitFor(): ExecResult<T> {
+    fun waitFor(): ExecResult {
         while (execResult.exitValue != -1) {
             try {
                 Thread.sleep(200)
@@ -25,10 +25,10 @@ class Process<T> {
         return execResult
     }
 
-    class ExecResult<T>(
+    class ExecResult(
         var exitValue: Int,
         message: String = "",
-        data: T? = null
-    ) : Result<T>(exitValue, message, data)
+        data: Any? = null
+    ) : Result<Any?>(exitValue, message, data)
 
 }
