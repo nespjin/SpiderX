@@ -3,7 +3,7 @@ plugins {
     id 'java'
 }
 
-group 'com.nesp.fishplugin.runtime'
+group 'com.nesp.fishplugin.runtime.movie'
 version '1.0-SNAPSHOT'
 
 repositories {
@@ -12,12 +12,12 @@ repositories {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.6.10"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 
     implementation project(":core")
-    implementation project(":compiler")
+    implementation project(":runtime")
 }
 
 test {

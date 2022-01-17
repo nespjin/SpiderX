@@ -3,7 +3,9 @@ rootProject.name = 'jvm'
 include ':core'
 include ':compiler'
 include ':runtime'
+include ':movie-runtime'
 
 project(':core').projectDir = new File('./core')
 project(':compiler').projectDir = new File('./compiler')
 project(':runtime').projectDir = new File('./runtime')
+project(':movie-runtime').projectDir = new File('./movie-runtime')

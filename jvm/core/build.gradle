@@ -3,7 +3,7 @@ plugins {
     id 'java'
 }
 
-group 'com.nesp.fishplugin'
+group 'com.nesp.fishplugin.core'
 version '1.0-SNAPSHOT'
 
 repositories {
