@@ -2,7 +2,7 @@
  * 小丑鱼影视 Runtime SDK
  */
 
-// import ./runtime_core
+// include path:./runtime_core
 // delete line
 import Runtime from './runtime_core';
 
