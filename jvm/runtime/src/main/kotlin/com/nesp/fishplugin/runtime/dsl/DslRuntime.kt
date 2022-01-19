@@ -86,27 +86,27 @@ abstract class DslRuntime : IRuntime {
         }
     }
 
-    fun runTask(task: Runnable) {
+    override fun runTask(task: Runnable) {
         executors.execute(task)
     }
 
-    open fun interruptCurrentTask() {
+    override fun interruptCurrentTask() {
         Thread.currentThread().interrupt()
     }
 
-    fun shutdown() {
+    override fun shutdown() {
         executors.shutdown()
     }
 
-    fun shutdownNow() {
+    override fun shutdownNow() {
         executors.shutdownNow()
     }
 
-    fun awaitTermination(timeout: Long, unit: TimeUnit) {
+    override fun awaitTermination(timeout: Long, unit: TimeUnit) {
         executors.awaitTermination(timeout, unit)
     }
 
-    fun isTerminated(): Boolean {
+    override fun isTerminated(): Boolean {
         return executors.isTerminated
     }
 

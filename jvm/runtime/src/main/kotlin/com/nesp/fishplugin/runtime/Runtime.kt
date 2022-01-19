@@ -6,15 +6,15 @@ class Runtime {
 
     var runtimeFactory: IRuntimeFactory? = null
 
-    fun <T> execJs(page: Page): Process<T> {
+    fun execJs(page: Page): Process {
         return exec(page, EXEC_TYPE_JS)
     }
 
-    fun <T> execDsl(page: Page): Process<T> {
+    fun execDsl(page: Page): Process {
         return exec(page, EXEC_TYPE_DSL)
     }
 
-    fun <T> exec(page: Page, execType: Int): Process<T> {
+    fun exec(page: Page, execType: Int): Process {
         if (runtimeFactory == null) {
             throw IllegalArgumentException("The runtimeFactory not set yet!")
         }

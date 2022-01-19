@@ -72,7 +72,8 @@ abstract class DSL(private var properties: MutableMap<String/*ignore caps*/, Str
         const val PROPERTY_CONTENT_CATEGORY = "Category"
         const val PROPERTY_CONTENT_STARS = "Stars"
         const val PROPERTY_CONTENT_DIRECTOR = "Director"
-        const val PROPERTY_CONTENT_UPDATE_TIME = "UpdateTime"
+        const val PROPERTY_CONTENT_RELEASE_TIME = "ReleaseTime"
+        const val PROPERTY_CONTENT_TITLE = "Title"
 
         @JvmStatic
         fun getDslType(dsl: String): Int {

@@ -13,7 +13,7 @@ internal class PluginTest {
     @BeforeEach
     fun setUp() {
         print("setUp")
-        plugin = Plugin(deviceFlag = 0b0000_0101)
+        plugin = Plugin(deviceFlags = 0b0000_0101)
     }
 
     @AfterEach
