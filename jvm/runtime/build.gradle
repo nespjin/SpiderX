@@ -6,11 +6,6 @@ plugins {
 group 'com.nesp.fishplugin.runtime'
 version '1.0-SNAPSHOT'
 
-repositories {
-    mavenCentral()
-    mavenCentral()
-}
-
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:1.6.10"
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'

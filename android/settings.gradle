@@ -1,0 +1,24 @@
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        jcenter() // Warning: this repository is going to shut down soon
+    }
+}
+rootProject.name = "android"
+
+include ':core'
+include ':compiler'
+include ':runtime'
+include ':movie-runtime'
+
+include ':app'
+include ':runtime-android'
+include ':movie-runtime-android'
+
+
+project(':core').projectDir = new File('../jvm/core')
+project(':compiler').projectDir = new File('../jvm/compiler')
+project(':runtime').projectDir = new File('../jvm/runtime')
+project(':movie-runtime').projectDir = new File('../jvm/movie-runtime')
