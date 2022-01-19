@@ -86,8 +86,8 @@ abstract class DslRuntime : IRuntime {
         }
     }
 
-    override fun runTask(task: Runnable) {
-        executors.execute(task)
+    override fun runTask(task: Any) {
+        if (task is Runnable) executors.execute(task)
     }
 
     override fun interruptCurrentTask() {

@@ -7,7 +7,7 @@ interface IRuntime {
 
     fun exec(page: Page): Process
 
-    fun runTask(task: Runnable)
+    fun runTask(task: Any)
 
     fun interruptCurrentTask()
 
