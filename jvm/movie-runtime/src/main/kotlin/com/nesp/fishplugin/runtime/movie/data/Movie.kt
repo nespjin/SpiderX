@@ -62,22 +62,17 @@ open class Movie(
      */
     var coverImageUrl: String = "",
 
+    var detail: String = "",
+
+    var subtitle: String = "",
+
+    var type: String = "",
+
+    var category: String = "",
+
     /**
      * Play lines
      */
     var playLines: MutableList<PlayLine> = mutableListOf()
 
-) : Serializable {
-
-    /**
-     * Returns Title, displayed under the movie name on the detail page
-     */
-    fun getTitle(): String {
-        return ""
-    }
-
-    fun getDetail(): String {
-        return ""
-    }
-
-}
+) : Serializable

@@ -11,10 +11,23 @@ class Process {
 
     fun destroy() {
         isDestroy = true
+        exit(EXIT_VALUE_BY_USER)
+    }
+
+    fun exit(exitValue: Int) {
+        execResult.exitValue = exitValue
+    }
+
+    fun exitNormally() {
+        exit(EXIT_VALUE_NORMAL)
+    }
+
+    fun exitWithError() {
+        exit(EXIT_VALUE_ERROR)
     }
 
     fun waitFor(): ExecResult {
-        while (execResult.exitValue != -1) {
+        while (execResult.exitValue != EXIT_VALUE_NULL) {
             try {
                 Thread.sleep(200)
             } catch (e: InterruptedException) {
@@ -30,5 +43,12 @@ class Process {
         message: String = "",
         data: Any? = null
     ) : Result<Any?>(exitValue, message, data)
+
+    companion object {
+        const val EXIT_VALUE_NULL = -1
+        const val EXIT_VALUE_NORMAL = 0
+        const val EXIT_VALUE_BY_USER = 1
+        const val EXIT_VALUE_ERROR = 2
+    }
 
 }

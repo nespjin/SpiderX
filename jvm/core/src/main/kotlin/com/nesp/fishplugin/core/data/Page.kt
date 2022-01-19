@@ -8,6 +8,10 @@ data class Page(
     var dsl: Any?/*String? or Map<String, Any>? or DSL entity */ = null,
 ) {
 
+    // TODO: 2022/1/19 Set owner value
+    var owner: Plugin? = null
+
+
     fun getFieldValue(fieldName: String): Any? {
         return when (fieldName) {
             FIELD_NAME_ID -> this.id

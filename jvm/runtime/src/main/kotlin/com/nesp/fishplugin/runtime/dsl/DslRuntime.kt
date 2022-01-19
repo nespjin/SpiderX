@@ -1,12 +1,118 @@
 package com.nesp.fishplugin.runtime.dsl
 
+import com.nesp.fishplugin.core.Environment
 import com.nesp.fishplugin.core.data.DSL
+import com.nesp.fishplugin.core.data.Page
+import com.nesp.fishplugin.core.data.Plugin
+import com.nesp.fishplugin.core.utils.LruCache
 import com.nesp.fishplugin.runtime.IRuntime
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.TextNode
 import org.jsoup.select.Elements
+import java.net.URL
+import java.util.*
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.lang.Runtime as JavaRuntime
 
-abstract class DSLRuntime : IRuntime {
+abstract class DslRuntime : IRuntime {
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Html
+    ///////////////////////////////////////////////////////////////////////////
+
+    protected val htmlDocumentCache: HtmlDocumentMemoryCache
+
+    init {
+        val maxSize = JavaRuntime.getRuntime().maxMemory() / 8
+        htmlDocumentCache = HtmlDocumentMemoryCache(maxSize.toInt())
+    }
+
+    protected inner class HtmlDocumentMemoryCache(maxSize: Int) :
+        LruCache<String/*Url*/, Document/*Html Document*/>(maxSize) {
+
+        override fun create(key: String?): Document? {
+            if (key == null) return null
+            return requestHtmlDocument(key)
+        }
+
+    }
+
+    var reqTimeoutMillis = 30 * 1000
+
+    protected fun requestHtmlDocument(url: String): Document {
+        val environment = Environment.shared
+        var userAgent =
+            "Mozilla/5.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Mobile Safari/537.36"
+        if (!environment.isMobilePhone()) {
+            // Using PC
+            userAgent =
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36"
+        }
+
+        val realUrl = Plugin.removeReqPrefix(url)
+        var connection = Jsoup.connect(realUrl)
+            .userAgent(userAgent)
+            .ignoreContentType(true)
+            .timeout(reqTimeoutMillis)
+        return if (Plugin.isPostReq(url)) {
+            // Post
+            val urlObj = URL(realUrl)
+            if (urlObj.query != null) {
+                val data: MutableMap<String, String> = hashMapOf()
+                val kvPairs = urlObj.query.split("&")
+                for (kvPair in kvPairs) {
+                    val kvArray = kvPair.split("=")
+                    data[kvArray[0]] = kvArray[1]
+                }
+                connection = connection.data(data)
+            }
+            connection.postDataCharset("UTF-8").post()
+        } else {
+            // Get
+            return connection.get()
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Executors
+    ///////////////////////////////////////////////////////////////////////////
+
+    private val executors = Executors.newCachedThreadPool {
+        Thread("DSL-Runtime-${UUID.randomUUID()}").apply {
+            isDaemon = true
+        }
+    }
+
+    fun runTask(task: Runnable) {
+        executors.execute(task)
+    }
+
+    open fun interruptCurrentTask() {
+        Thread.currentThread().interrupt()
+    }
+
+    fun shutdown() {
+        executors.shutdown()
+    }
+
+    fun shutdownNow() {
+        executors.shutdownNow()
+    }
+
+    fun awaitTermination(timeout: Long, unit: TimeUnit) {
+        executors.awaitTermination(timeout, unit)
+    }
+
+    fun isTerminated(): Boolean {
+        return executors.isTerminated
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Dsl
+    ///////////////////////////////////////////////////////////////////////////
 
     fun select(parentElement: Element, dsl: String): Elements {
         val dslWithoutTypePrefix = DSL.removeDslTypePrefix(dsl)
@@ -33,6 +139,7 @@ abstract class DSLRuntime : IRuntime {
     }
 
     fun getValueByDsl(parentElement: Element, dsl: String): String {
+        if (dsl.isEmpty()) return ""
         val dslType = DSL.getDslType(dsl.trim())
 
         val infos = DSL.removeDslTypePrefix(dsl).split("@")
@@ -70,7 +177,7 @@ abstract class DSLRuntime : IRuntime {
             if (dslType == DSL.DSL_TYPE_XPATH) methodsIndex = 1
         }
 
-        if (methodsIndex != -1) return runDslMultiMethod(result, infos[methodsIndex])
+        if (methodsIndex != -1) return runDslMethods(result, infos[methodsIndex])
 
         return result
     }
@@ -122,10 +229,10 @@ abstract class DSLRuntime : IRuntime {
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    // DSL API
+    // DSL Methods
     ///////////////////////////////////////////////////////////////////////////
 
-    protected fun runDslMultiMethod(`$this`: String, methods: String): String {
+    protected fun runDslMethods(`$this`: String, methods: String): String {
         var result = `$this`
         if (methods.contains(";")) {
             val methodList = methods.split(";")
@@ -258,4 +365,11 @@ abstract class DSLRuntime : IRuntime {
         }.trimStart().trimEnd()
     }
 
+    companion object {
+
+        fun isPageAvailable(page: Page): Boolean {
+            return page.owner != null && page.url.isNotEmpty() && page.dsl != null && page.dsl is Map<*, *>
+        }
+
+    }
 }

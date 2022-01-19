@@ -211,6 +211,29 @@ data class Plugin @JvmOverloads constructor(
         const val FILED_NAME_EXTENSIONS = "extensions"
 
         ///////////////////////////////////////////////////////////////////////////
+        // Http
+        ///////////////////////////////////////////////////////////////////////////
+        const val HTTP_REQ_TYPE_PREFIX_GET = "get:"
+        const val HTTP_REQ_TYPE_PREFIX_POST = "post:"
+
+        fun isGetReq(url: String): Boolean {
+            return url.startsWith(HTTP_REQ_TYPE_PREFIX_GET)
+        }
+
+        fun isPostReq(url: String): Boolean {
+            return url.startsWith(HTTP_REQ_TYPE_PREFIX_POST)
+        }
+
+        fun removeReqPrefix(url: String): String {
+            if (isGetReq(url)) {
+                return url.substring(HTTP_REQ_TYPE_PREFIX_GET.length)
+            } else if (isPostReq(url)) {
+                return url.substring(HTTP_REQ_TYPE_PREFIX_POST.length)
+            }
+            return url
+        }
+
+        ///////////////////////////////////////////////////////////////////////////
         // Plugin Type
         ///////////////////////////////////////////////////////////////////////////
         const val TYPE_MOVIE = 0

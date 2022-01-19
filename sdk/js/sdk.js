@@ -146,6 +146,10 @@ Runtime.prototype.createMovie = function () {
         "sourceName": "",
         "detailUrl": "",
         "coverImageUrl": "",
+        "detail": "",
+        "subtitle": "",
+        "type": "",
+        "category": "",
         "playLines": []
     }
 }
