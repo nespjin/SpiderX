@@ -68,19 +68,21 @@
           // 格式：类型:值
           // 类型可不写
           "field0": "class.main/tag.div.2/tag.img@href", // 默认dsl
-          "field1": "dsl:class.main/tag.div.2/tag.img@href", // dsl
+          "field1": "fdsl:class.main/tag.div.2/tag.img@href", // fish-dsl
           "field2": "selector:#content_views > p:nth-child(2)@href", // selector
           "field3": "xpath://*[@id=\"content_views\"]/p[2]/text()[1]", // XPath
           "field4": "xpath:/html/body/div[3]/div[1]/main/div[1]/article/div/div[1]/div/div/p[2]/text()[1]", // fullXPath
-          "field5": "regex:/^(?:Chapter|Section) [1-9][0-9]{0,1}$/", // 正则表达式
+//           "field5": "regex:/^(?:Chapter|Section) [1-9][0-9]{0,1}$/", // 正则表达式
 
           // 高级用法
           // 1.使用DSL函数
-          "field6":"(dsl:class.main/tag.div.2/tag.img).trim()",
-          // 2.使用DSL变量
+          "field6":"dsl:class.main/tag.div.2/tag.img@trim;concat(a)",
+          // 2.使用DSL变量 暂未实现
           "field7":"
-          let a = dsl:class.main/tag.div.2/tag.img;
-          a.trim();
+          let a = dsl:class.main/tag.div.2/tag.img
+          let b = dsl:class.main/tag.div.2/tag.img
+          let c = a@href
+          c.trim();
           "
         }
     },
@@ -110,10 +112,12 @@
 /**
 DSL函数:
 
-split(a,',')
+replace(a,b)
+
+split(a,1)
 分割字符串
 
-contact(a,b)
+concat(b)
 合并多个字符串
 
 trim()
