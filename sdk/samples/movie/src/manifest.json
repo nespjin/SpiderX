@@ -1,0 +1,50 @@
+{
+  "name": "笨笨鸡",
+  "version": "1.0.0+1",
+  "runtime": "1-3",
+  "time": "2022-01-15 22:00:11,2022-01-01 08:00:11",
+  "tags": [
+    "Sample"
+  ],
+  "deviceFlags": "00000111",
+  "type": 0,
+  "ref": {
+    "categoryJs": "path:./js/category.js"
+  },
+  "pages": [
+    {
+      "id": "home",
+      "url": "http://m.benbenji.com/",
+      "js": "path:./js/home.js"
+    },
+    {
+      "id": "category_movie",
+      "url": "http://m.benbenji.com/dy/index_1_______1.html",
+      "js": "{{categoryJs}}"
+    },
+    {
+      "id": "category_soap",
+      "url": "http://m.benbenji.com/dsj/index_1_______1.html",
+      "js": "{{categoryJs}}"
+    },
+    {
+      "id": "category_variety",
+      "url": "http://m.benbenji.com/arts/",
+      "js": "{{categoryJs}}"
+    },
+    {
+      "id": "category_anim",
+      "url": "http://m.benbenji.com/dm/",
+      "js": "{{categoryJs}}"
+    },
+    {
+      "id": "search",
+      "url": "http://m.benbenji.com/vod-search-wd-{{st}}-p-1.html",
+      "js": "path:./js/search.js"
+    },
+    {
+      "id": "detail",
+      "js": "path:./js/detail.js"
+    }
+  ]
+}
