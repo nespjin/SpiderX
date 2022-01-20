@@ -255,4 +255,3 @@ Runtime.prototype.sendDetailPage = function (detailPage) {
 }
 
 window.runtime = new Runtime();
-

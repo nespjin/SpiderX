@@ -1,34 +1,39 @@
 package com.nesp.fishplugin.runtime.movie.dsl
 
 import com.nesp.fishplugin.core.data.Page
+import com.nesp.fishplugin.runtime.IRunnableRuntimeTask
 import com.nesp.fishplugin.runtime.Process
 import com.nesp.fishplugin.runtime.dsl.DslRuntime
+import com.nesp.fishplugin.runtime.movie.MoviePage
+import com.nesp.fishplugin.runtime.movie.PAGE_ID_CATEGORY
 import com.nesp.fishplugin.runtime.movie.data.*
 import org.jsoup.nodes.Document
 
 class MovieDslRuntime : DslRuntime() {
 
-    override fun exec(page: Page): Process {
-        val process = Process()
-        runTask {
-            when {
-                page.id == PAGE_ID_HOME -> {
-                    execHomePage(page, process)
-                }
-                page.id.startsWith(PAGE_ID_CATEGORY) -> {
-                    execMovieCategoryPage(page, process)
-                }
-                page.id == PAGE_ID_SEARCH -> {
-                    execSearchPage(page, process)
-                }
-                page.id == PAGE_ID_DETAIL -> {
-                    execDetailPage(page, process)
-                }
-                else -> {
-                    process.exitWithError()
+    override fun exec(page: Page, vararg parameters: Any?): Process {
+        val process = super.exec(page, parameters)
+        runTask(object : IRunnableRuntimeTask {
+            override fun run() {
+                when {
+                    page.id == MoviePage.HOME.id -> {
+                        execHomePage(page, process)
+                    }
+                    page.id.startsWith(PAGE_ID_CATEGORY) -> {
+                        execMovieCategoryPage(page, process)
+                    }
+                    page.id == MoviePage.SEARCH.id -> {
+                        execSearchPage(page, process)
+                    }
+                    page.id == MoviePage.DETAIL.id -> {
+                        execDetailPage(page, process)
+                    }
+                    else -> {
+                        process.exitWithError()
+                    }
                 }
             }
-        }
+        })
         return process
     }
 
@@ -50,12 +55,20 @@ class MovieDslRuntime : DslRuntime() {
         val episodeGroupListElements =
             select(document, dsl.getProperty(DetailPageDsl.PROPERTY_NAME_EPISODE_GROUP_LIST))
         for (episodeGroupListElement in episodeGroupListElements) {
+            if (process.isDestroy) {
+                interruptCurrentTask()
+                return
+            }
             val playLine = PlayLine()
             val episodeListElements = select(
                 episodeGroupListElement,
                 dsl.getProperty(DetailPageDsl.PROPERTY_NAME_EPISODE_LIST)
             )
             for (episodeListElement in episodeListElements) {
+                if (process.isDestroy) {
+                    interruptCurrentTask()
+                    return
+                }
                 val title = getValueByDsl(
                     episodeListElement,
                     dsl.getProperty(DetailPageDsl.PROPERTY_NAME_EPISODE_TITLE)
@@ -96,6 +109,12 @@ class MovieDslRuntime : DslRuntime() {
         getValueByDsl(document, dsl.getProperty(DetailPageDsl.PROPERTY_NAME_MOVIE_AREA)).also {
             if (it.isNotEmpty()) movie.area = it
         }
+
+        if (process.isDestroy) {
+            interruptCurrentTask()
+            return
+        }
+
         getValueByDsl(document, dsl.getProperty(DetailPageDsl.PROPERTY_NAME_MOVIE_SCORE)).also {
             if (it.isNotEmpty()) movie.score = it
         }
@@ -103,7 +122,6 @@ class MovieDslRuntime : DslRuntime() {
             .also { if (it.isNotEmpty()) movie.releaseTime = it }
         getValueByDsl(document, dsl.getProperty(DetailPageDsl.PROPERTY_NAME_MOVIE_INTRODUCTION))
             .also { if (it.isNotEmpty()) movie.introduction = it }
-
         getValueByDsl(document, dsl.getProperty(DetailPageDsl.PROPERTY_NAME_MOVIE_DETAIL)).also {
             if (it.isNotEmpty()) movie.detail = it
         }
@@ -113,6 +131,7 @@ class MovieDslRuntime : DslRuntime() {
         getValueByDsl(document, dsl.getProperty(DetailPageDsl.PROPERTY_NAME_MOVIE_TYPE)).also {
             if (it.isNotEmpty()) movie.type = it
         }
+
         getValueByDsl(document, dsl.getProperty(DetailPageDsl.PROPERTY_NAME_MOVIE_CATEGORY)).also {
             if (it.isNotEmpty()) movie.category = it
         }
@@ -139,6 +158,10 @@ class MovieDslRuntime : DslRuntime() {
         val moviesElements =
             select(document, dsl.getProperty(SearchPageDsl.PROPERTY_NAME_MOVIE_LIST))
         for (moviesElement in moviesElements) {
+            if (process.isDestroy) {
+                interruptCurrentTask()
+                return
+            }
             val movie = Movie()
             movie.sourceName = page.owner!!.name
 
@@ -146,42 +169,34 @@ class MovieDslRuntime : DslRuntime() {
                 moviesElement,
                 dsl.getProperty(SearchPageDsl.PROPERTY_NAME_MOVIE_COVER_IMAGE)
             ).also { if (it.isNotEmpty()) movie.coverImageUrl = it }
-
             getValueByDsl(
                 moviesElement,
                 dsl.getProperty(SearchPageDsl.PROPERTY_NAME_MOVIE_TYPE)
             ).also { if (it.isNotEmpty()) movie.type = it }
-
             getValueByDsl(
                 moviesElement,
                 dsl.getProperty(SearchPageDsl.PROPERTY_NAME_MOVIE_STARS)
             ).also { if (it.isNotEmpty()) movie.stars = it }
-
             getValueByDsl(
                 moviesElement,
                 dsl.getProperty(SearchPageDsl.PROPERTY_NAME_MOVIE_DIRECTOR)
             ).also { if (it.isNotEmpty()) movie.director = it }
-
             getValueByDsl(
                 moviesElement,
                 dsl.getProperty(SearchPageDsl.PROPERTY_NAME_MOVIE_RELEASE_TIME)
             ).also { if (it.isNotEmpty()) movie.releaseTime = it }
-
             getValueByDsl(
                 moviesElement,
                 dsl.getProperty(SearchPageDsl.PROPERTY_NAME_MOVIE_CATEGORY)
             ).also { if (it.isNotEmpty()) movie.category = it }
-
             getValueByDsl(
                 moviesElement,
                 dsl.getProperty(SearchPageDsl.PROPERTY_NAME_MOVIE_NAME)
             ).also { if (it.isNotEmpty()) movie.name = it }
-
             getValueByDsl(
                 moviesElement,
                 dsl.getProperty(SearchPageDsl.PROPERTY_NAME_MOVIE_SCORE)
             ).also { if (it.isNotEmpty()) movie.score = it }
-
             getValueByDsl(
                 moviesElement,
                 dsl.getProperty(SearchPageDsl.PROPERTY_NAME_MOVIE_DETAIL_URL)
@@ -189,11 +204,15 @@ class MovieDslRuntime : DslRuntime() {
             searchPage.movies.add(movie)
         }
 
+        if (process.isDestroy) {
+            interruptCurrentTask()
+            return
+        }
+
         searchPage.nextPageUrl = getValueByDsl(
             document,
             dsl.getProperty(SearchPageDsl.PROPERTY_NAME_MOVIE_NEXT_PAGE_URL)
         )
-
         process.execResult.data = searchPage
         process.exitNormally()
     }
@@ -220,6 +239,10 @@ class MovieDslRuntime : DslRuntime() {
             )
 
         for (categoryGroupListElement in categoryGroupListElements) {
+            if (process.isDestroy) {
+                interruptCurrentTask()
+                return
+            }
             val movieCategoryGroup = MovieCategoryGroup()
             val categoryListElements =
                 select(
@@ -228,6 +251,10 @@ class MovieDslRuntime : DslRuntime() {
                 )
 
             for (categoryListElement in categoryListElements) {
+                if (process.isDestroy) {
+                    interruptCurrentTask()
+                    return
+                }
                 val title = getValueByDsl(
                     categoryListElement,
                     dsl.getProperty(MovieCategoryPageDsl.PROPERTY_NAME_CATEGORY_TITLE)
@@ -244,6 +271,11 @@ class MovieDslRuntime : DslRuntime() {
         val moviesElements =
             select(document, dsl.getProperty(MovieCategoryPageDsl.PROPERTY_NAME_MOVIE_LIST))
         for (moviesElement in moviesElements) {
+            if (process.isDestroy) {
+                interruptCurrentTask()
+                return
+            }
+
             val movie = Movie()
             getValueByDsl(
                 moviesElement,
@@ -269,8 +301,12 @@ class MovieDslRuntime : DslRuntime() {
                 moviesElement,
                 dsl.getProperty(MovieCategoryPageDsl.PROPERTY_NAME_MOVIE_DETAIL)
             ).also { if (it.isNotEmpty()) movie.detail = it }
-
             movieCategoryPage.movies.add(movie)
+        }
+
+        if (process.isDestroy) {
+            interruptCurrentTask()
+            return
         }
 
         movieCategoryPage.nextPageUrl = getValueByDsl(
@@ -297,19 +333,29 @@ class MovieDslRuntime : DslRuntime() {
         @Suppress("UNCHECKED_CAST")
         val dsl = HomePageDsl(page.dsl!! as MutableMap<String, String>)
 
-        homePage.slideMovies = getNewMovieList(MOVIES_INDEX_SLIDE, page, dsl, document)
-        homePage.newPlay = getNewMovieList(MOVIES_INDEX_NEW_PLAY, page, dsl, document)
-        homePage.newMovie = getNewMovieList(MOVIES_INDEX_NEW_MOVIE, page, dsl, document)
-        homePage.newSoap = getNewMovieList(MOVIES_INDEX_NEW_SOAP, page, dsl, document)
-        homePage.newVariety = getNewMovieList(MOVIES_INDEX_NEW_VARIETY, page, dsl, document)
-        homePage.newAnim = getNewMovieList(MOVIES_INDEX_NEW_ANIM, page, dsl, document)
+        homePage.slideMovies = getNewMovieList(process, MOVIES_INDEX_SLIDE, page, dsl, document)
+        homePage.newPlay = getNewMovieList(process, MOVIES_INDEX_NEW_PLAY, page, dsl, document)
+        homePage.newMovie = getNewMovieList(process, MOVIES_INDEX_NEW_MOVIE, page, dsl, document)
+        homePage.newSoap = getNewMovieList(process, MOVIES_INDEX_NEW_SOAP, page, dsl, document)
+        homePage.newVariety =
+            getNewMovieList(process, MOVIES_INDEX_NEW_VARIETY, page, dsl, document)
+        homePage.newAnim = getNewMovieList(process, MOVIES_INDEX_NEW_ANIM, page, dsl, document)
 
+        if (process.isDestroy) {
+            interruptCurrentTask()
+            return
+        }
         process.execResult.data = homePage
         process.exitNormally()
     }
 
-    private fun getNewMovieList(moviesIndex: Int, page: Page, dsl: HomePageDsl, document: Document)
-            : MutableList<Movie> {
+    private fun getNewMovieList(
+        process: Process,
+        moviesIndex: Int,
+        page: Page,
+        dsl: HomePageDsl,
+        document: Document
+    ): MutableList<Movie> {
         val rMovies = mutableListOf<Movie>()
 
         var listDsl = ""
@@ -444,6 +490,10 @@ class MovieDslRuntime : DslRuntime() {
 
         val listElements = select(document, listDsl)
         for (slideElement in listElements) {
+            if (process.isDestroy) {
+                interruptCurrentTask()
+                return mutableListOf()
+            }
             val movie = Movie()
             movie.sourceName = page.owner!!.name
 
@@ -484,17 +534,6 @@ class MovieDslRuntime : DslRuntime() {
     }
 
     companion object {
-        const val PAGE_ID_HOME = "home"
-
-        const val PAGE_ID_CATEGORY = "category_"
-        const val PAGE_ID_CATEGORY_MOVIE = "${PAGE_ID_CATEGORY}movie"
-        const val PAGE_ID_CATEGORY_SOAP = "${PAGE_ID_CATEGORY}soap"
-        const val PAGE_ID_CATEGORY_VARIETY = "${PAGE_ID_CATEGORY}variety"
-        const val PAGE_ID_CATEGORY_ANIM = "${PAGE_ID_CATEGORY}anim"
-
-        const val PAGE_ID_SEARCH = "search"
-        const val PAGE_ID_DETAIL = "detail"
-
         private const val MOVIES_INDEX_SLIDE = 0
         private const val MOVIES_INDEX_NEW_PLAY = 1
         private const val MOVIES_INDEX_NEW_MOVIE = 2

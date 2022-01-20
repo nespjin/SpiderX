@@ -5,11 +5,13 @@ import java.util.concurrent.TimeUnit
 
 interface IRuntime {
 
-    fun exec(page: Page): Process
+    fun exec(page: Page, vararg parameters: Any?): Process
 
-    fun runTask(task: Any)
+    fun getCurrentProcess(): Process?
 
-    fun interruptCurrentTask()
+    fun destroyAllProcess()
+
+    fun getAllProcesses(): MutableList<Process>
 
     fun shutdown()
 

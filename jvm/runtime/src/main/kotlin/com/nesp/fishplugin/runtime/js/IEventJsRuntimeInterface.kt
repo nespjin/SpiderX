@@ -7,8 +7,10 @@ package com.nesp.fishplugin.runtime.js
  **/
 interface IEventJsRuntimeInterface {
 
-    fun sendData(type: Int, data: String)
+    fun sendPage2Platform(page: String)
 
-    fun sendError(errorMsg: String)
+    fun sendError2Platform(errorMsg: String)
+
+    fun printHtml(html: String)
 
 }

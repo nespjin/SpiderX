@@ -5,7 +5,9 @@ import com.nesp.fishplugin.core.data.DSL
 import com.nesp.fishplugin.core.data.Page
 import com.nesp.fishplugin.core.data.Plugin
 import com.nesp.fishplugin.core.utils.LruCache
-import com.nesp.fishplugin.runtime.IRuntime
+import com.nesp.fishplugin.runtime.AbsRuntime
+import com.nesp.fishplugin.runtime.IRunnableRuntimeTask
+import com.nesp.fishplugin.runtime.IRuntimeTask
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
@@ -17,7 +19,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.lang.Runtime as JavaRuntime
 
-abstract class DslRuntime : IRuntime {
+abstract class DslRuntime : AbsRuntime() {
 
     ///////////////////////////////////////////////////////////////////////////
     // Html
@@ -86,12 +88,11 @@ abstract class DslRuntime : IRuntime {
         }
     }
 
-    override fun runTask(task: Any) {
-        if (task is Runnable) executors.execute(task)
-    }
-
-    override fun interruptCurrentTask() {
-        Thread.currentThread().interrupt()
+    override fun runTask(task: IRuntimeTask) {
+        if (task is IRunnableRuntimeTask) {
+            super.runTask(task)
+            executors.execute(task)
+        }
     }
 
     override fun shutdown() {

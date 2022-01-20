@@ -52,11 +52,16 @@ open class AndroidJsRuntimeInterface : IJsRuntimeInterface {
     }
 
     @JavascriptInterface
-    override fun sendData(type: Int, data: String) {
+    override fun sendPage2Platform(page: String) {
     }
 
     @JavascriptInterface
-    override fun sendError(errorMsg: String) {
+    override fun sendError2Platform(errorMsg: String) {
+    }
+
+    @JavascriptInterface
+    override fun printHtml(html: String) {
+
     }
 
     companion object {

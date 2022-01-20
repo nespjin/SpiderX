@@ -1,150 +1,211 @@
 package com.nesp.fishplugin.runtime.android.js
 
 import android.content.Context
-import android.os.Build
-import android.view.View
-import android.webkit.*
-import com.nesp.fishplugin.core.Environment
+import android.os.CancellationSignal
+import android.os.SystemClock
+import android.webkit.WebView
+import com.google.gson.Gson
 import com.nesp.fishplugin.core.data.Page
 import com.nesp.fishplugin.core.data.Plugin
+import com.nesp.fishplugin.runtime.IRuntimeTask
 import com.nesp.fishplugin.runtime.Process
-import com.nesp.fishplugin.runtime.js.IEventJsRuntimeInterface
 import com.nesp.fishplugin.runtime.js.JsRuntime
+import com.nesp.fishplugin.runtime.movie.MoviePage
+import com.nesp.fishplugin.runtime.movie.PAGE_ID_CATEGORY
+import com.nesp.fishplugin.runtime.movie.data.HomePage
+import com.nesp.fishplugin.runtime.movie.data.Movie
+import com.nesp.fishplugin.runtime.movie.data.MovieCategoryPage
+import com.nesp.fishplugin.runtime.movie.data.SearchPage
 import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 /**
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu Email:1756404649@qq.com</a>
  * Time: Created 2022/1/20 1:33
  * Description:
  **/
-class AndroidJsRuntime(
-    context: Context
-) : JsRuntime() {
+class AndroidJsRuntime(context: Context) : JsRuntime() {
 
     private val context = context.applicationContext
 
-    private val androidJsRuntimeInterface = object : AndroidJsRuntimeInterface() {
-
-        override fun sendData(type: Int, data: String) {
-            super.sendData(type, data)
+    override fun exec(page: Page, vararg parameters: Any?): Process {
+        val process = super.exec(page, parameters)
+        process.onDestroyListener = object : Process.OnDestroyListener {
+            override fun onDestroy() {
+                interruptCurrentTask()
+            }
         }
 
-        override fun sendError(errorMsg: String) {
-            super.sendError(errorMsg)
+        var runtimeTaskListener: AndroidJsRuntimeTaskListener? = null
+
+        if (!parameters.isNullOrEmpty() && parameters.first() is AndroidJsRuntimeTaskListener) {
+            runtimeTaskListener = parameters.first() as AndroidJsRuntimeTaskListener
         }
-    }
 
-    var eventJsRuntimeInterface: IEventJsRuntimeInterface? = null
+        runTask(object : AndroidJsRuntimeTask(context) {
 
-    override fun exec(page: Page): Process {
-        val process = Process()
+            init {
+                // Bind listener
+                listener = object : AndroidJsRuntimeTaskListener() {
+                    override fun onPageStart() {
+                        runtimeTaskListener?.onPageStart()
+                    }
 
-        val webView = WebView(context)
+                    override fun onShouldInterceptRequest(url: String) {
+                        runtimeTaskListener?.onShouldInterceptRequest(url)
+                    }
 
-        val environment = Environment.shared
-        var userAgent =
-            "Mozilla/5.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Mobile Safari/537.36"
-        if (!environment.isMobilePhone()) {
-            // Using PC
-            userAgent =
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36"
-        }
-        val settings = webView.settings
-        settings.defaultTextEncodingName = "utf-8"
-        settings.userAgentString = userAgent
-        settings.cacheMode = WebSettings.LOAD_DEFAULT
-        settings.pluginState = WebSettings.PluginState.OFF
-        settings.displayZoomControls = true
-        settings.allowFileAccess = true
-        settings.allowContentAccess = true
-        settings.savePassword = false
-        settings.saveFormData = false
-        settings.javaScriptEnabled = true
-        settings.domStorageEnabled = true
-        settings.setSupportMultipleWindows(true)
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            settings.mediaPlaybackRequiresUserGesture = true
-        }
-        if (Build.VERSION.SDK_INT > 16) {
-            settings.allowFileAccessFromFileURLs = true
-            settings.allowUniversalAccessFromFileURLs = true
-        }
-        settings.javaScriptCanOpenWindowsAutomatically = false
-        settings.loadsImagesAutomatically = false
-        settings.blockNetworkImage = true
-        settings.blockNetworkLoads = false
-        settings.setAppCacheEnabled(true)
-        settings.setAppCachePath(context.cacheDir.absolutePath)
-        settings.databaseEnabled = true
-        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                    override fun onReceiveError(error: String) {
+                        runtimeTaskListener?.onReceiveError(error)
+                    }
 
-        webView.addJavascriptInterface(androidJsRuntimeInterface, "runtime")
-        enableWebViewCookie(webView)
+                    override fun onReceivePage(pageJson: String) {
+                        runtimeTaskListener?.onReceivePage(pageJson)
+                        val gson = Gson()
+                        when {
+                            page.id == MoviePage.HOME.id -> {
+                                process.execResult.data =
+                                    gson.fromJson(pageJson, HomePage::class.java)
+                            }
+                            page.id.startsWith(PAGE_ID_CATEGORY) -> {
+                                process.execResult.data =
+                                    gson.fromJson(pageJson, MovieCategoryPage::class.java)
+                            }
+                            page.id == MoviePage.SEARCH.id -> {
+                                process.execResult.data =
+                                    gson.fromJson(pageJson, SearchPage::class.java)
+                            }
+                            page.id == MoviePage.DETAIL.id -> {
+                                process.execResult.data = gson.fromJson(pageJson, Movie::class.java)
+                            }
+                        }
 
+                        process.exitNormally()
+                    }
 
-        val url = page.url
-        val realUrl = Plugin.removeReqPrefix(url)
+                    override fun onPageFinished() {
+                        runtimeTaskListener?.onPageFinished()
+                    }
 
-        if (Plugin.isPostReq(url)) {
-            // Post
-            val urlObj = URL(realUrl)
-            val query = if (urlObj.query != null) {
-                val data: MutableMap<String, String> = hashMapOf()
-                val kvPairs = urlObj.query.split("&")
-                for (kvPair in kvPairs) {
-                    val kvArray = kvPair.split("=")
-                    data[kvArray[0]] = kvArray[1]
+                    override fun onTimeout() {
+                        runtimeTaskListener?.onTimeout()
+                        process.exitWithError()
+                    }
+
+                    override fun onPrintHtml(html: String) {
+                        if (html.isNotEmpty()) {
+                            htmlDocumentStringCache.put(Plugin.removeReqPrefix(page.url), html)
+                        }
+                    }
                 }
-                urlObj.query
-            } else ""
-            webView.postUrl(realUrl, query.toByteArray(StandardCharsets.UTF_8))
-        } else {
-            // Get
-            webView.loadUrl(realUrl)
-        }
+            }
+
+            override fun run(webView: WebView) {
+                val url = page.url
+                this.js = page.js
+
+                val realUrl = Plugin.removeReqPrefix(url)
+                val realUrlObj = URL(realUrl)
+
+                val s = htmlDocumentStringCache[realUrl]
+                if (!s.isNullOrEmpty()) {
+                    // Load from cache
+                    webView.loadDataWithBaseURL(
+                        "${realUrlObj.protocol}://${realUrlObj.host}", s,
+                        "text/html",
+                        "utf-8",
+                        null
+                    )
+                    return
+                }
+
+                if (Plugin.isPostReq(url)) {
+                    // Post
+                    val query = if (realUrlObj.query != null) {
+                        val data: MutableMap<String, String> = hashMapOf()
+                        val kvPairs = realUrlObj.query.split("&")
+                        for (kvPair in kvPairs) {
+                            val kvArray = kvPair.split("=")
+                            data[kvArray[0]] = kvArray[1]
+                        }
+                        realUrlObj.query
+                    } else ""
+                    webView.postUrl(realUrl, query.toByteArray(StandardCharsets.UTF_8))
+                } else {
+                    // Get
+                    webView.loadUrl(realUrl)
+                }
+            }
+        })
         return process
     }
 
-    private fun enableWebViewCookie(webView: WebView) {
-        val instance: CookieManager = CookieManager.getInstance()
-        if (Build.VERSION.SDK_INT < 21) {
-            CookieSyncManager.createInstance(context)
-        }
-        instance.setAcceptCookie(true)
-        if (Build.VERSION.SDK_INT >= 21) {
-            instance.setAcceptThirdPartyCookies(webView, true)
+    override fun runTask(task: IRuntimeTask) {
+        if (task is AndroidJsRuntimeTask) {
+            super.runTask(task)
+            task.run()
         }
     }
 
-    override fun runTask(task: Any) {
-        TODO("Not yet implemented")
-    }
-
-    override fun interruptCurrentTask() {
-        TODO("Not yet implemented")
-    }
-
+    /**
+     * may blocking thread
+     */
+    @Synchronized
     override fun shutdown() {
-        TODO("Not yet implemented")
+        tasks.forEach {
+            if (it is AndroidJsRuntimeTask) {
+                it.awaitFinish()
+                it.destroy()
+            }
+        }
     }
 
+    @Synchronized
     override fun shutdownNow() {
-        TODO("Not yet implemented")
+        tasks.forEach {
+            if (it is AndroidJsRuntimeTask) {
+                it.destroy()
+            }
+        }
     }
 
+    private var _isTerminated = false
+
+    @Synchronized
     override fun awaitTermination(timeout: Long, unit: TimeUnit) {
-        TODO("Not yet implemented")
+        val beginTimeMillis = System.currentTimeMillis()
+        val cancellationSignal = CancellationSignal()
+        thread(isDaemon = true) {
+            while (true) {
+                if (System.currentTimeMillis() - beginTimeMillis >=
+                    TimeUnit.MILLISECONDS.convert(timeout, unit)
+                ) {
+                    cancellationSignal.cancel()
+                    break
+                }
+
+                if (cancellationSignal.isCanceled) {
+                    break
+                }
+
+                SystemClock.sleep(50)
+            }
+        }
+        tasks.forEach {
+            if (it is AndroidJsRuntimeTask) {
+                it.awaitFinish(cancellationSignal)
+                it.destroy()
+            }
+        }
+        _isTerminated = true
+        cancellationSignal.cancel()
     }
 
+    @Synchronized
     override fun isTerminated(): Boolean {
-        TODO("Not yet implemented")
+        return _isTerminated
     }
 
-    companion object {
-
-        private const val TAG = "AndroidJsRuntime"
-
-    }
 }

@@ -19,6 +19,14 @@ internal class CompilerTest {
 
     @Test
     fun compileFromDisk() {
+        // 安装：
+        // 用户输入Plugin的ProtoBuffer -> load -> grammar -> compiler -> 最终Plugin的ProtoBuffer。
+        // 加载:
+        //
+        // plugin文件结构
+        // version_code(32 byte) body_length(64 byte)
+        //
+        //
         // Result:
         //
         // {

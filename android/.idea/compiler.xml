@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
-    <bytecodeTargetLevel target="11" />
+    <bytecodeTargetLevel target="1.8">
+      <module name="android.app" target="11" />
+      <module name="android.core" target="11" />
+      <module name="android.movie-runtime-android" target="11" />
+      <module name="android.runtime-android" target="11" />
+      <module name="com.nesp.fishplugin.runtime.android.runtime" target="11" />
+      <module name="com.nesp.fishplugin.runtime.movie.android.movie-runtime" target="11" />
+    </bytecodeTargetLevel>
   </component>
 </project>

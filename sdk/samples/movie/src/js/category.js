@@ -1,0 +1,3 @@
+function JsRuntime_LoadPage() {
+    
+}
