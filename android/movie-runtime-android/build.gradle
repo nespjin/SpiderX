@@ -60,9 +60,9 @@ dependencies {
 
     implementation 'com.google.code.gson:gson:2.8.9'
 
-    implementation project(':runtime')
-    implementation project(":core")
-    implementation project(":movie-runtime")
-    implementation project(":runtime-android")
+    implementation project(path: ':runtime')
+    implementation project(path: ":core")
+    implementation project(path: ":movie-runtime")
+    implementation project(path: ":runtime-android")
 
 }
