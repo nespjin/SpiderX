@@ -9,6 +9,7 @@ import android.os.CancellationSignal
 import android.os.OperationCanceledException
 import android.os.SystemClock
 import android.view.View
+import android.view.ViewGroup
 import android.webkit.*
 import com.nesp.fishplugin.core.Environment
 import com.nesp.fishplugin.core.data.Plugin
@@ -124,6 +125,9 @@ abstract class AndroidJsRuntimeTask(context: Context) : IJsRuntimeTask {
         loadTimer = null
 
         if (webView == null) return
+        if (webView!!.parent != null) {
+            (webView!!.parent as ViewGroup).removeView(webView!!)
+        }
         webView!!.removeAllViews()
         webView!!.removeAllViewsInLayout()
         webView!!.settings.javaScriptEnabled = false
