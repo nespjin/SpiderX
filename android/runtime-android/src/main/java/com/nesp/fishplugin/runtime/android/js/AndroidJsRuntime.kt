@@ -3,21 +3,8 @@ package com.nesp.fishplugin.runtime.android.js
 import android.content.Context
 import android.os.CancellationSignal
 import android.os.SystemClock
-import android.webkit.WebView
-import com.google.gson.Gson
-import com.nesp.fishplugin.core.data.Page
-import com.nesp.fishplugin.core.data.Plugin
 import com.nesp.fishplugin.runtime.IRuntimeTask
-import com.nesp.fishplugin.runtime.Process
 import com.nesp.fishplugin.runtime.js.JsRuntime
-import com.nesp.fishplugin.runtime.movie.MoviePage
-import com.nesp.fishplugin.runtime.movie.PAGE_ID_CATEGORY
-import com.nesp.fishplugin.runtime.movie.data.HomePage
-import com.nesp.fishplugin.runtime.movie.data.Movie
-import com.nesp.fishplugin.runtime.movie.data.MovieCategoryPage
-import com.nesp.fishplugin.runtime.movie.data.SearchPage
-import java.net.URL
-import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
