@@ -1,5 +1,5 @@
 plugins {
-    id 'com.android.application'
+    id 'com.android.library'
     id 'kotlin-android'
 }
 
@@ -7,7 +7,6 @@ android {
     compileSdk 31
 
     defaultConfig {
-        applicationId "com.nesp.fishplugin.runtime.movie.android"
         minSdk 21
         targetSdk 31
         versionCode 1
@@ -59,7 +58,11 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 
+    implementation 'com.google.code.gson:gson:2.8.9'
+
     implementation project(':runtime')
     implementation project(":core")
     implementation project(":movie-runtime")
+    implementation project(":runtime-android")
+
 }
