@@ -1,0 +1,1 @@
+javadoc -d D:\NetBeansProjects\nesp-sdk-java\doc -sourcepath D:\NetBeansProjects\nesp-sdk-java\src\main\java @D:\NetBeansProjects\nesp-sdk-java\doc\java-doc-packages.txt -verbose -author -encoding UTF-8

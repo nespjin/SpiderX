@@ -1,0 +1,6 @@
+include ':nesp-sdk-java'
+include ':nesp-sdk-kotlin'
+project(':nesp-sdk-java').projectDir = new File("./nesp-sdk-java/nesp-sdk-java")
+project(':nesp-sdk-kotlin').projectDir = new File("./nesp-sdk-java/nesp-sdk-kotlin")
+
+rootProject.name = "com.nesp.sdk.javafx"
