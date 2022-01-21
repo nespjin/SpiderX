@@ -6,16 +6,16 @@ package com.nesp.fishplugin.runtime.movie
  * Description:
  **/
 
-const val PAGE_ID_CATEGORY = "category_"
+const val MOVIE_PAGE_ID_CATEGORY = "category_"
 
 enum class MoviePage(
     val id: String
 ) {
     HOME("home"),
-    CATEGORY_MOVIE("${PAGE_ID_CATEGORY}movie"),
-    CATEGORY_SOAP("${PAGE_ID_CATEGORY}soap"),
-    CATEGORY_VARIETY("${PAGE_ID_CATEGORY}variety"),
-    CATEGORY_ANIM("${PAGE_ID_CATEGORY}anim"),
+    CATEGORY_MOVIE("${MOVIE_PAGE_ID_CATEGORY}movie"),
+    CATEGORY_SOAP("${MOVIE_PAGE_ID_CATEGORY}soap"),
+    CATEGORY_VARIETY("${MOVIE_PAGE_ID_CATEGORY}variety"),
+    CATEGORY_ANIM("${MOVIE_PAGE_ID_CATEGORY}anim"),
     SEARCH("search"),
     DETAIL("detail"),
     ;

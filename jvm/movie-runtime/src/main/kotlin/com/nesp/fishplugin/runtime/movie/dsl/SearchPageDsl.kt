@@ -35,7 +35,7 @@ class SearchPageDsl(properties: MutableMap<String, String>) : DSL(properties) {
             PROPERTY_NAME_PREFIX_MOVIE + PROPERTY_CONTENT_DETAIL_URL
 
         const val PROPERTY_NAME_MOVIE_NEXT_PAGE_URL =
-            PROPERTY_NAME_PREFIX_NEXT_PAGE + PROPERTY_CONTENT_DETAIL_URL
+            PROPERTY_NAME_PREFIX_NEXT_PAGE + PROPERTY_CONTENT_URL
 
 
     }

@@ -29,6 +29,10 @@ object Grammar {
             return GrammarCheckResult(GrammarCheckResult.LEVEL_ERROR, "name cannot empty")
         }
 
+        if (plugin.id.trim().isEmpty() && !isParent) {
+            return GrammarCheckResult(GrammarCheckResult.LEVEL_ERROR, "id cannot empty")
+        }
+
         if (plugin.version.trim().isEmpty()) {
             if (!isParent) {
                 return GrammarCheckResult(GrammarCheckResult.LEVEL_ERROR, "version cannot empty")

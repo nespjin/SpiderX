@@ -135,6 +135,32 @@ object Loader {
                     ?: "").also { if (it.isNotEmpty()) plugin.name = it }
             }
 
+            // Id
+            if (jsonPluginRoot.has("${Plugin.FILED_NAME_ID}-$deviceType")
+                && !jsonPluginRoot.isNull("${Plugin.FILED_NAME_ID}-$deviceType")
+            ) {
+                (jsonPluginRoot.get("${Plugin.FILED_NAME_ID}-$deviceType")?.toString()
+                    ?: "").also { if (it.isNotEmpty()) plugin.id = it }
+            } else if (jsonPluginRoot.has(Plugin.FILED_NAME_ID)
+                && !jsonPluginRoot.isNull(Plugin.FILED_NAME_ID)
+            ) {
+                (jsonPluginRoot.get(Plugin.FILED_NAME_ID)?.toString()
+                    ?: "").also { if (it.isNotEmpty()) plugin.id = it }
+            }
+
+            // Author
+            if (jsonPluginRoot.has("${Plugin.FILED_NAME_AUTHOR}-$deviceType")
+                && !jsonPluginRoot.isNull("${Plugin.FILED_NAME_AUTHOR}-$deviceType")
+            ) {
+                (jsonPluginRoot.get("${Plugin.FILED_NAME_AUTHOR}-$deviceType")?.toString()
+                    ?: "").also { if (it.isNotEmpty()) plugin.author = it }
+            } else if (jsonPluginRoot.has(Plugin.FILED_NAME_AUTHOR)
+                && !jsonPluginRoot.isNull(Plugin.FILED_NAME_AUTHOR)
+            ) {
+                (jsonPluginRoot.get(Plugin.FILED_NAME_AUTHOR)?.toString()
+                    ?: "").also { if (it.isNotEmpty()) plugin.author = it }
+            }
+
             // Version
             if (jsonPluginRoot.has("${Plugin.FILED_NAME_VERSION}-$deviceType")
                 && !jsonPluginRoot.isNull("${Plugin.FILED_NAME_VERSION}-$deviceType")

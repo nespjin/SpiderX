@@ -110,7 +110,20 @@ object Compiler {
         // Remove ref if compile success
         plugin.ref = null
 
+        // TODO: Compress Js code
+        compressJsCode()
+        // TODO: Compress plugin
+        compressPlugin()
+
         return CompileResult(Result.CODE_SUCCESS, data = plugin)
+    }
+
+    private fun compressJsCode() {
+
+    }
+
+    private fun compressPlugin() {
+
     }
 
     /**
@@ -127,6 +140,18 @@ object Compiler {
 
         // Name
         var lookupAndApplyVariableResult = lookupAndApplyVariable(plugin, Plugin.FILED_NAME_NAME)
+        if (lookupAndApplyVariableResult.isNotEmpty()) {
+            return lookupAndApplyVariableResult
+        }
+
+        // id
+        lookupAndApplyVariableResult = lookupAndApplyVariable(plugin, Plugin.FILED_NAME_ID)
+        if (lookupAndApplyVariableResult.isNotEmpty()) {
+            return lookupAndApplyVariableResult
+        }
+
+        // Author
+        lookupAndApplyVariableResult = lookupAndApplyVariable(plugin, Plugin.FILED_NAME_AUTHOR)
         if (lookupAndApplyVariableResult.isNotEmpty()) {
             return lookupAndApplyVariableResult
         }
@@ -175,6 +200,8 @@ object Compiler {
         }
 
         if (fieldName == Plugin.FILED_NAME_NAME
+            || fieldName == Plugin.FILED_NAME_ID
+            || fieldName == Plugin.FILED_NAME_AUTHOR
             || fieldName == Plugin.FILED_NAME_VERSION
             || fieldName == Plugin.FILED_NAME_RUNTIME
             || fieldName == Plugin.FILED_NAME_TIME

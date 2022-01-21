@@ -5,7 +5,7 @@ import com.nesp.fishplugin.runtime.IRunnableRuntimeTask
 import com.nesp.fishplugin.runtime.Process
 import com.nesp.fishplugin.runtime.dsl.DslRuntime
 import com.nesp.fishplugin.runtime.movie.MoviePage
-import com.nesp.fishplugin.runtime.movie.PAGE_ID_CATEGORY
+import com.nesp.fishplugin.runtime.movie.MOVIE_PAGE_ID_CATEGORY
 import com.nesp.fishplugin.runtime.movie.data.*
 import org.jsoup.nodes.Document
 
@@ -19,7 +19,7 @@ class MovieDslRuntime : DslRuntime() {
                     page.id == MoviePage.HOME.id -> {
                         execHomePage(page, process)
                     }
-                    page.id.startsWith(PAGE_ID_CATEGORY) -> {
+                    page.id.startsWith(MOVIE_PAGE_ID_CATEGORY) -> {
                         execMovieCategoryPage(page, process)
                     }
                     page.id == MoviePage.SEARCH.id -> {

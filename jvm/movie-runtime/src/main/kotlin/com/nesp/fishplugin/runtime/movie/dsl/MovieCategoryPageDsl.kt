@@ -22,7 +22,7 @@ class MovieCategoryPageDsl(properties: MutableMap<String, String>) : DSL(propert
         const val PROPERTY_NAME_CATEGORY_LIST =
             PROPERTY_NAME_PREFIX_CATEGORY + PROPERTY_CONTENT_LIST
         const val PROPERTY_NAME_CATEGORY_TITLE =
-            PROPERTY_NAME_PREFIX_CATEGORY + "title"
+            PROPERTY_NAME_PREFIX_CATEGORY + "Title"
         const val PROPERTY_NAME_CATEGORY_URL = PROPERTY_NAME_PREFIX_CATEGORY + PROPERTY_CONTENT_URL
 
         const val PROPERTY_NAME_MOVIE_LIST =
@@ -40,7 +40,7 @@ class MovieCategoryPageDsl(properties: MutableMap<String, String>) : DSL(propert
         const val PROPERTY_NAME_MOVIE_DETAIL = "detail"
 
         const val PROPERTY_NAME_MOVIE_NEXT_PAGE_URL =
-            PROPERTY_NAME_PREFIX_NEXT_PAGE + PROPERTY_CONTENT_DETAIL_URL
+            PROPERTY_NAME_PREFIX_NEXT_PAGE + PROPERTY_CONTENT_URL
 
 
     }

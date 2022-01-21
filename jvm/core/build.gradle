@@ -6,6 +6,21 @@ plugins {
 group 'com.nesp.fishplugin.core'
 version '1.0-SNAPSHOT'
 
+task buildMobile(type: Copy) {
+    from configurations.implementation
+    into 'libs'
+}
+
+task buildTable(type: Copy) {
+    from configurations.implementation
+    into 'libs'
+}
+
+task buildDesktop(type: Copy) {
+    from configurations.implementation
+    into 'libs'
+}
+
 dependencies {
     implementation 'org.junit.jupiter:junit-jupiter:5.8.2'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
@@ -18,4 +33,9 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }

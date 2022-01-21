@@ -11,6 +11,12 @@ data class Page(
     // TODO: 2022/1/19 Set owner value
     var owner: Plugin? = null
 
+    fun isDslAvailable(): Boolean {
+        if (dsl == null) return false
+        if (dsl is String && (dsl as String).isNotEmpty()) return false
+        if (dsl is Map<*, *> && !(dsl as Map<*, *>).isNullOrEmpty()) return true
+        return false
+    }
 
     fun getFieldValue(fieldName: String): Any? {
         return when (fieldName) {

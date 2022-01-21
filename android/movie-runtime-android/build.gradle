@@ -49,6 +49,11 @@ android {
     }
 }
 
+task copyLibs(type: Copy) {
+    from configurations.implementation
+    into 'libs'
+}
+
 dependencies {
 
     implementation 'androidx.core:core-ktx:1.7.0'

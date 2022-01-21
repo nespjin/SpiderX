@@ -7,16 +7,20 @@ group 'com.nesp.fishplugin.runtime.movie'
 version '1.0-SNAPSHOT'
 
 dependencies {
+
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 
     implementation 'org.jsoup:jsoup:1.14.3'
-
     implementation project(path: ":core")
-    implementation project(path: ":runtime")
+    implementation project(path: ':runtime')
 }
 
 test {
     useJUnitPlatform()
+}
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }

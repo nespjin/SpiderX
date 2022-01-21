@@ -23,6 +23,16 @@ data class Plugin @JvmOverloads constructor(
     var name: String = "",
 
     /**
+     * The plugin id
+     */
+    var id: String = "",
+
+    /**
+     * The author
+     */
+    var author: String = "",
+
+    /**
      * Version: version name + version code
      * for example:
      * 1.0.0+1
@@ -125,6 +135,8 @@ data class Plugin @JvmOverloads constructor(
     fun getFieldValue(fieldName: String): Any? {
         return when (fieldName) {
             FILED_NAME_NAME -> this.name
+            FILED_NAME_ID -> this.id
+            FILED_NAME_AUTHOR -> this.author
             FILED_NAME_VERSION -> this.version
             FILED_NAME_RUNTIME -> this.runtime
             FILED_NAME_TIME -> this.time
@@ -144,6 +156,12 @@ data class Plugin @JvmOverloads constructor(
             FILED_NAME_NAME -> {
                 if (fieldValue is String) this.name = fieldValue
             }
+            FILED_NAME_ID -> {
+                if (fieldValue is String) this.id = fieldValue
+            }
+            FILED_NAME_AUTHOR -> {
+                if (fieldValue is String) this.author = fieldValue
+            }
             FILED_NAME_VERSION -> {
                 if (fieldValue is String) this.version = fieldValue
             }
@@ -156,6 +174,7 @@ data class Plugin @JvmOverloads constructor(
             FILED_NAME_TAGS -> {
                 if (fieldValue is Collection<*>) {
                     val arrayList = arrayListOf<String>()
+                    @Suppress("UNCHECKED_CAST")
                     arrayList.addAll(fieldValue as Collection<String>)
                     this.tags = arrayList
                 }
@@ -192,6 +211,14 @@ data class Plugin @JvmOverloads constructor(
         }
     }
 
+    fun findPageById(id: String): Page? {
+        return pages.firstOrNull { it.id == id }
+    }
+
+    fun findPage(predicate: (Page) -> Boolean): Page? {
+        return pages.firstOrNull(predicate)
+    }
+
     companion object {
 
         ///////////////////////////////////////////////////////////////////////////
@@ -199,6 +226,8 @@ data class Plugin @JvmOverloads constructor(
         ///////////////////////////////////////////////////////////////////////////
         const val FILED_NAME_PARENT = "parent"
         const val FILED_NAME_NAME = "name"
+        const val FILED_NAME_ID = "id"
+        const val FILED_NAME_AUTHOR = "author"
         const val FILED_NAME_VERSION = "version"
         const val FILED_NAME_RUNTIME = "runtime"
         const val FILED_NAME_TIME = "time"
