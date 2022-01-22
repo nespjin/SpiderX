@@ -148,6 +148,10 @@ public class HomeStage extends AppBaseStage {
         initializeViews();
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Initialize
+    ///////////////////////////////////////////////////////////////////////////
+
     private void initializeViews() {
         HomeStageViewBinding binding = getBinding();
         setContent(binding.getRoot());
@@ -348,6 +352,10 @@ public class HomeStage extends AppBaseStage {
         }
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    // File TreeView
+    ///////////////////////////////////////////////////////////////////////////
+
     @SuppressWarnings("unchecked")
     private void loadProjectTreeView() {
         getBinding().dirTreeView.setRoot(null);
@@ -379,6 +387,11 @@ public class HomeStage extends AppBaseStage {
             }
         }
     }
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Open File
+    ///////////////////////////////////////////////////////////////////////////
 
     private BooleanProperty hasFileOpened;
 
