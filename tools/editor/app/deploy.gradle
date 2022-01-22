@@ -1,0 +1,198 @@
+import org.gradle.internal.os.OperatingSystem
+
+apply from: 'config.gradle'
+
+final def BUILD_LIBS_PATH = './build/libs'
+
+task copyDependencies(type: Copy) {
+    duplicatesStrategy DuplicatesStrategy.EXCLUDE
+    dependsOn 'build'
+    from configurations.implementation.filter {
+        !it.name.startsWith("javafx") // remove javafx framework
+                && it.name != "mail.jar" // remove mail
+                && !it.name.startsWith("tornadofx") // remove tornadofx
+    }
+    into BUILD_LIBS_PATH
+}
+
+final def JDK_PATH = System.getProperty('java.home')
+final def JFX_MODULES_PATH = String.valueOf(project.jfxModsPath)
+
+final def CUSTOM_JRE_OUT_PATH = './build/jre'
+final def CUSTOM_JRE_MODULES =
+        'java.sql,' +
+                'java.naming,' +
+                'javafx.base,' +
+                'javafx.controls,' +
+                'javafx.fxml,' +
+                'javafx.graphics,' +
+                'javafx.media,' +
+                'javafx.swing,' +
+                'javafx.web'
+
+final def PACKAGE_OUT = 'release/'
+
+task cleanup(type: Delete) {
+    delete CUSTOM_JRE_OUT_PATH
+    delete BUILD_LIBS_PATH
+    delete PACKAGE_OUT
+    followSymlinks = true
+}
+
+task jlink(type: Exec) {
+    dependsOn 'cleanup'
+    dependsOn 'copyDependencies'
+
+    // https://docs.oracle.com/en/java/javase/17/docs/specs/man/jlink.html
+    commandLine "${JDK_PATH}/bin/jlink",
+            '--strip-debug',
+            '--compress', '2',
+            '--no-header-files',
+            '--no-man-pages',
+            '--endian', 'little',
+//            '--save-opts', 'jlink-opts',
+            '--output', CUSTOM_JRE_OUT_PATH,
+            '--module-path', "${JDK_PATH}/jmods${OperatingSystem.current().isWindows() ? ";" : ":"}${JFX_MODULES_PATH}",
+            '--add-modules', CUSTOM_JRE_MODULES
+}
+
+project.ext {
+    mainJar = 'app.jar'
+}
+
+final def APP_NAME = 'PluginEditor'
+
+final def APP_VERSION_LINUX = String.valueOf("${project.versionName}-${project.versionCode}")
+final def APP_VERSION_WIN = String.valueOf(project.versionName)
+
+final def DESCRIPTION = 'The Editor for FishPlugin'
+final def VENDOR = 'NESP Technology'
+
+final def ICON_LINUX = 'src/main/resources/drawable/ic_launcher_497_497.png'
+final def ICON_WIN = 'src/main/resources/drawable/ic_launcher_497_497.ico'
+
+final def BUILD_TYPE = 'alpha'
+final def BUILD_PACKAGE_NAME = APP_NAME.toLowerCase()
+
+task deployApp(type: Exec) {
+    dependsOn 'jlink'
+
+    doLast {
+        Runtime.runtime.exec("echo release out at $PACKAGE_OUT")
+    }
+
+    // https://docs.oracle.com/en/java/javase/17/docs/specs/man/jpackage.html
+    def ICON = ICON_LINUX
+    if (OperatingSystem.current().isWindows()) {
+        ICON = ICON_WIN
+    }
+
+    def APP_VERSION = APP_VERSION_LINUX
+    if (OperatingSystem.current().isWindows()) {
+        APP_VERSION = APP_VERSION_WIN
+    }
+
+    // command options
+    def command = [
+            "${JDK_PATH}/bin/jpackage",
+            '--input', "${argWrap()}$BUILD_LIBS_PATH${argWrap()}",
+            '--name', "${argWrap()}$APP_NAME${argWrap()}",
+            '--main-jar', "${argWrap()}${project.mainJar}${argWrap()}",
+            '--main-class', "${argWrap()}com.nesp.fishplugin.editor.Main${argWrap()}",
+            '--description', "${argWrap()}$DESCRIPTION${argWrap()}",
+            '--vendor', "${argWrap()}$VENDOR${argWrap()}",
+            '--dest', "${argWrap()}$PACKAGE_OUT${argWrap()}",
+            '--icon', "${argWrap()}$ICON${argWrap()}",
+            '--runtime-image', "${argWrap()}$CUSTOM_JRE_OUT_PATH${argWrap()}",
+            '--app-version', "${argWrap()}$APP_VERSION${argWrap()}",
+            '--copyright', "${argWrap()}Copyright2021 © NESP Technology. All Rights Reserved${argWrap()}",
+            '--license-file', "${argWrap()}../LICENSE_APACHE.txt${argWrap()}",
+            '--verbose',
+
+            // Java vm options
+            '--java-options', "${argWrap()}-Xmx500m${argWrap()}",
+            '--java-options', "${argWrap()}-Xms128m${argWrap()}",
+            '--java-options', "${argWrap()}-XX:ReservedCodeCacheSize=512m${argWrap()}",
+            '--java-options', "${argWrap()}-XX:+UseG1GC${argWrap()}",
+            '--java-options', "${argWrap()}-XX:SoftRefLRUPolicyMSPerMB=50${argWrap()}",
+            '--java-options', "${argWrap()}-XX:CICompilerCount=2${argWrap()}",
+            '--java-options', "${argWrap()}-XX:+HeapDumpOnOutOfMemoryError${argWrap()}",
+            '--java-options', "${argWrap()}-XX:-OmitStackTraceInFastThrow${argWrap()}",
+            '--java-options', "${argWrap()}-ea${argWrap()}",
+            '--java-options', "${argWrap()}-Dsun.io.useCanonCaches=false${argWrap()}",
+            '--java-options', "${argWrap()}-Djdk.http.auth.tunneling.disabledSchemes=\"\"${argWrap()}",
+            '--java-options', "${argWrap()}-Djdk.attach.allowAttachSelf=true${argWrap()}",
+            '--java-options', "${argWrap()}-Djdk.module.illegalAccess.silent=true${argWrap()}",
+            '--java-options', "${argWrap()}-Dkotlinx.coroutines.debug=off${argWrap()}",
+            '--java-options', "${argWrap()}-Dsun.tools.attach.tmp.only=true${argWrap()}",
+            '--java-options', "${argWrap()}-Djdk.gtk.version=2${argWrap()}",
+
+            '--install-dir', "${argWrap()}${getInstallLocation()}${argWrap()}",
+            '--type', "${argWrap()}${getBinaryType()}${argWrap()}"]
+
+    if (OperatingSystem.current().isLinux()) {
+        command.addAll([
+                '--java-options', "${argWrap()}-Dglass.gtk.uiScale=1.75${argWrap()}",
+        ])
+        // Linux config
+        command.addAll([
+                '--linux-menu-group', 'Utility',
+                '--linux-package-name', BUILD_PACKAGE_NAME
+        ])
+    } else if (OperatingSystem.current().isWindows()) {
+        // Windows config
+        command.addAll([
+                '--win-dir-chooser',
+                '--win-menu',
+                '--win-menu-group', "\"$APP_NAME\"",
+                '--win-shortcut',
+                '--win-shortcut-prompt'
+        ])
+    } else if (OperatingSystem.current().isMacOsX()) {
+        command.addAll([
+                '--mac-package-identifier', "com.nesp.password",
+                '--mac-package-name', APP_NAME,
+                '--mac-package-signing-prefix', 'com.nesp.password.',
+                '--mac-app-category', 'Utilities.'
+        ])
+    }
+
+    def commandString = ""
+    for (String s in command) {
+        if (!commandString.isEmpty()) commandString += " "
+        commandString += s
+    }
+
+    println commandString
+
+    commandLine command
+}
+
+final static def argWrap() {
+    if (OperatingSystem.current().isWindows()) {
+        return "\""
+    } else return ""
+
+}
+
+final static def getBinaryType() {
+    if (OperatingSystem.current().isWindows()) {
+        return 'msi'
+    } else if (OperatingSystem.current().isLinux()) {
+        return 'deb'
+    } else if (OperatingSystem.current().isMacOsX()) {
+        return 'pkg'
+    }
+    return ""
+}
+
+final static def getInstallLocation() {
+    if (OperatingSystem.current().isWindows()) {
+        return 'NESP/PluginEditor'
+    } else if (OperatingSystem.current().isLinux()) {
+        return '/opt/nesp'
+    } else if (OperatingSystem.current().isMacOsX()) {
+        return '/opt/nesp'
+    }
+    return ""
+}

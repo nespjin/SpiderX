@@ -90,7 +90,7 @@ sourceSets {
 if (JavaVersion.toVersion(sourceCompatibility) == JavaVersion.VERSION_1_8) {
     compileJava.options.compilerArgs.addAll(['--release', '8'])
 } else {
-    classes.dependsOn mainModuleClasses
+//    classes.dependsOn mainModuleClasses
     compileMainModuleJava.options.compilerArgs.addAll(['--release', '16'])
 }
 
