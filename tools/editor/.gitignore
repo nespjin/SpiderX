@@ -20,3 +20,4 @@
 /database/
 /.idea/artifacts/
 /nesp-sdk-kotlin-localnet-device/nesp-sdk-kotlin-localnet-device/build/
+/log/
