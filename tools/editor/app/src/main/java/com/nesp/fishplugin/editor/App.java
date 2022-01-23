@@ -1,10 +1,12 @@
 package com.nesp.fishplugin.editor;
 
-import com.nesp.fishplugin.editor.home.HomeStage;
+import com.nesp.fishplugin.editor.app.LauncherStage;
 import com.nesp.sdk.javafx.ApplicationContext;
 import javafx.application.Application;
 import javafx.stage.Stage;
-import org.apache.log4j.helpers.Loader;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 /**
  * Team: NESP Technology
@@ -16,13 +18,16 @@ public class App extends ApplicationContext {
 
     private static final String TAG = "Main";
 
+    private static final Logger LOGGER = LogManager.getLogger(App.class);
+
     @Override
     public void start(final Stage primaryStage) throws Exception {
-        HomeStage.showWindow();
+        LauncherStage.showWindow();
         primaryStage.hide();
     }
 
     public static void main(String[] args) {
-         Application.launch(App.class, args);
+        LOGGER.info("App Started");
+        Application.launch(App.class, args);
     }
 }

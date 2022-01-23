@@ -10,6 +10,9 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
 import javafx.util.Callback;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 public class WorkingDialog<R1> extends AppBaseDialog<ButtonType> {
 
     private DoubleProperty progress;
@@ -64,6 +67,7 @@ public class WorkingDialog<R1> extends AppBaseDialog<ButtonType> {
     }
 
     public void run() {
+        final boolean[] isDone = {false};
         if (workingThread == null) {
             workingThread = new Thread(new Runnable() {
                 @Override
@@ -72,6 +76,7 @@ public class WorkingDialog<R1> extends AppBaseDialog<ButtonType> {
                     if (workingRunnable != null) {
                         r = workingRunnable.run();
                     }
+                    isDone[0] = true;
 
                     R1 finalR = r;
                     Platform.runLater(() -> {
@@ -83,6 +88,26 @@ public class WorkingDialog<R1> extends AppBaseDialog<ButtonType> {
         }
         workingThread.setDaemon(true);
         workingThread.start();
+        long startWorkTimeMillis = System.currentTimeMillis();
+
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (!isDone[0]) {
+                    if (System.currentTimeMillis() - startWorkTimeMillis >= 3000) {
+                        Platform.runLater(() -> show());
+                        break;
+                    }
+                    try {
+                        Thread.sleep(20);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
+        });
+        thread.setDaemon(true);
+        thread.start();
     }
 
     private void interrupt() {

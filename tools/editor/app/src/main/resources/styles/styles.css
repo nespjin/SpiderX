@@ -20,3 +20,114 @@
 .button:pressed {
     -fx-opacity: 0.8;
 }
+
+.progress-bar {
+    -fx-indeterminate-bar-length: 70;
+    -fx-indeterminate-bar-escape: true;
+    -fx-indeterminate-bar-flip: true;
+    -fx-indeterminate-bar-animation-time: 2;
+}
+
+.progress-bar > .bar {
+    -fx-background-color: #007AFF;
+    -fx-background-insets: 0;
+    -fx-background-radius: 3;
+    -fx-padding: 0.1em;
+}
+
+.progress-bar:indeterminate > .bar {
+    -fx-background-color: linear-gradient(to left, transparent, #007AFF);
+}
+
+/*背景*/
+.progress-bar > .track {
+    -fx-background-color: #ebebeb;
+    -fx-background-radius: 3;
+    /*-fx-background-insets: 0, 0 0 1 0, 1 1 2 1;*/
+    /*-fx-background-radius: 4, 3, 2;*/
+}
+
+.scroll-bar:vertical .track {
+    -fx-background-color: rgba(235, 233, 232, 0);
+    -fx-border-color: rgba(235, 233, 232, 0);
+    -fx-border-width: 0px;
+    -fx-background-radius: 0em;
+    -fx-border-radius: 0em;
+}
+
+.scroll-bar:vertical .increment-button,
+.scroll-bar:vertical .decrement-button {
+    -fx-background-color: rgba(70, 70, 70, 0);
+    -fx-background-radius: 0em;
+    -fx-padding: 0 0 10 0;
+    -fx-border-width: 0;
+    -fx-border-color: transparent;
+    -fx-border-insets: 0;
+    -fx-control-inner-background: transparent;
+}
+
+.scroll-bar:vertical .increment-arrow,
+.scroll-bar:vertical .decrement-arrow {
+    -fx-background-color: rgba(235, 233, 232, 0);
+    -fx-shape: " ";
+    -fx-padding: 0;
+    -fx-border-width: 0;
+    -fx-border-color: transparent;
+    -fx-border-insets: 0;
+    -fx-control-inner-background: transparent;
+}
+
+.scroll-bar:vertical .thumb {
+    -fx-background-color: #c7c7c7;
+    -fx-background-insets: 2, 0, 0;
+    -fx-background-radius: 0.5em;
+}
+
+.scroll-bar:vertical .thumb:hover,
+.scroll-bar:vertical .thumb:pressed {
+    -fx-background-color: #b9b9b9;
+}
+
+.scroll-bar:vertical {
+    -fx-background-color: rgba(243, 243, 243, 0.27);
+
+}
+
+.scroll-pane-list .track {
+    -fx-vbar-policy: never;
+    -fx-border-width: 0;
+    -fx-border-color: transparent;
+    -fx-border-insets: 0;
+    -fx-control-inner-background: transparent;
+}
+
+.scroll-pane-list:hover {
+    -fx-vbar-policy: as-needed;
+    -fx-border-width: 0;
+    -fx-border-color: transparent;
+    -fx-border-insets: 0;
+    -fx-control-inner-background: transparent;
+}
+
+
+.scroll-pane-build-output .track {
+    -fx-vbar-policy: never;
+    -fx-border-width: 0;
+    -fx-border-color: transparent;
+    -fx-border-insets: 0;
+    -fx-control-inner-background: transparent;
+}
+
+.scroll-pane-build-output {
+    -fx-vbar-policy: as-needed;
+    -fx-border-width: 0;
+    -fx-border-color: transparent;
+    -fx-border-insets: 0;
+    -fx-control-inner-background: white;
+    -fx-background-color: white;
+}
+
+.scroll-pane-build-output  > .viewport  {
+
+    -fx-background-color: white;
+}

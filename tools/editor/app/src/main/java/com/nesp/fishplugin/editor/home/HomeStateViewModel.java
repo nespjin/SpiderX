@@ -41,7 +41,7 @@ public class HomeStateViewModel {
 
     public StringProperty bottomStatusProperty() {
         if (bottomStatus == null) {
-            bottomStatus = new SimpleStringProperty(){
+            bottomStatus = new SimpleStringProperty() {
                 @Override
                 protected void invalidated() {
                     onBottomStatusInvalidate(get());

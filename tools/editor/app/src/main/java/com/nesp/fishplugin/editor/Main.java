@@ -1,5 +1,8 @@
 package com.nesp.fishplugin.editor;
 
+
+import org.apache.logging.log4j.LogManager;
+
 /**
  * Team: NESP Technology
  * Author: <a href="mailto:1756404649@qq.com">JinZhaolu Email:1756404649@qq.com</a>
@@ -11,6 +14,7 @@ public class Main {
     private static final String TAG = "Main";
 
     public static void main(String[] args) {
+        LogManager.getLogger(Main.class).info("Main Start");
         App.main(args);
     }
 }

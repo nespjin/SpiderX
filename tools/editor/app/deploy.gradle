@@ -78,7 +78,7 @@ task deployApp(type: Exec) {
     dependsOn 'jlink'
 
     doLast {
-        Runtime.runtime.exec("echo release out at $PACKAGE_OUT")
+        println "release out at $PACKAGE_OUT"
     }
 
     // https://docs.oracle.com/en/java/javase/17/docs/specs/man/jpackage.html

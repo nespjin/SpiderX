@@ -2,18 +2,20 @@ package com.nesp.fishplugin.editor.home;
 
 import com.nesp.fishplugin.core.data.Plugin;
 import com.nesp.fishplugin.editor.AppInfo;
-import com.nesp.fishplugin.editor.HomeStageViewBinding;
 import com.nesp.fishplugin.editor.R;
-import com.nesp.fishplugin.editor.app.AppBaseStage;
-import com.nesp.fishplugin.editor.app.ResultRunnable;
-import com.nesp.fishplugin.editor.app.Storage;
-import com.nesp.fishplugin.editor.app.WorkingDialog;
+import com.nesp.fishplugin.editor.StageHomeViewBinding;
+import com.nesp.fishplugin.editor.app.*;
 import com.nesp.fishplugin.editor.plugin.MoviePluginBuilder;
+import com.nesp.fishplugin.editor.plugin.OnBuildProgressListener;
 import com.nesp.fishplugin.editor.plugin.PluginBuilder;
 import com.nesp.fishplugin.editor.project.NewProjectWizardDialog;
 import com.nesp.fishplugin.editor.project.Project;
 import com.nesp.fishplugin.editor.project.ProjectManager;
 import com.nesp.sdk.java.lang.SingletonFactory;
+import com.nesp.sdk.java.util.OnResultListener;
+import com.nesp.sdk.javafx.platform.PlatformUtil;
+import javafx.animation.Transition;
+import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
@@ -21,23 +23,23 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.event.WeakEventHandler;
-import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.TextFieldTreeCell;
 import javafx.scene.image.Image;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import javafx.util.Callback;
-import org.apache.log4j.Logger;
+import javafx.util.Duration;
+import org.apache.logging.log4j.LogManager;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -65,12 +67,12 @@ public class HomeStage extends AppBaseStage {
         //no instance
     }
 
-    private WeakReference<HomeStageViewBinding> mBinding;
+    private WeakReference<StageHomeViewBinding> mBinding;
 
     @NotNull
-    private HomeStageViewBinding getBinding() {
+    private StageHomeViewBinding getBinding() {
         if (mBinding == null || mBinding.get() == null) {
-            mBinding = new WeakReference<>(HomeStageViewBinding.inflate(R.layout.home_stage));
+            mBinding = new WeakReference<>(StageHomeViewBinding.inflate(R.layout.stage_home));
         }
         return Objects.requireNonNull(mBinding.get());
     }
@@ -80,6 +82,8 @@ public class HomeStage extends AppBaseStage {
     private HomeStateViewModel getViewModel() {
         if (viewModel == null || viewModel.get() == null) {
             HomeStateViewModel homeStateViewModel = new HomeStateViewModel() {
+                private final StageHomeViewBinding binding = getBinding();
+
                 @Override
                 @SuppressWarnings("unchecked")
                 void onWorkingProjectInvalidate(Project project) {
@@ -87,25 +91,39 @@ public class HomeStage extends AppBaseStage {
                     invalidateProjectView();
                     setTitle(project);
 
+                    // stop build at first
+                    buildState(PluginBuilder.BUILD_STATUS_STOP);
+
                     if (project != null) {
                         startWatchProjectDir();
-                        Optional.of(project).map(Project::getTargetPlugin)
-                                .map(Plugin::getType).ifPresent(integer -> {
+
+                        binding.borderPanelContent.setCenter(binding.taFileEditor);
+
+                        Optional.of(project).map(Project::getTargetPlugin).map(Plugin::getType)
+                                .ifPresent(integer -> {
                                     if (integer == Plugin.TYPE_MOVIE) {
                                         pluginBuilder = new MoviePluginBuilder();
+                                    } else {
+                                        new AppAlert(Alert.AlertType.WARNING, "UnSupport this project",
+                                                ButtonType.OK)
+                                                .showAndWait();
+                                        closeProject();
+                                        return;
                                     }
-                                    HomeStageViewBinding binding = getBinding();
                                     binding.cbBuildTYpe.getItems()
                                             .addAll(Arrays.asList(pluginBuilder.getBuildTypes()));
+                                    binding.cbBuildTYpe.getSelectionModel().select(0);
                                 });
-                        buildState(PluginBuilder.BUILD_STATUS_STOP);
-                        buildState(PluginBuilder.BUILD_STATUS_NONE);
+                    } else {
+                        binding.borderPanelContent.setCenter(null);
+                        pluginBuilder = null;
+                        binding.cbBuildTYpe.getItems().clear();
                     }
                 }
 
                 @Override
                 void onBottomStatusInvalidate(String status) {
-                    getBinding().lbBottomStatus.setText(status);
+                    binding.lbBottomStatus.setText(status);
                 }
             };
             viewModel = new WeakReference<>(homeStateViewModel);
@@ -123,38 +141,97 @@ public class HomeStage extends AppBaseStage {
                 @Override
                 protected void invalidated() {
                     int buildState = get();
-                    HomeStageViewBinding binding = getBinding();
+
+                    HomeStateViewModel viewModel = getViewModel();
+                    viewModel.bottomStatus(PluginBuilder.getBuildStatusString(buildState));
+
+                    StageHomeViewBinding binding = getBinding();
 
                     binding.ivBuildStop.setDisable(true);
                     binding.ivBuildStart.setDisable(false);
 
                     switch (buildState) {
                         case PluginBuilder.BUILD_STATUS_NONE -> {
+                            binding.vbBottom.getChildren().remove(binding.vbBuildOutput);
+                            binding.vbTop.getChildren().remove(binding.apBuildProgressContainer);
+                            getViewModel().bottomStatus("");
+                        }
 
+                        case PluginBuilder.BUILD_STATUS_START -> {
+                            if (pluginBuilder != null) {
+                                binding.textFlowBuildOutput.getChildren().clear();
+                                int selectedIndex = binding.cbBuildTYpe.getSelectionModel().getSelectedIndex();
+                                pluginBuilder.build(selectedIndex, new OnBuildProgressListener() {
+                                    @Override
+                                    public void onProgress(double progress, int lineType, String line) {
+                                        Text text = new Text(line + "\n");
+                                        String lineColor = "#FFF";
+                                        if (lineType == -1) {
+                                            lineColor = "#ff0000";
+                                        } else if (lineType == 1) {
+                                            lineColor = "#ffcc00";
+                                        } else {
+                                            lineColor = "#000";
+                                        }
+                                        text.setFill(Color.valueOf(lineColor));
+                                        binding.textFlowBuildOutput.getChildren().add(text);
+                                        binding.spBuildOutput.setVvalue(binding.spBuildOutput.getVmax());
+                                        binding.pbBuild.setProgress(progress);
+                                        if (progress == 1 || progress < -1) {
+                                            binding.ivCloseBuildOutput.setVisible(true);
+                                            binding.vbTop.getChildren().remove(binding.apBuildProgressContainer);
+                                            if (progress < -1) {
+                                                buildState(PluginBuilder.BUILD_STATUS_FAILED);
+                                            } else {
+                                                buildState(PluginBuilder.BUILD_STATUS_SUCCESS);
+                                            }
+                                        }
+                                    }
+                                });
+                                buildState(PluginBuilder.BUILD_STATUS_BUILDING);
+                            } else {
+                                buildState(PluginBuilder.BUILD_STATUS_STOP);
+                            }
                         }
 
                         case PluginBuilder.BUILD_STATUS_BUILDING -> {
                             binding.ivBuildStop.setDisable(false);
                             binding.ivBuildStart.setDisable(true);
-                        }
 
-                        case PluginBuilder.BUILD_STATUS_FAILED -> {
+                            if (!binding.vbBottom.getChildren().contains(binding.vbBuildOutput)) {
+                                binding.textFlowBuildOutput.getChildren().clear();
+                                binding.vbBottom.getChildren().add(0, binding.vbBuildOutput);
+                            }
 
-                        }
-
-                        case PluginBuilder.BUILD_STATUS_SUCCESS -> {
-
+                            if (!binding.vbTop.getChildren().contains(binding.apBuildProgressContainer)) {
+                                binding.vbTop.getChildren().add(1, binding.apBuildProgressContainer);
+                            }
+                            binding.ivCloseBuildOutput.setVisible(false);
                         }
 
                         case PluginBuilder.BUILD_STATUS_STOP -> {
+                            if (pluginBuilder != null) {
+                                pluginBuilder.stopBuild(new OnResultListener<Boolean>() {
+                                    @Override
+                                    public void onResult(Boolean result) {
+                                        buildState(PluginBuilder.BUILD_STATUS_NONE);
+                                    }
+                                });
+                            } else {
+                                buildState(PluginBuilder.BUILD_STATUS_NONE);
+                            }
+                        }
 
+                        case PluginBuilder.BUILD_STATUS_FAILED -> {
+                            viewModel.bottomStatus("Build Failed");
+                        }
+
+                        case PluginBuilder.BUILD_STATUS_SUCCESS -> {
+                            viewModel.bottomStatus("Build Success");
                         }
 
                         default -> throw new IllegalStateException("Unexpected value: " + buildState);
                     }
-
-                    HomeStateViewModel viewModel = getViewModel();
-                    viewModel.bottomStatus(PluginBuilder.getBuildStatusString(buildState));
                 }
             };
         }
@@ -226,6 +303,47 @@ public class HomeStage extends AppBaseStage {
         stage.setMinHeight(700);
         AppInfo.name = getResource().getString(R.string.app_name);
         initializeViews();
+        stage.setOpacity(0);
+        getStage().focusedProperty().addListener((observable, oldValue, newValue) -> onFocusedChanged(newValue));
+    }
+
+    @SuppressWarnings("unchecked")
+    public void onFocusedChanged(boolean isFocused) {
+        if (isFocused && currentFileOpened != null) {
+            StageHomeViewBinding binding = getBinding();
+            ObservableList<TreeItem<File>> selectedItems = binding.dirTreeView.getSelectionModel().getSelectedItems();
+            if (selectedItems != null && !selectedItems.isEmpty()) {
+                File value = selectedItems.get(0).getValue();
+                double scrollTop = binding.taFileEditor.getScrollTop();
+
+                if (value.isFile()) {
+                    openFile(currentFileOpened, new OnResultListener<Boolean>() {
+                        @Override
+                        public void onResult(Boolean result) {
+                            binding.taFileEditor.setScrollTop(scrollTop);
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onShown(WindowEvent event) {
+        super.onShown(event);
+        LauncherStage.hideWindow();
+
+        new Transition() {
+
+            {
+                setCycleDuration(new Duration(300));
+            }
+
+            @Override
+            protected void interpolate(double frac) {
+                getStage().setOpacity(frac);
+            }
+        }.play();
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -233,7 +351,7 @@ public class HomeStage extends AppBaseStage {
     ///////////////////////////////////////////////////////////////////////////
 
     private void initializeViews() {
-        HomeStageViewBinding binding = getBinding();
+        StageHomeViewBinding binding = getBinding();
         setContent(binding.getRoot());
         setTitle((Project) null);
         initializeView();
@@ -251,7 +369,7 @@ public class HomeStage extends AppBaseStage {
     private void initializeView() {
         initializeTopMenu();
 
-        HomeStageViewBinding binding = getBinding();
+        StageHomeViewBinding binding = getBinding();
 
         binding.ivBuildStart.disableProperty().addListener(new ChangeListener<Boolean>() {
             @Override
@@ -264,7 +382,7 @@ public class HomeStage extends AppBaseStage {
             @Override
             public void handle(MouseEvent event) {
                 if (event.getButton() == MouseButton.PRIMARY) {
-                    buildState(PluginBuilder.BUILD_STATUS_BUILDING);
+                    buildState(PluginBuilder.BUILD_STATUS_START);
                 }
             }
         });
@@ -304,7 +422,7 @@ public class HomeStage extends AppBaseStage {
             }
         });
         dirTreeView.getSelectionModel().selectedItemProperty()
-                .addListener((ChangeListener<TreeItem<File>>) (observable, oldValue, newValue) -> {
+                .addListener((observable, oldValue, newValue) -> {
                     if (newValue == null) return;
                     File value = newValue.getValue();
                     if (value.isFile())
@@ -318,13 +436,26 @@ public class HomeStage extends AppBaseStage {
 
         initializeEditor();
 
+        binding.ivCloseBuildOutput.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent event) {
+                if (event.getButton() == MouseButton.PRIMARY) {
+                    binding.vbBottom.getChildren().remove(binding.vbBuildOutput);
+                }
+            }
+        });
+        binding.textFlowBuildOutput.maxWidthProperty().bind(binding.vbBottom.widthProperty());
+
         invalidateView();
 
-        binding.borderPanelContent.setCenter(null);
+        HomeStateViewModel viewModel = getViewModel();
+
+        viewModel.onBottomStatusInvalidate(null);
+        viewModel.onWorkingProjectInvalidate(null);
     }
 
     private void initializeTopMenu() {
-        HomeStageViewBinding binding = getBinding();
+        StageHomeViewBinding binding = getBinding();
 
         // Menu File
         final Menu newProjectMenu = new Menu("_New Project");
@@ -364,7 +495,6 @@ public class HomeStage extends AppBaseStage {
                             getViewModel().workingProject(project);
                             getViewModel().bottomStatus("");
                         });
-                        workingDialog.show();
                         getViewModel().bottomStatus("Opening Project(" + project.getName() + ")...");
                         workingDialog.run();
                     }
@@ -375,7 +505,12 @@ public class HomeStage extends AppBaseStage {
 
         closeProjectMenuItem = new MenuItem("_Close Project");
         closeProjectMenuItem.setMnemonicParsing(true);
-        closeProjectMenuItem.setOnAction(event -> closeProject());
+        closeProjectMenuItem.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                closeProject();
+            }
+        });
         binding.topMenuFile.getItems().add(closeProjectMenuItem);
 
         binding.topMenuFile.getItems().add(new SeparatorMenuItem());
@@ -417,7 +552,6 @@ public class HomeStage extends AppBaseStage {
                 getViewModel().workingProject(project);
                 getViewModel().bottomStatus("");
             });
-            workingDialog.show();
             getViewModel().bottomStatus("Creating Project(" + project.getName() + ")...");
             workingDialog.run();
         });
@@ -434,7 +568,7 @@ public class HomeStage extends AppBaseStage {
 
     @SuppressWarnings("unchecked")
     private void invalidateProjectView() {
-        HomeStageViewBinding binding = getBinding();
+        StageHomeViewBinding binding = getBinding();
         final ProjectManager manager = ProjectManager.getInstance();
         Project workingProject = manager.getWorkingProject();
         if (workingProject == null) {
@@ -448,7 +582,6 @@ public class HomeStage extends AppBaseStage {
 
             hasFileOpened(false);
 
-
         } else {
             // Project Opened
             if (closeProjectMenuItem != null) {
@@ -460,8 +593,8 @@ public class HomeStage extends AppBaseStage {
             if (!binding.vbTop.getChildren().contains(binding.topToolBar)) {
                 binding.vbTop.getChildren().add(binding.topToolBar);
             }
-            loadProjectTreeView();
         }
+        loadProjectTreeView();
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -476,6 +609,7 @@ public class HomeStage extends AppBaseStage {
         Project workingProject = manager.getWorkingProject();
         if (workingProject == null) return;
         File rootDirectory = workingProject.getRootDirectory();
+        if (rootDirectory == null) return;
         File[] files = rootDirectory.listFiles();
         if (files == null) return;
 
@@ -485,6 +619,77 @@ public class HomeStage extends AppBaseStage {
         rootTreeItem.setExpanded(true);
         addTreeViewItem(rootDirectory, rootTreeItem, false);
         dirTreeView.setRoot(rootTreeItem);
+        ContextMenu contextMenu = new ContextMenu();
+        MenuItem menuItemOpenWithVsCode = new MenuItem();
+        EventHandler<ActionEvent> menuItemOpenWithVsCodeEventHandler = new EventHandler<>() {
+            @Override
+            public void handle(ActionEvent event) {
+
+                MultipleSelectionModel<TreeItem<File>> selectionModel = dirTreeView.getSelectionModel();
+                ObservableList<TreeItem<File>> selectedItems = selectionModel.getSelectedItems();
+                if (selectedItems == null || selectedItems.isEmpty()) return;
+                TreeItem<File> fileTreeItem = selectedItems.get(0);
+
+                Runnable runnableMain = new Runnable() {
+                    @Override
+                    public void run() {
+                        getViewModel().bottomStatus("Open In VsCode Failed!");
+                    }
+                };
+                Runnable runnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            var windows = com.nesp.sdk.javafx.platform.Platform.WINDOWS;
+                            boolean isWin = PlatformUtil.getPlatform() == windows;
+                            String findCodeCommand = isWin ? "where" : "which";
+                            findCodeCommand = findCodeCommand + " code";
+                            Process execFindCodeCommand = Runtime.getRuntime().exec(findCodeCommand);
+
+                            boolean isSuccess = true;
+                            if (execFindCodeCommand.waitFor() != 0) {
+                                isSuccess = false;
+                            } else {
+                                String codePath;
+                                try (InputStreamReader inputStreamReader =
+                                             new InputStreamReader(execFindCodeCommand.getInputStream());
+                                     BufferedReader bufferedReader = new BufferedReader(inputStreamReader)) {
+                                    codePath = bufferedReader.readLine();
+                                }
+
+                                System.out.println("Code Path: " + codePath);
+
+                                if (codePath == null || codePath.isEmpty()) {
+                                    isSuccess = false;
+                                } else {
+                                    Process exec = Runtime.getRuntime().exec(new String[]{
+                                            isWin ? "cmd" : "",
+                                            isWin ? "/c" : "",
+                                            codePath, fileTreeItem.getValue().getAbsolutePath()
+                                    }, null, null);
+                                    if (exec.waitFor() != 0) {
+                                        isSuccess = false;
+                                    }
+                                }
+                            }
+
+                            if (!isSuccess) {
+                                runOnUIThread(runnableMain);
+                            }
+                            System.out.println("Open In VsCode Success");
+                        } catch (IOException | InterruptedException e) {
+                            System.out.println("Open In VsCode Error: " + e);
+                            runOnUIThread(runnableMain);
+                        }
+                    }
+                };
+                runOnIOThread(true, runnable);
+            }
+        };
+        menuItemOpenWithVsCode.setOnAction(menuItemOpenWithVsCodeEventHandler);
+        menuItemOpenWithVsCode.setText("Open In VsCode");
+        contextMenu.getItems().add(menuItemOpenWithVsCode);
+        dirTreeView.setContextMenu(contextMenu);
     }
 
     private void addTreeViewItem(File currentFile, TreeItem<File> currentTreeItem, boolean isRecursive) {
@@ -512,7 +717,7 @@ public class HomeStage extends AppBaseStage {
             hasFileOpened = new SimpleBooleanProperty() {
                 @Override
                 protected void invalidated() {
-                    HomeStageViewBinding binding = getBinding();
+                    StageHomeViewBinding binding = getBinding();
                     if (get()) {
                         if (binding.borderPanelContent.getCenter() == null) {
                             binding.borderPanelContent.setCenter(binding.taFileEditor);
@@ -538,6 +743,10 @@ public class HomeStage extends AppBaseStage {
     private File currentFileOpened = null;
 
     private void openFile(File file) {
+        openFile(file, null);
+    }
+
+    private void openFile(File file, OnResultListener<Boolean> onResultListener) {
         if (file == null || !file.exists()) return;
 
         WorkingDialog<String> workingDialog = new WorkingDialog<>(() -> {
@@ -559,9 +768,11 @@ public class HomeStage extends AppBaseStage {
             getBinding().taFileEditor.setText(s);
             currentFileOpened = file;
             hasFileOpened(true);
+            if (onResultListener != null) {
+                onResultListener.onResult(true);
+            }
         });
         workingDialog.setTitle("Opening File " + file.getName());
-        workingDialog.show();
         workingDialog.run();
         getViewModel().bottomStatus("Opening File(" + file.getName() + ")...");
     }
@@ -573,8 +784,8 @@ public class HomeStage extends AppBaseStage {
     private void initializeEditor() {
         TextArea taFileEditor = getBinding().taFileEditor;
         taFileEditor.setOnKeyReleased(event -> {
-            Logger.getLogger(HomeStage.class).info("Event Released: " + event.toString());
-            System.out.println("Event Released: " + event.toString());
+            LogManager.getLogger(HomeStage.class).info("Event Released: " + event.toString());
+            System.out.println("Event Released: " + event);
         });
     }
 
@@ -584,5 +795,6 @@ public class HomeStage extends AppBaseStage {
         stopWatchProjectDir();
         Optional.ofNullable(viewModel).map(Reference::get).ifPresent(HomeStateViewModel::destroy);
         closeProjectMenuItem = null;
+        isShown = false;
     }
 }

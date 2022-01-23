@@ -1,13 +1,16 @@
 package com.nesp.fishplugin.editor.app;
 
 import com.nesp.sdk.java.text.TextUtil;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.nio.file.Path;
 
 public final class Storage {
+
+    private static final Logger LOGGER = LogManager.getLogger(Storage.class);
 
     private Storage() {
         //no instance
@@ -39,7 +42,7 @@ public final class Storage {
         File file = new File(path);
         if (!file.exists()) {
             if (!file.mkdirs()) {
-                Logger.getLogger(Storage.class).info("The file for " + path + " mkdirs failed");
+                LOGGER.info("The file for " + path + " mkdirs failed");
             }
         }
         return file;

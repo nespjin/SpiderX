@@ -2,10 +2,12 @@ package com.nesp.fishplugin.editor.project;
 
 import com.nesp.fishplugin.editor.DialogNewProjectWizardViewBinding;
 import com.nesp.fishplugin.editor.R;
+import com.nesp.fishplugin.editor.app.AppAlert;
 import com.nesp.fishplugin.editor.app.AppBaseDialog;
 import com.nesp.fishplugin.editor.app.Storage;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.beans.value.WeakChangeListener;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -31,13 +33,14 @@ public class NewProjectWizardDialog extends AppBaseDialog<Project> {
 
         binding.tfProjectLocation.setText(Storage.getProjectDirPath("").toString());
 
-        binding.tfProjectName.textProperty().addListener(new ChangeListener<String>() {
+        ChangeListener<String> onProjectNameChangedListener = new ChangeListener<>() {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
                 binding.tfProjectLocation.setText(Storage.getProjectDirPath(newValue).toString());
                 buttonOk.setDisable(!Project.isNameAvailable(newValue));
             }
-        });
+        };
+        binding.tfProjectName.textProperty().addListener(new WeakChangeListener<>(onProjectNameChangedListener));
     }
 
     private static final class ResultConvert implements Callback<ButtonType, Project> {
@@ -57,8 +60,9 @@ public class NewProjectWizardDialog extends AppBaseDialog<Project> {
                 if (Project.isNameAvailable(name)) {
                     return ProjectManager.createProject(name, pluginType);
                 } else {
-                    new Alert(Alert.AlertType.WARNING, "Project name is not available!", ButtonType.OK)
-                            .showAndWait();
+                    Alert alert =
+                            new AppAlert(Alert.AlertType.WARNING, "Project name is not available!", ButtonType.OK);
+                    alert.showAndWait();
                 }
             }
             return null;
