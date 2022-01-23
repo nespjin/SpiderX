@@ -23,6 +23,6 @@ project.ext {
 
     mainJar = 'app.jar'
     jfxModsPath = OperatingSystem.current().isWindows() ?
-            'C:\\Users\\jin\\javafx-jmods-17.0.2' :
+            '../jmods/win' :
             '/home/jinzhaolu/openjfx/javafx-jmods-17.0.1'
 }
