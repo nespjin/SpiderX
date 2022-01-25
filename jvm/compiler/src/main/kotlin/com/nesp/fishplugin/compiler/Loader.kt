@@ -13,6 +13,7 @@ import java.io.File
 import java.lang.Exception
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.Path
 
 /**
  * The plugin loader
@@ -28,6 +29,7 @@ object Loader {
     /**
      * Load the plugin
      */
+    @JvmStatic
     fun load(plugin: Plugin): LoadResult {
         if (!Environment.shared.isSupport(plugin)) {
             return LoadResult(Result.CODE_FAILED, "Plugin is not support current device type")
@@ -38,6 +40,7 @@ object Loader {
     /**
      * Load plugin from disk
      */
+    @JvmStatic
     fun loadPluginFromDisk(path: String): LoadResult {
         val pluginFile = File(path)
         if (!pluginFile.exists() || !pluginFile.isFile)
@@ -53,6 +56,7 @@ object Loader {
     /**
      * Load plugin from url
      */
+    @JvmStatic
     fun loadPluginFromUrl(url: String): LoadResult {
         val request = Request.Builder().get().url(url).build()
         val response = httpClient.newCall(request).execute()
@@ -659,9 +663,9 @@ object Loader {
      * Load Js from disk
      */
     fun loadJsFromDisk(path: String): LoadJsResult {
-        val jsFile = File(path)
+        val jsFile = Path(path).toFile()
         if (!jsFile.exists() || !jsFile.isFile) {
-            return LoadJsResult(Result.CODE_FAILED, "Load failed from path:$path")
+            return LoadJsResult(Result.CODE_FAILED, "Load failed from path: $path")
         }
         val jsString = String(jsFile.readBytes(), StandardCharsets.UTF_8)
         return LoadJsResult(Result.CODE_SUCCESS, data = jsString)
@@ -675,8 +679,8 @@ object Loader {
         val response = httpClient.newCall(request).execute()
         val code = response.code
         val responseBody = response.body
-            ?: return LoadJsResult(Result.CODE_FAILED, "Load failed from url:$url")
-        if (code != 400) return LoadJsResult(Result.CODE_FAILED, "Load plugin failed from url:$url")
+            ?: return LoadJsResult(Result.CODE_FAILED, "Load failed from url: $url")
+        if (code != 400) return LoadJsResult(Result.CODE_FAILED, "Load plugin failed from url: $url")
         return LoadJsResult(Result.CODE_SUCCESS, data = responseBody.string())
     }
 

@@ -14,7 +14,7 @@ data class Page(
     fun isDslAvailable(): Boolean {
         if (dsl == null) return false
         if (dsl is String && (dsl as String).isNotEmpty()) return false
-        if (dsl is Map<*, *> && !(dsl as Map<*, *>).isNullOrEmpty()) return true
+        if (dsl is Map<*, *> && (dsl as Map<*, *>).isNotEmpty()) return true
         return false
     }
 

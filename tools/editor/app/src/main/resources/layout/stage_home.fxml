@@ -22,7 +22,7 @@
     <children>
       <BorderPane fx:id="borderPanelContent" prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: #DCDCDC;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <top>
-            <VBox fx:id="vbTop" BorderPane.alignment="CENTER">
+            <VBox fx:id="vbTop" style="-fx-background-color: #F5F5F5;" BorderPane.alignment="CENTER">
                <children>
                   <MenuBar style="-fx-background-color: #F5F5F5; -fx-border-color: #DCDCDC; -fx-border-width: 1;">
                     <menus>
@@ -30,7 +30,7 @@
                       <Menu fx:id="topMenuHelp" text="_Help" />
                     </menus>
                   </MenuBar>
-                  <AnchorPane fx:id="apBuildProgressContainer">
+                  <AnchorPane fx:id="apBuildProgressContainer" style="-fx-background-color: #F5F5F5;">
                      <children>
                         <ProgressBar fx:id="pbBuild" prefWidth="200.0" progress="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
                      </children>
@@ -82,7 +82,7 @@
                         </AnchorPane>
                         <ScrollPane fx:id="spBuildOutput" maxHeight="226.0" minHeight="226.0" style="-fx-border-color: #DCDCDC; -fx-border-width: 0.5 0 0.5 0;" styleClass="scroll-pane-build-output">
                            <content>
-                              <TextFlow fx:id="textFlowBuildOutput" style="-fx-background-color: white; -fx-border-color: #DCDCDC; -fx-border-image-insets: 0; -fx-background-insets: 0; -fx-border-width: 0.5 0 0.5 0;" />
+                              <TextFlow fx:id="textFlowBuildOutput" style="-fx-background-color: white; -fx-border-color: #DCDCDC; -fx-border-image-insets: 0; -fx-background-insets: 0; -fx-border-width: 0;" />
                            </content>
                            <padding>
                               <Insets left="16.0" right="16.0" />

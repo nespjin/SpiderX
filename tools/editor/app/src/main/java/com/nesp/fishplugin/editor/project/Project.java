@@ -5,8 +5,14 @@ import com.nesp.fishplugin.editor.app.Storage;
 import com.nesp.sdk.java.text.TextUtil;
 
 import java.io.File;
+import java.nio.file.Path;
 
 public class Project {
+
+    public static final String SRC_DIR_NAME = "src";
+    public static final String BUILD_DIR_NAME = "build";
+    public static final String PLUGIN_MANIFEST_FILE_NAME = "PluginManifest";
+    public static final String[] PLUGIN_MANIFEST_FILE_EXTENSIONS = {"json"};
 
     private String name = "";
     private File rootDirectory = null;
@@ -27,16 +33,20 @@ public class Project {
                 && TextUtil.checkLength(name, 20);
     }
 
+    public File getProjectManifestFile() {
+        return findProjectManifestFile(getRootDirectory());
+    }
+
     public File getRootDirectory() {
         return rootDirectory;
     }
 
     public File getSourceDirectory() {
-        return new File(rootDirectory, "src");
+        return new File(rootDirectory, SRC_DIR_NAME);
     }
 
     public File getBuildDirectory() {
-        return new File(rootDirectory, "build");
+        return new File(rootDirectory, BUILD_DIR_NAME);
     }
 
     private void setRootDirectory(File rootDirectory) {
@@ -49,5 +59,19 @@ public class Project {
 
     public void setTargetPlugin(Plugin targetPlugin) {
         this.targetPlugin = targetPlugin;
+    }
+
+    public static File findProjectManifestFile(File projectDir) {
+        if (projectDir == null || projectDir.isFile()) return null;
+        File[] files = projectDir.listFiles();
+        if (files == null || files.length == 0) return null;
+        for (String pluginManifestFileExtension : Project.PLUGIN_MANIFEST_FILE_EXTENSIONS) {
+            File file = Path.of(projectDir.getAbsolutePath(), Project.SRC_DIR_NAME,
+                    Project.PLUGIN_MANIFEST_FILE_NAME + "." + pluginManifestFileExtension).toFile();
+            if (file.exists()) {
+                return file;
+            }
+        }
+        return null;
     }
 }

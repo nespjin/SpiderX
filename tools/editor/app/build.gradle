@@ -1,3 +1,5 @@
+import org.gradle.internal.jvm.Jvm
+
 /*
  *
  *   Copyright (c) 2021  NESP Technology Corporation. All rights reserved.
@@ -16,6 +18,7 @@
 plugins {
     id 'java'
     id 'application'
+    id 'c'
     id 'io.github.nespjin.javafx' version "1.1"
     id 'org.openjfx.javafxplugin'
 }
@@ -150,6 +153,44 @@ javafx {
     }
 }*/
 
+test {
+    systemProperty "java.library.path", file("${buildDir}/libs/hello/shared").absolutePath
+}
+
+model {
+    platforms {
+        x64 {
+            architecture "x64"
+        }
+    }
+
+    components {
+        hello(NativeLibrarySpec) {
+            binaries.all {
+                if (targetPlatform.operatingSystem.macOsX) {
+                    cCompiler.args '-I', "${Jvm.current().javaHome}/include"
+                    cCompiler.args '-I', "${Jvm.current().javaHome}/include/darwin"
+                    cCompiler.args '-mmacosx-version-min=10.4'
+                    linker.args '-mmacosx-version-min=10.4'
+                } else if (targetPlatform.operatingSystem.linux) {
+                    cCompiler.args '-I', "${Jvm.current().javaHome}/include"
+                    cCompiler.args '-I', "${Jvm.current().javaHome}/include/linux"
+                    cCompiler.args '-D_FILE_OFFSET_BITS=64'
+                } else if (targetPlatform.operatingSystem.windows) {
+                    cCompiler.args "-I${Jvm.current().javaHome}/include"
+                    cCompiler.args "-I${Jvm.current().javaHome}/include/win32"
+                    linker.args "Shlwapi.lib", "Advapi32.lib"
+                } else if (targetPlatform.operatingSystem.freeBSD) {
+                    cCompiler.args '-I', "${Jvm.current().javaHome}/include"
+                    cCompiler.args '-I', "${Jvm.current().javaHome}/include/freebsd"
+                }
+            }
+        }
+    }
+}
+
+test.dependsOn 'helloSharedLibrary'
+
 dependencies {
     implementation fileTree(dir: 'libs', includes: ['*.jar'])
 
@@ -173,8 +214,8 @@ dependencies {
     implementation 'com.alibaba:fastjson:1.2.79'
     implementation 'org.json:json:20211205'
 
-    implementation project(path:':core')
-    implementation project(path:':compiler')
+    implementation project(path: ':core')
+    implementation project(path: ':compiler')
 
 //    implementation 'log4j:log4j:1.2.17'
 //    implementation 'org.apache.logging.log4j:log4j:2.17.1' // Not work present

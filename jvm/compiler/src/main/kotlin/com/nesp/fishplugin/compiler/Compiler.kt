@@ -3,18 +3,22 @@ package com.nesp.fishplugin.compiler
 import com.nesp.fishplugin.core.Result
 import com.nesp.fishplugin.core.data.Page
 import com.nesp.fishplugin.core.data.Plugin
+import java.io.File
+import kotlin.io.path.Path
 
 object Compiler {
 
+    @JvmStatic
     fun compileFromDisk(path: String): CompileResult {
         // Load plugin
         val loadResult = Loader.loadPluginFromDisk(path)
         if (loadResult.code != Result.CODE_SUCCESS) {
             return CompileResult(Result.CODE_FAILED, loadResult.message)
         }
-        return doCompile(loadResult.data!!)
+        return doCompile(loadResult.data!!, File(path).parentFile)
     }
 
+    @JvmStatic
     fun compileFromUrl(url: String): CompileResult {
         // Load plugin
         val loadResult = Loader.loadPluginFromUrl(url)
@@ -24,6 +28,7 @@ object Compiler {
         return doCompile(loadResult.data!!)
     }
 
+    @JvmStatic
     fun compile(plugin: Plugin): CompileResult {
         // Load plugin
         val loadResult = Loader.load(plugin)
@@ -36,7 +41,9 @@ object Compiler {
     /**
      * Compile plugin
      */
-    private fun doCompile(plugin: Plugin): CompileResult {
+    private fun doCompile(plugin: Plugin, pluginDir: File? = null): CompileResult {
+
+        val pluginDirPath = if (pluginDir == null) "" else pluginDir.absolutePath
 
         // Check parent
         if (plugin.parent != null && plugin.parent !is Plugin) {
@@ -86,8 +93,13 @@ object Compiler {
 
                 if (page.js.isNotEmpty()) {
                     if (page.js.startsWith(Page.JS_PATH_PREFIX)) {
-                        val loadJsFromDisk =
-                            Loader.loadJsFromDisk(page.js.substring(Page.JS_PATH_PREFIX.length))
+
+                        val loadJsFromDisk = Loader.loadJsFromDisk(
+                            Path(
+                                pluginDirPath,
+                                page.js.substring(Page.JS_PATH_PREFIX.length)
+                            ).toString()
+                        )
                         if (loadJsFromDisk.code != Result.CODE_SUCCESS) {
                             return CompileResult(Result.CODE_FAILED, loadJsFromDisk.message)
                         }
