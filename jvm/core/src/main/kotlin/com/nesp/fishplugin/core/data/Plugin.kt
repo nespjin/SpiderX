@@ -245,14 +245,17 @@ data class Plugin @JvmOverloads constructor(
         const val HTTP_REQ_TYPE_PREFIX_GET = "get:"
         const val HTTP_REQ_TYPE_PREFIX_POST = "post:"
 
+        @JvmStatic
         fun isGetReq(url: String): Boolean {
             return url.startsWith(HTTP_REQ_TYPE_PREFIX_GET)
         }
 
+        @JvmStatic
         fun isPostReq(url: String): Boolean {
             return url.startsWith(HTTP_REQ_TYPE_PREFIX_POST)
         }
 
+        @JvmStatic
         fun removeReqPrefix(url: String): String {
             if (isGetReq(url)) {
                 return url.substring(HTTP_REQ_TYPE_PREFIX_GET.length)

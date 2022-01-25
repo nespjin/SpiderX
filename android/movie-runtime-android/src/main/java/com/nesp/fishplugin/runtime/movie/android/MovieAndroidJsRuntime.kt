@@ -9,8 +9,8 @@ import com.nesp.fishplugin.runtime.Process
 import com.nesp.fishplugin.runtime.android.js.AndroidJsRuntime
 import com.nesp.fishplugin.runtime.android.js.AndroidJsRuntimeTask
 import com.nesp.fishplugin.runtime.android.js.AndroidJsRuntimeTaskListener
+import com.nesp.fishplugin.runtime.movie.MOVIE_PAGE_ID_CATEGORY
 import com.nesp.fishplugin.runtime.movie.MoviePage
-import com.nesp.fishplugin.runtime.movie.PAGE_ID_CATEGORY
 import com.nesp.fishplugin.runtime.movie.data.HomePage
 import com.nesp.fishplugin.runtime.movie.data.Movie
 import com.nesp.fishplugin.runtime.movie.data.MovieCategoryPage
@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets
 class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
 
     private val context = context.applicationContext
+    private val gson = Gson()
 
     override fun exec(page: Page, vararg parameters: Any?): Process {
         val process = super.exec(page, parameters)
@@ -46,8 +47,8 @@ class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
             init {
                 // Bind listener
                 listener = object : AndroidJsRuntimeTaskListener() {
-                    override fun onPageStart() {
-                        runtimeTaskListener?.onPageStart()
+                    override fun onPageLoadStart() {
+                        runtimeTaskListener?.onPageLoadStart()
                     }
 
                     override fun onShouldInterceptRequest(url: String) {
@@ -60,13 +61,12 @@ class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
 
                     override fun onReceivePage(pageJson: String) {
                         runtimeTaskListener?.onReceivePage(pageJson)
-                        val gson = Gson()
                         when {
                             page.id == MoviePage.HOME.id -> {
                                 process.execResult.data =
                                     gson.fromJson(pageJson, HomePage::class.java)
                             }
-                            page.id.startsWith(PAGE_ID_CATEGORY) -> {
+                            page.id.startsWith(MOVIE_PAGE_ID_CATEGORY) -> {
                                 process.execResult.data =
                                     gson.fromJson(pageJson, MovieCategoryPage::class.java)
                             }
@@ -82,8 +82,8 @@ class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
                         process.exitNormally()
                     }
 
-                    override fun onPageFinished() {
-                        runtimeTaskListener?.onPageFinished()
+                    override fun onPageLoadFinished() {
+                        runtimeTaskListener?.onPageLoadFinished()
                     }
 
                     override fun onTimeout() {
@@ -92,6 +92,7 @@ class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
                     }
 
                     override fun onPrintHtml(html: String) {
+                        runtimeTaskListener?.onPrintHtml(html)
                         if (html.isNotEmpty()) {
                             htmlDocumentStringCache.put(Plugin.removeReqPrefix(page.url), html)
                         }
@@ -99,7 +100,7 @@ class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
                 }
             }
 
-            override fun run(webView: WebView) {
+            override fun run(jsEngine: WebView) {
                 val url = page.url
                 this.js = page.js
 
@@ -109,7 +110,7 @@ class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
                 val s = htmlDocumentStringCache[realUrl]
                 if (!s.isNullOrEmpty()) {
                     // Load from cache
-                    webView.loadDataWithBaseURL(
+                    jsEngine.loadDataWithBaseURL(
                         "${realUrlObj.protocol}://${realUrlObj.host}", s,
                         "text/html",
                         "utf-8",
@@ -129,10 +130,10 @@ class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
                         }
                         realUrlObj.query
                     } else ""
-                    webView.postUrl(realUrl, query.toByteArray(StandardCharsets.UTF_8))
+                    jsEngine.postUrl(realUrl, query.toByteArray(StandardCharsets.UTF_8))
                 } else {
                     // Get
-                    webView.loadUrl(realUrl)
+                    jsEngine.loadUrl(realUrl)
                 }
             }
         })

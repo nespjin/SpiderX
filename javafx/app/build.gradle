@@ -1,0 +1,86 @@
+/*
+ *
+ *   Copyright (c) 2021  NESP Technology Corporation. All rights reserved.
+ *
+ *   This program is not free software; you can't redistribute it and/or modify it
+ *   without the permit of team manager.
+ *
+ *   Unless required by applicable law or agreed to in writing.
+ *
+ *   If you have any questions or if you find a bug,
+ *   please contact the author by email or ask for Issues.
+ *
+ *   Author:JinZhaolu <1756404649@qq.com>
+ */
+
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.openjfx.javafxplugin'
+}
+
+group 'com.nesp.fishplugin.javafx'
+version '1.0'
+
+
+sourceCompatibility = "17"
+targetCompatibility = "17"
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+processResources {
+    from('src/main/resources') {
+        include '**/**'
+        duplicatesStrategy DuplicatesStrategy.INCLUDE
+    }
+}
+
+distTar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+distZip {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    archiveFileName = "app.jar"
+
+    configurations.implementation.setCanBeResolved(true)
+
+//    manifest {
+//        attributes 'Main-Class': "com.nesp.fishplugin.javafx.app.App"
+//    }
+}
+test {
+    useJUnitPlatform()
+}
+
+
+ext {
+    jfxVersion = '17.0.1'
+}
+
+javafx {
+    version = jfxVersion
+    // Add JavaFx modules
+    modules = ['javafx.base', 'javafx.graphics', 'javafx.controls', 'javafx.fxml']
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', includes: ['*.jar'])
+
+    def junitVersion = '5.8.2'
+    testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
+
+    implementation 'com.google.code.gson:gson:2.8.9'
+    implementation 'com.google.guava:guava:31.0.1-jre'
+
+    implementation 'com.alibaba:fastjson:1.2.79'
+    implementation 'org.json:json:20211205'
+}

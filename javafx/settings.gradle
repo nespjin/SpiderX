@@ -1,0 +1,25 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+    }
+}
+
+rootProject.name = "javafx"
+
+include ':core'
+include ':compiler'
+include ':runtime'
+include ':movie-runtime'
+
+include ':app'
+include ':runtime-javafx'
+include ':movie-runtime-javafx'
+
+project(':core').projectDir = new File('../jvm/core')
+project(':compiler').projectDir = new File('../jvm/compiler')
+project(':runtime').projectDir = new File('../jvm/runtime')
+project(':movie-runtime').projectDir = new File('../jvm/movie-runtime')
+
+project(':app').projectDir = new File("./app")
+project(':runtime-javafx').projectDir = new File("./runtime-javafx")
+project(':movie-runtime-javafx').projectDir = new File("./movie-runtime-javafx")

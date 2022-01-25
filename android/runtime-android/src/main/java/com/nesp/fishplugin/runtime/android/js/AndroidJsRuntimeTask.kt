@@ -5,15 +5,14 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.http.SslError
 import android.os.Build
-import android.os.CancellationSignal
-import android.os.OperationCanceledException
 import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.*
 import com.nesp.fishplugin.core.Environment
-import com.nesp.fishplugin.core.data.Plugin
-import com.nesp.fishplugin.runtime.IJsRuntimeTask
+import com.nesp.fishplugin.runtime.CancellationSignal
+import com.nesp.fishplugin.runtime.OperationCanceledException
+import com.nesp.fishplugin.runtime.js.JsRuntimeTask
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -26,7 +25,7 @@ import kotlin.coroutines.EmptyCoroutineContext
  * Time: Created 2022/1/20 11:42
  * Description:
  **/
-abstract class AndroidJsRuntimeTask(context: Context) : IJsRuntimeTask {
+abstract class AndroidJsRuntimeTask(context: Context) : JsRuntimeTask<WebView>() {
 
     private val context = context.applicationContext
 
@@ -47,18 +46,15 @@ abstract class AndroidJsRuntimeTask(context: Context) : IJsRuntimeTask {
     private var loadTimer: Timer? = null
     var js: String = ""
     var timeout = 60 * 1000L
+    private var webView: WebView? = null
 
-    abstract fun run(webView: WebView)
-
-    fun run() {
+    override fun run() {
         if (webView == null) {
             webView = WebView(context)
             initWebView(webView!!)
         }
         run(webView!!)
     }
-
-    private var webView: WebView? = null
 
     private val androidJsRuntimeInterface = object : AndroidJsRuntimeInterface() {
 
@@ -79,12 +75,12 @@ abstract class AndroidJsRuntimeTask(context: Context) : IJsRuntimeTask {
         destroy()
     }
 
-    fun isRunning(): Boolean {
+    override fun isRunning(): Boolean {
         return isLoading
     }
 
     @Synchronized
-    fun awaitFinish() {
+    override fun awaitFinish() {
         while (isLoading) {
             SystemClock.sleep(50)
         }
@@ -94,30 +90,30 @@ abstract class AndroidJsRuntimeTask(context: Context) : IJsRuntimeTask {
      * @throws OperationCanceledException if the operation has been canceled.
      */
     @Throws(OperationCanceledException::class)
-    fun awaitFinish(cancellationSignal: CancellationSignal) {
+    override fun awaitFinish(cancellationSignal: CancellationSignal) {
         while (isLoading) {
             cancellationSignal.throwIfCanceled()
             SystemClock.sleep(50)
         }
     }
 
-    fun pauseTimers() {
+    override fun pauseTimers() {
         webView?.pauseTimers()
     }
 
-    fun resumeTimers() {
+    override fun resumeTimers() {
         webView?.resumeTimers()
     }
 
-    fun pause() {
+    override fun pause() {
         webView?.onPause()
     }
 
-    fun resume() {
+    override fun resume() {
         webView?.onResume()
     }
 
-    fun destroy() {
+    override fun destroy() {
         coroutineScope.cancel()
         timeoutWatcherTimer?.cancel()
         timeoutWatcherTimer = null
@@ -138,7 +134,7 @@ abstract class AndroidJsRuntimeTask(context: Context) : IJsRuntimeTask {
         webView = null
     }
 
-    fun execCurrentJs() {
+    override fun execCurrentJs() {
         prepareJsRuntime()
         execJs(js)
 
@@ -247,7 +243,7 @@ abstract class AndroidJsRuntimeTask(context: Context) : IJsRuntimeTask {
 
             override fun onReceivedSslError(
                 view: WebView?, handler: SslErrorHandler?,
-                error: SslError?
+                error: SslError?,
             ) {
                 handler?.proceed()
             }
@@ -258,7 +254,7 @@ abstract class AndroidJsRuntimeTask(context: Context) : IJsRuntimeTask {
 
             override fun shouldInterceptRequest(
                 view: WebView?,
-                request: WebResourceRequest?
+                request: WebResourceRequest?,
             ): WebResourceResponse? {
                 val url = request?.url?.toString() ?: return null
                 return shouldInterceptRequest(view, url)
@@ -274,7 +270,7 @@ abstract class AndroidJsRuntimeTask(context: Context) : IJsRuntimeTask {
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 isLoading = true
                 isLoadFinished = true
-                listener?.onPageStart()
+                listener?.onPageLoadStart()
 
                 loadTimer?.cancel()
                 loadTimer?.schedule(object : TimerTask() {
@@ -283,7 +279,7 @@ abstract class AndroidJsRuntimeTask(context: Context) : IJsRuntimeTask {
                             coroutineScope.launch(Dispatchers.Main) { execCurrentJs() }
                             isLoadFinished = true
                             isLoading = false
-                            listener?.onPageFinished()
+                            listener?.onPageLoadFinished()
                         }
 
                         loadTimer?.cancel()
@@ -308,7 +304,7 @@ abstract class AndroidJsRuntimeTask(context: Context) : IJsRuntimeTask {
             }
 
             override fun onPageFinished(view: WebView?, url: String?) {
-                listener?.onPageFinished()
+                listener?.onPageLoadFinished()
             }
 
         }
@@ -325,9 +321,4 @@ abstract class AndroidJsRuntimeTask(context: Context) : IJsRuntimeTask {
         }
     }
 
-    companion object {
-
-        private const val TAG = "AndroidJsRuntimeTask"
-
-    }
 }

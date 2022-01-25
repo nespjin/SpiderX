@@ -3,70 +3,67 @@ package com.nesp.fishplugin.runtime.android.js
 import android.webkit.JavascriptInterface
 import com.nesp.fishplugin.core.Environment
 import com.nesp.fishplugin.runtime.js.IJsRuntimeInterface
+import com.nesp.fishplugin.runtime.js.JsRuntimeInterface
 
 /**
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu Email:1756404649@qq.com</a>
  * Time: Created 2022/1/20 1:18
  * Description:
  **/
-open class AndroidJsRuntimeInterface : IJsRuntimeInterface {
+open class AndroidJsRuntimeInterface : JsRuntimeInterface() {
 
     @JavascriptInterface
     override fun getApiLevel(): Int {
-        return Environment.shared.getBuild().runtimeApiLevel
+        return super.getApiLevel()
     }
 
     @JavascriptInterface
     override fun getVersionCode(): Int {
-        return Environment.shared.getBuild().runtimeVersionCode
+        return super.getVersionCode()
     }
 
     @JavascriptInterface
     override fun getVersionName(): String {
-        return Environment.shared.getBuild().runtimeVersionName
+        return super.getVersionName()
     }
 
     @JavascriptInterface
     override fun getBuild(): String {
-        return Environment.shared.getBuild().runtimeBuild
+        return super.getBuild()
     }
 
     @JavascriptInterface
     override fun getDeviceType(): Int {
-        return Environment.shared.getDeviceType()
+        return super.getDeviceType()
     }
 
     @JavascriptInterface
     override fun isMobilePhone(): Boolean {
-        return Environment.shared.isMobilePhone()
+        return super.isMobilePhone()
     }
 
     @JavascriptInterface
     override fun isTable(): Boolean {
-        return Environment.shared.isTable()
+        return super.isTable()
     }
 
     @JavascriptInterface
     override fun isDesktop(): Boolean {
-        return Environment.shared.isDesktop()
+        return super.isDesktop()
     }
 
     @JavascriptInterface
     override fun sendPage2Platform(page: String) {
+        super.sendPage2Platform(page)
     }
 
     @JavascriptInterface
     override fun sendError2Platform(errorMsg: String) {
+        super.sendError2Platform(errorMsg)
     }
 
     @JavascriptInterface
     override fun printHtml(html: String) {
-
-    }
-
-    companion object {
-
-        private const val TAG = "JsRuntimeInterface"
-
+        super.printHtml(html)
     }
 }
