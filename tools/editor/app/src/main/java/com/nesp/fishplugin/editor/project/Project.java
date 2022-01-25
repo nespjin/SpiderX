@@ -11,8 +11,10 @@ public class Project {
 
     public static final String SRC_DIR_NAME = "src";
     public static final String BUILD_DIR_NAME = "build";
+    public static final String BUILD_OUT_DIR_NAME = "out";
     public static final String PLUGIN_MANIFEST_FILE_NAME = "PluginManifest";
     public static final String[] PLUGIN_MANIFEST_FILE_EXTENSIONS = {"json"};
+    private static final String FISH_PLUGIN_FILE_EXTENSION = ".fpk";
 
     private String name = "";
     private File rootDirectory = null;
@@ -47,6 +49,14 @@ public class Project {
 
     public File getBuildDirectory() {
         return new File(rootDirectory, BUILD_DIR_NAME);
+    }
+
+    public File getBuildOutDirectory() {
+        return new File(getBuildDirectory(), BUILD_OUT_DIR_NAME);
+    }
+
+    public File getBuildBinaryFile(String binaryName) {
+        return new File(getBuildOutDirectory(), binaryName + FISH_PLUGIN_FILE_EXTENSION);
     }
 
     private void setRootDirectory(File rootDirectory) {

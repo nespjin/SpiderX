@@ -14,6 +14,8 @@ include ':nesp-sdk-javafx'
 
 include ':core'
 include ':compiler'
+include ':packager'
+include ':tools'
 
 def currentPath = rootProject.projectDir
 project(':app').projectDir = new File("${currentPath}\\app")
@@ -25,5 +27,7 @@ project(':nesp-sdk-javafx').projectDir = new File("${currentPath}\\nesp-sdk-java
 
 project(':core').projectDir = new File("..\\..\\jvm\\core")
 project(':compiler').projectDir = new File("..\\..\\jvm\\compiler")
+project(':packager').projectDir = new File("..\\..\\jvm\\packager")
+project(':tools').projectDir = new File("..\\..\\jvm\\tools")
 
 rootProject.name = 'editor'

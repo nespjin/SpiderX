@@ -9,12 +9,13 @@
 #### File Structure
 
 |                   Area                   | Size(Byte) | Comments      |
-|:----------------------------------------:|:----------:|---------------|
+| :--------------------------------------: | :--------: | ------------- |
 |               file version               |     2      |               |
 |                file flags                |     1      | 0x00 - binary |
 |               plugin count               |     2      |               |
 | the count of constants in constants pool |     2      |               |
 |              constants pool              |            |               |
+|       data_index_count_per_plugin        |     2      |               |
 |            field-1 data index            |     2      |               |
 |            field-2 data index            |     2      |               |
 |                   ...                    |            |               |
@@ -22,26 +23,26 @@
 
 #### File Structure (Detail) 
 
-|                   Area                   | Field Value Type | Size(Byte) | Comments                       |
-|:----------------------------------------:|:----------------:|:----------:|--------------------------------|
-|               file version               |        -         |     2      |                                |
-|                file flags                |        -         |     1      | 0x00 - binary <br/>0x01 - json |
-|               plugin count               |        -         |     2      |                                |
-| the count of constants in constants pool |        -         |     2      |                                |
-|              constants pool              |        -         |            |                                |
-|       data_index_count_per_plugin        |     Integer      |     2      |                                |
-|             name_data_index              |      String      |     2      |                                |
-|              id_data_index               |      String      |     2      |                                |
-|            author_data_index             |      String      |     2      |                                |
-|            version_data_index            |      String      |     2      |                                |
-|            runtime_data_index            |      String      |     2      |                                |
-|             time_data_index              |      String      |     2      |                                |
-|              tag_data_index              |      String      |     2      |                                |
-|         introduction_data_index          |      String      |     2      |                                |
-|          pages_count_data_index          |     Integer      |     2      |                                |
-|          pages_info[page_count]          |        -         |     -      |                                |
-|      name_data_index [next plugin]       |      String      |     2      |                                |
-|                   ....                   |                  |            |                                |
+|                   Area                   | Field Value Type | Size(Byte) | Comments      |
+| :--------------------------------------: | :--------------: | :--------: | ------------- |
+|               file version               |        -         |     2      |               |
+|                file flags                |        -         |     1      | 0x00 - binary |
+|               plugin count               |        -         |     2      |               |
+| the count of constants in constants pool |        -         |     2      |               |
+|              constants pool              |        -         |            |               |
+|       data_index_count_per_plugin        |        -         |     2      |               |
+|             name_data_index              |      String      |     2      |               |
+|              id_data_index               |      String      |     2      |               |
+|            author_data_index             |      String      |     2      |               |
+|            version_data_index            |      String      |     2      |               |
+|            runtime_data_index            |      String      |     2      |               |
+|             time_data_index              |      String      |     2      |               |
+|              tag_data_index              |      String      |     2      |               |
+|         introduction_data_index          |      String      |     2      |               |
+|          pages_count_data_index          |     Integer      |     2      |               |
+|          pages_info[page_count]          |        -         |     -      |               |
+|      name_data_index [next plugin]       |      String      |     2      |               |
+|                   ....                   |                  |            |               |
 
 #### Page Structure
 

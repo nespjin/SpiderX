@@ -6,6 +6,8 @@ import com.nesp.fishplugin.editor.App;
 import com.nesp.fishplugin.editor.concurrent.AppThreadManager;
 import com.nesp.fishplugin.editor.project.Project;
 import com.nesp.fishplugin.editor.project.ProjectManager;
+import com.nesp.fishplugin.packager.PluginFile;
+import com.nesp.fishplugin.packager.binary.BinaryPluginFile;
 import com.nesp.sdk.java.util.OnResultListener;
 import javafx.animation.Transition;
 import javafx.application.Platform;
@@ -135,6 +137,10 @@ public class MoviePluginBuilder implements PluginBuilder {
         }
 
         if (Thread.currentThread().isInterrupted()) return;
+
+        File binaryFile = workingProject.getBuildBinaryFile("FishPlugin");
+        PluginFile file = new BinaryPluginFile(binaryFile.getAbsolutePath());
+        file.write();
 
         publishProgress(onBuildProgressListener, new ProgressData(1, 2, "Package plugin success"));
 
