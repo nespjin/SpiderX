@@ -62,19 +62,26 @@
 
 #### Page 结构
 
-| 区域 | 字段值类型 | 注释 | | :-------------------------------------: | :--------: | :--: | | 字段id的常量引用 |
-String | | | 字段url的常量引用 | String | | | 字段js的常量引用 | String | | | 字段dsl的常量引用 | Integer | | |
-Dsl信息/dsl_field_info[dsl_field_count] | - | |
+| 区域                                 |  字段值类型   |  注释   |
+|------------------------------------|-----|-----|
+| 字段id的常量引用                          |  String   |     |
+| 字段url的常量引用                         |  String   |     |
+| 字段js的常量引用                          |    String |     |
+| Dsl字段的常量引用的个数                      |  Integer   |     |
+| Dsl信息/dsl_field_info[dsl_field_count] |            |     |
+
 
 #### Dsl 结构
 
-| 区域 | 字段值类型 | 注释 | | :-------------: | :--------: | :--: | | 字段1的常量引用 | String | | | 字段2的常量引用 |
-String | | | 字段3的常量引用 | String | | | ... | ... | ... |
-
-
+|         区域         | 字段值类型  | 注释  |
+|:------------------:|:------:|:---:|
+|      字段1的常量引用      | String |     |
+|      字段2的常量引用      | String |     |
+| 字段3的常量引用     |       String |     |
+|        ...         |  ...   | ... |
+ 
 > Note: <br/>
 > Index of field data equals to Index of constant in constants pool.
->
 
 #### 字段结构
 <table>
@@ -126,6 +133,7 @@ String | | | 字段3的常量引用 | String | | | ... | ... | ... |
         <td align="center">Double-precision floating-point literal</td>
     </tr>
 </table>
+
 
 ## 编辑器
 
