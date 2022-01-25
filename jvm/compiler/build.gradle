@@ -19,6 +19,7 @@ dependencies {
     implementation 'org.json:json:20211205'
 
     implementation project(path: ":core")
+    implementation project(path: ":tools")
 }
 
 test {

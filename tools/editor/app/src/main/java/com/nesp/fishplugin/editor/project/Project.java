@@ -11,7 +11,8 @@ public class Project {
 
     public static final String SRC_DIR_NAME = "src";
     public static final String BUILD_DIR_NAME = "build";
-    public static final String BUILD_OUT_DIR_NAME = "out";
+    public static final String BUILD_OUT_DIR_NAME = "outputs";
+    private static final String BUILD_CACHE_DIR_NAME = "cache";
     public static final String PLUGIN_MANIFEST_FILE_NAME = "PluginManifest";
     public static final String[] PLUGIN_MANIFEST_FILE_EXTENSIONS = {"json"};
     private static final String FISH_PLUGIN_FILE_EXTENSION = ".fpk";
@@ -44,19 +45,23 @@ public class Project {
     }
 
     public File getSourceDirectory() {
-        return new File(rootDirectory, SRC_DIR_NAME);
+        return Storage.getDir(Path.of(rootDirectory.getAbsolutePath(), SRC_DIR_NAME).toString());
     }
 
     public File getBuildDirectory() {
-        return new File(rootDirectory, BUILD_DIR_NAME);
+        return Storage.getDir(Path.of(rootDirectory.getAbsolutePath(), BUILD_DIR_NAME).toString());
     }
 
     public File getBuildOutDirectory() {
-        return new File(getBuildDirectory(), BUILD_OUT_DIR_NAME);
+        return Storage.getDir(Path.of(getBuildDirectory().getAbsolutePath(), BUILD_OUT_DIR_NAME).toString());
+    }
+
+    public File getBuildCacheDirectory() {
+        return Storage.getDir(Path.of(getBuildDirectory().getAbsolutePath(), BUILD_CACHE_DIR_NAME).toString());
     }
 
     public File getBuildBinaryFile(String binaryName) {
-        return new File(getBuildOutDirectory(), binaryName + FISH_PLUGIN_FILE_EXTENSION);
+        return new File(getBuildOutDirectory().getAbsolutePath(), binaryName + FISH_PLUGIN_FILE_EXTENSION);
     }
 
     private void setRootDirectory(File rootDirectory) {

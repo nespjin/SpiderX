@@ -3,6 +3,7 @@ package com.nesp.fishplugin.compiler
 import com.nesp.fishplugin.core.Result
 import com.nesp.fishplugin.core.data.Page
 import com.nesp.fishplugin.core.data.Plugin
+import com.nesp.fishplugin.tools.code.JsMinifier
 import java.io.File
 import kotlin.io.path.Path
 
@@ -123,15 +124,17 @@ object Compiler {
         plugin.ref = null
 
         // TODO: Compress Js code
-        compressJsCode()
+        compressJsCode(plugin)
         // TODO: Compress plugin
         compressPlugin()
 
         return CompileResult(Result.CODE_SUCCESS, data = plugin)
     }
 
-    private fun compressJsCode() {
-
+    private fun compressJsCode(plugin: Plugin) {
+        for (page in plugin.pages) {
+            page.js = JsMinifier().minify(page.js)
+        }
     }
 
     private fun compressPlugin() {
@@ -329,6 +332,6 @@ object Compiler {
     class CompileResult(
         code: Int,
         message: String = "",
-        data: Plugin? = null
+        data: Plugin? = null,
     ) : Result<Plugin>(code, message, data)
 }

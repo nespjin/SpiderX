@@ -1,23 +1,25 @@
 package com.nesp.fishplugin.editor.plugin;
 
+import com.google.gson.Gson;
 import com.nesp.fishplugin.compiler.Compiler;
 import com.nesp.fishplugin.core.Result;
-import com.nesp.fishplugin.editor.App;
-import com.nesp.fishplugin.editor.concurrent.AppThreadManager;
+import com.nesp.fishplugin.core.data.Plugin;
 import com.nesp.fishplugin.editor.project.Project;
 import com.nesp.fishplugin.editor.project.ProjectManager;
 import com.nesp.fishplugin.packager.PluginFile;
 import com.nesp.fishplugin.packager.binary.BinaryPluginFile;
 import com.nesp.sdk.java.util.OnResultListener;
-import javafx.animation.Transition;
 import javafx.application.Platform;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
-import java.util.concurrent.CountDownLatch;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 public class MoviePluginBuilder implements PluginBuilder {
 
     private Thread workThread;
+    private Gson gson = new Gson();
 
     @Override
     public String[] getBuildTypes() {
@@ -112,6 +114,18 @@ public class MoviePluginBuilder implements PluginBuilder {
             return;
         }
 
+        File midFile = new File(workingProject.getBuildCacheDirectory(), "plugin.out");
+        if (!midFile.getParentFile().exists()) midFile.getParentFile().mkdirs();
+        if (!midFile.exists()) {
+            try {
+                midFile.createNewFile();
+                FileUtils.writeStringToFile(midFile, gson.toJson(compileResult.getData()));
+            } catch (IOException e) {
+                publishProgress(onBuildProgressListener, new ProgressData(1, -1, "Compile plugin failed"));
+                return;
+            }
+        }
+
         publishProgress(onBuildProgressListener, new ProgressData(0.5, 2, "Compile plugin success"));
 
         for (double i = 0.5; i < 0.75; i = i + 0.001) {
@@ -138,11 +152,19 @@ public class MoviePluginBuilder implements PluginBuilder {
 
         if (Thread.currentThread().isInterrupted()) return;
 
-        File binaryFile = workingProject.getBuildBinaryFile("FishPlugin");
+        File binaryFile = workingProject.getBuildBinaryFile("plugin");
         PluginFile file = new BinaryPluginFile(binaryFile.getAbsolutePath());
-        file.write();
+        try {
+            file.write(new Plugin[]{compileResult.getData()});
+        } catch (IOException e) {
+            e.printStackTrace();
+            publishProgress(onBuildProgressListener, new ProgressData(1, -1, "Package plugin failed"));
+            return;
+        }
 
         publishProgress(onBuildProgressListener, new ProgressData(1, 2, "Package plugin success"));
+        publishProgress(onBuildProgressListener,
+                new ProgressData(1, 2, "Build Out Path: " + binaryFile.getAbsolutePath()));
 
     }
 
@@ -164,6 +186,14 @@ public class MoviePluginBuilder implements PluginBuilder {
                 onBuildProgressListener.onProgress(progress.progress(), progress.lineType(), progress.line());
             }
         });
+    }
+
+    private void testPageWithDsl() {
+
+    }
+
+    private void testPageWithJs() {
+
     }
 
 }

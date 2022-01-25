@@ -203,6 +203,9 @@ public class BinaryPluginFile implements PluginFile {
     }
 
     protected void writeContentToFile() throws IOException {
+        System.out.println(file.getAbsolutePath());
+        if (!file.getParentFile().exists()) file.getParentFile().mkdirs();
+        if (!file.exists()) file.createNewFile();
         try (OutputStream outputStream = new FileOutputStream(file)) {
             outputStream.write(Bytes.toArray(content));
             outputStream.flush();

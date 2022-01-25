@@ -37,7 +37,7 @@ public final class Storage {
         return Path.of(getProjectsDir().getAbsolutePath(), name);
     }
 
-    private static File getDir(String path) {
+    public static File getDir(String path) {
         if (path == null || path.isEmpty()) return null;
         File file = new File(path);
         if (!file.exists()) {
