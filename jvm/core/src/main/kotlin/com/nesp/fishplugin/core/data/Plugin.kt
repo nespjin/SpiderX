@@ -94,28 +94,28 @@ data class Plugin @JvmOverloads constructor(
     /**
      * Extend Object
      */
-    var extensions: Any? /* Map<String,Any?> or entity */ = null
+    var extensions: Any? /* Map<String,Any?> or entity */ = null,
 ) {
 
     /**
      * Whether to support mobile phone
      */
     fun isSupportMobilePhone(): Boolean {
-        return (deviceFlags and 0x01) == 0x01
+        return (deviceFlags and DEVICE_FLAG_PHONE) == DEVICE_FLAG_PHONE
     }
 
     /**
      * Whether to support table
      */
     fun isSupportTable(): Boolean {
-        return (deviceFlags and 0x02) == 0x02
+        return (deviceFlags and DEVICE_FLAG_TABLE) == DEVICE_FLAG_TABLE
     }
 
     /**
      * Whether to support desktop
      */
     fun isSupportDesktop(): Boolean {
-        return (deviceFlags and 0x04) == 0x04
+        return (deviceFlags and DEVICE_FLAG_DESKTOP) == DEVICE_FLAG_DESKTOP
     }
 
     /**
@@ -220,6 +220,10 @@ data class Plugin @JvmOverloads constructor(
     }
 
     companion object {
+
+        const val DEVICE_FLAG_PHONE = 1 shl 0
+        const val DEVICE_FLAG_TABLE = 1 shl 1
+        const val DEVICE_FLAG_DESKTOP = 1 shl 2
 
         ///////////////////////////////////////////////////////////////////////////
         // FILED NAME

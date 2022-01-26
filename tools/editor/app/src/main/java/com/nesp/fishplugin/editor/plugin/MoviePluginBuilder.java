@@ -1,67 +1,136 @@
 package com.nesp.fishplugin.editor.plugin;
 
+import com.google.common.util.concurrent.AtomicDouble;
 import com.google.gson.Gson;
-import com.nesp.fishplugin.compiler.Compiler;
-import com.nesp.fishplugin.core.Result;
-import com.nesp.fishplugin.core.data.Plugin;
 import com.nesp.fishplugin.editor.project.Project;
 import com.nesp.fishplugin.editor.project.ProjectManager;
-import com.nesp.fishplugin.packager.PluginFile;
-import com.nesp.fishplugin.packager.binary.BinaryPluginFile;
 import com.nesp.sdk.java.util.OnResultListener;
 import javafx.application.Platform;
-import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class MoviePluginBuilder implements PluginBuilder {
+public class MoviePluginBuilder extends PluginBuilder {
 
+    private final Logger logger = LogManager.getLogger(MoviePluginBuilder.class);
     private Thread workThread;
-    private Gson gson = new Gson();
+    private final Gson gson = new Gson();
 
     @Override
-    public String[] getBuildTypes() {
-        return new String[]{
-                "Build",
-                "Test Home Page:DSL",
-                "Test Home Page:JS",
-                "Test Category Page:DSL",
-                "Test Category Page:JS",
-                "Test Search Page:DSL",
-                "Test Search Page:JS",
-                "Test Detail Page:DSL",
-                "Test Detail Page:JS",
+    public PluginBuildTask[] getBuildTasks() {
+        return new PluginBuildTask[]{
+                new BuildPluginTask(),
+                new TestPageTask("home", 0),
+                new TestPageTask("home", 1),
+                new TestPageTask("category", 0),
+                new TestPageTask("category", 1),
+                new TestPageTask("search", 0),
+                new TestPageTask("search", 1),
+                new TestPageTask("detail", 0),
+                new TestPageTask("detail", 1),
         };
     }
 
     @Override
-    public void build(int buildType, OnBuildProgressListener onBuildProgressListener) {
-        String buildTypeString = getBuildTypes()[buildType];
+    public void build(int buildTaskIndex, OnBuildProgressListener onBuildProgressListener) {
+        PluginBuildTask buildTask = getBuildTasks()[buildTaskIndex];
+        ProgressData progressData =
+                new ProgressData(-1, 0, String.format("Start %s", buildTask.name()));
+        publishProgress(onBuildProgressListener, progressData);
 
-        publishProgress(onBuildProgressListener, new ProgressData(-1, 0, String.format("Starting %s", buildTypeString)));
-
-        Runnable task = new Runnable() {
+        final Runnable task = new Runnable() {
             @Override
             public void run() {
-                switch (buildType) {
-                    case 0:
-                        buildPlugin(onBuildProgressListener);
-                        break;
-                    case 1:
-
-                        break;
-                    case 2:
-
-                        break;
-                    case 3:
-
-                        break;
-                    case 4:
-
-                        break;
+                final Project workingProject = ProjectManager.getInstance().getWorkingProject();
+                ProgressData progressData;
+                if (workingProject == null) {
+                    progressData = new ProgressData(-1, "No Opened Project");
+                    publishProgress(onBuildProgressListener, progressData);
+                    return;
                 }
+                List<List<PluginBuildTask>> buildTaskChain = analyseBuildTask(buildTask);
+                final int taskCountInChain = getTaskCountInChain(buildTaskChain);
+                AtomicInteger taskCountRun = new AtomicInteger(0);
+                if (buildTaskChain.isEmpty()) {
+                    progressData = new ProgressData(-1, "错误: 任务链为空");
+                    publishProgress(onBuildProgressListener, progressData);
+                    return;
+                }
+
+                AtomicBoolean isSuccess = new AtomicBoolean(true);
+                AtomicDouble lastProgress = new AtomicDouble(0);
+
+                for (List<PluginBuildTask> pluginBuildTasks : buildTaskChain) {
+                    CountDownLatch countDownLatch = new CountDownLatch(pluginBuildTasks.size());
+                    for (PluginBuildTask pluginBuildTask : pluginBuildTasks) {
+                        Thread thread = new Thread(() -> {
+                            boolean isSuccess1;
+                            String msg = "";
+                            PluginBuildTask.Result result = null;
+                            try {
+                                ProgressData progressData1 = new ProgressData(-2, 0,
+                                        "Start " + pluginBuildTask.name());
+                                publishProgress(onBuildProgressListener, progressData1);
+
+                                result = pluginBuildTask.run(workingProject);
+
+                                isSuccess1 = result.code() == PluginBuildTask.Result.CODE_SUCCESS;
+                                isSuccess.getAndSet(isSuccess.get() && isSuccess1);
+
+                                msg = result.msg();
+
+                                if (msg.isEmpty()) {
+                                    msg = pluginBuildTask.name() + " " + (isSuccess1 ? "Success" : "Failed");
+                                }
+
+                            } catch (Exception e) {
+                                isSuccess1 = false;
+                                isSuccess.getAndSet(false);
+                            }
+
+                            double progress = (taskCountRun.incrementAndGet() * 1.00 / taskCountInChain) * 0.9;
+                            for (double i = lastProgress.get(); i < progress; i += 0.001) {
+                                try {
+                                    ProgressData progressData1 = new ProgressData(i, 0, "");
+                                    publishProgress(onBuildProgressListener, progressData1);
+                                    Thread.sleep(1);
+                                } catch (InterruptedException ignored) {
+                                }
+                            }
+
+                            lastProgress.set(progress);
+                            ProgressData progressData1;
+
+                            if (result == null) {
+                                result = PluginBuildTask.Result.fail("Unknown Error");
+                            }
+                            if (!result.printMessages().isEmpty()) {
+                                for (PluginBuildTask.Result printMessage : result.printMessages()) {
+                                    progressData1 = new ProgressData(-2, 0, printMessage.msg());
+                                    publishProgress(onBuildProgressListener, progressData1);
+                                }
+                            }
+                            progressData1 = new ProgressData(progress, isSuccess1 ? 2 : -1, msg);
+                            publishProgress(onBuildProgressListener, progressData1);
+
+                            countDownLatch.countDown();
+                        });
+                        thread.setDaemon(true);
+                        thread.start();
+                    }
+                    try {
+                        countDownLatch.await();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                }
+                ProgressData progressData1 = new ProgressData(1, isSuccess.get() ? 2 : -1, "");
+                publishProgress(onBuildProgressListener, progressData1);
             }
         };
 
@@ -70,102 +139,6 @@ public class MoviePluginBuilder implements PluginBuilder {
         workThread = new Thread(task);
         workThread.setDaemon(true);
         workThread.start();
-    }
-
-    private void buildPlugin(OnBuildProgressListener onBuildProgressListener) {
-        Project workingProject = ProjectManager.getInstance().getWorkingProject();
-        if (workingProject == null) {
-            publishProgress(onBuildProgressListener, new ProgressData(-1, "No Opened Project"));
-            return;
-        }
-
-        File projectManifestFile = workingProject.getProjectManifestFile();
-
-        for (double i = 0; i < 0.25; i = i + 0.001) {
-            publishProgress(onBuildProgressListener, new ProgressData(i));
-            try {
-                Thread.sleep(20);
-            } catch (InterruptedException ignored) {
-                return;
-            }
-        }
-
-        publishProgress(onBuildProgressListener, new ProgressData(0.25, 0, "Compiling plugin..."));
-
-        if (Thread.currentThread().isInterrupted()) return;
-
-        for (double i = 0.25; i < 0.5; i = i + 0.001) {
-            publishProgress(onBuildProgressListener, new ProgressData(i));
-            try {
-                Thread.sleep(20);
-            } catch (InterruptedException ignored) {
-                return;
-            }
-        }
-
-        if (Thread.currentThread().isInterrupted()) return;
-
-        Compiler.CompileResult compileResult = Compiler.compileFromDisk(projectManifestFile.getPath());
-        if (compileResult.getCode() != Result.CODE_SUCCESS) {
-            String message = compileResult.getMessage();
-            if (message.isEmpty())
-                message = "Compile the file " + projectManifestFile.getName() + " failed";
-            publishProgress(onBuildProgressListener, new ProgressData(-1, message));
-            return;
-        }
-
-        File midFile = new File(workingProject.getBuildCacheDirectory(), "plugin.out");
-        if (!midFile.getParentFile().exists()) midFile.getParentFile().mkdirs();
-        if (!midFile.exists()) {
-            try {
-                midFile.createNewFile();
-                FileUtils.writeStringToFile(midFile, gson.toJson(compileResult.getData()));
-            } catch (IOException e) {
-                publishProgress(onBuildProgressListener, new ProgressData(1, -1, "Compile plugin failed"));
-                return;
-            }
-        }
-
-        publishProgress(onBuildProgressListener, new ProgressData(0.5, 2, "Compile plugin success"));
-
-        for (double i = 0.5; i < 0.75; i = i + 0.001) {
-            publishProgress(onBuildProgressListener, new ProgressData(i));
-            try {
-                Thread.sleep(20);
-            } catch (InterruptedException ignored) {
-                return;
-            }
-        }
-
-        if (Thread.currentThread().isInterrupted()) return;
-
-        publishProgress(onBuildProgressListener, new ProgressData(0.75, 0, "Start Package"));
-
-        for (double i = 0.75; i < 1; i = i + 0.001) {
-            publishProgress(onBuildProgressListener, new ProgressData(i));
-            try {
-                Thread.sleep(20);
-            } catch (InterruptedException ignored) {
-                return;
-            }
-        }
-
-        if (Thread.currentThread().isInterrupted()) return;
-
-        File binaryFile = workingProject.getBuildBinaryFile("plugin");
-        PluginFile file = new BinaryPluginFile(binaryFile.getAbsolutePath());
-        try {
-            file.write(new Plugin[]{compileResult.getData()});
-        } catch (IOException e) {
-            e.printStackTrace();
-            publishProgress(onBuildProgressListener, new ProgressData(1, -1, "Package plugin failed"));
-            return;
-        }
-
-        publishProgress(onBuildProgressListener, new ProgressData(1, 2, "Package plugin success"));
-        publishProgress(onBuildProgressListener,
-                new ProgressData(1, 2, "Build Out Path: " + binaryFile.getAbsolutePath()));
-
     }
 
     @Override
@@ -188,7 +161,7 @@ public class MoviePluginBuilder implements PluginBuilder {
         });
     }
 
-    private void testPageWithDsl() {
+    private void testPageWithDsl(String pageId) {
 
     }
 

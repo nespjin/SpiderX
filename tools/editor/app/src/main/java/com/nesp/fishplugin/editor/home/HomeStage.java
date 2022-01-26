@@ -42,6 +42,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.lang.ref.Reference;
@@ -107,14 +108,14 @@ public class HomeStage extends AppBaseStage {
                                     if (integer == Plugin.TYPE_MOVIE) {
                                         pluginBuilder = new MoviePluginBuilder();
                                     } else {
-                                        new AppAlert(Alert.AlertType.WARNING, "UnSupport this project",
+                                        new AppAlert(Alert.AlertType.WARNING, "不支持改项目",
                                                 ButtonType.OK)
                                                 .showAndWait();
                                         closeProject();
                                         return;
                                     }
                                     binding.cbBuildTYpe.getItems()
-                                            .addAll(Arrays.asList(pluginBuilder.getBuildTypes()));
+                                            .addAll(Arrays.asList(pluginBuilder.getBuildTaskDisplayNames()));
                                     binding.cbBuildTYpe.getSelectionModel().select(0);
                                 });
                     } else {
@@ -172,7 +173,7 @@ public class HomeStage extends AppBaseStage {
                                     OnBuildProgressListener onBuildProgressListener = new OnBuildProgressListener() {
                                         @Override
                                         public void onProgress(double progress, int lineType, String line) {
-                                            if (!line.isEmpty()){
+                                            if (!line.isEmpty()) {
                                                 Text text = new Text(line + "\n");
                                                 String lineColor;
                                                 if (lineType == -1) {
@@ -189,30 +190,11 @@ public class HomeStage extends AppBaseStage {
                                                 binding.spBuildOutput.setVvalue(binding.spBuildOutput.getVmax());
                                             }
 
-                                            /*double increase = progress - binding.pbBuild.getProgress();
+                                            if (progress > -2) {
+                                                binding.pbBuild.setProgress(progress);
+                                            }
 
-                                            new Transition(2000) {
-
-                                                @Override
-                                                protected void interpolate(double frac) {
-
-                                                }
-                                            }.play();*/
-
-                                            /*Timeline task = new Timeline(
-                                                    new KeyFrame(
-                                                            Duration.ZERO,
-                                                            new KeyValue(bar.progressProperty(), 0)
-                                                    ),
-                                                    new KeyFrame(
-                                                            Duration.seconds(2),
-                                                            new KeyValue(bar.progressProperty(), 1)
-                                                    )
-                                            );*/
-
-
-                                            binding.pbBuild.setProgress(progress);
-                                            if (progress == 1 || progress < -1) {
+                                            if (progress == 1 || progress < -2) {
                                                 try {
                                                     Thread.sleep(50);
                                                 } catch (InterruptedException e) {
@@ -221,7 +203,7 @@ public class HomeStage extends AppBaseStage {
                                                 binding.ivCloseBuildOutput.setVisible(true);
 //                                                binding.vbTop.getChildren().remove(binding.apBuildProgressContainer);
                                                 binding.apBuildProgressContainer.setVisible(false);
-                                                if (progress < -1) {
+                                                if (progress < -2) {
                                                     buildState(PluginBuilder.BUILD_STATUS_FAILED);
                                                 } else {
                                                     buildState(PluginBuilder.BUILD_STATUS_SUCCESS);
@@ -268,11 +250,11 @@ public class HomeStage extends AppBaseStage {
                         }
 
                         case PluginBuilder.BUILD_STATUS_FAILED -> {
-                            viewModel.bottomStatus("Build Failed");
+                            viewModel.bottomStatus("构建失败");
                         }
 
                         case PluginBuilder.BUILD_STATUS_SUCCESS -> {
-                            viewModel.bottomStatus("Build Success");
+                            viewModel.bottomStatus("构建成功");
                         }
 
                         default -> throw new IllegalStateException("Unexpected value: " + buildState);
@@ -370,6 +352,9 @@ public class HomeStage extends AppBaseStage {
                     });
                 }
             }
+        } else {
+            // When window lost focus, try to save file current opened
+            saveOpenedFile();
         }
     }
 
@@ -503,9 +488,9 @@ public class HomeStage extends AppBaseStage {
         StageHomeViewBinding binding = getBinding();
 
         // Menu File
-        final Menu newProjectMenu = new Menu("_New Project");
+        final Menu newProjectMenu = new Menu("新建项目(_N)");
         newProjectMenu.setMnemonicParsing(true);
-        final MenuItem newProjectMenuMovieItem = new MenuItem("Movie");
+        final MenuItem newProjectMenuMovieItem = new MenuItem("小丑鱼影视");
         newProjectMenuMovieItem.setOnAction(event -> {
             showNewProjectWizardDialog();
         });
@@ -522,16 +507,16 @@ public class HomeStage extends AppBaseStage {
         newProjectMenu.getItems().add(newProjectMenuBookItem);*/
         binding.topMenuFile.getItems().add(newProjectMenu);
 
-        final MenuItem openProjectMenuItem = new MenuItem("_Open Project");
+        final MenuItem openProjectMenuItem = new MenuItem("打开项目(_O)");
         openProjectMenuItem.setMnemonicParsing(true);
         openProjectMenuItem.setOnAction(event -> {
             DirectoryChooser directoryChooser = new DirectoryChooser();
             directoryChooser.setInitialDirectory(Storage.getProjectsDir());
-            directoryChooser.setTitle("Choose Project");
+            directoryChooser.setTitle("选择项目");
             File file = directoryChooser.showDialog(getStage());
             WorkingDialog<Result<Project>> workingDialog =
                     new WorkingDialog<>(() -> ProjectManager.openProject(file));
-            workingDialog.setTitle("Opening...");
+            workingDialog.setTitle("正在打开项目...");
             workingDialog.setOnFinishListener((openProjectResult) -> {
                 if (openProjectResult.getCode() == Result.CODE_SUCCESS) {
                     getViewModel().workingProject(openProjectResult.getData());
@@ -541,12 +526,12 @@ public class HomeStage extends AppBaseStage {
                         getViewModel().bottomStatus(message);
                 }
             });
-            getViewModel().bottomStatus("Opening Project...");
+            getViewModel().bottomStatus("正在打开项目...");
             workingDialog.run();
         });
         binding.topMenuFile.getItems().add(openProjectMenuItem);
 
-        closeProjectMenuItem = new MenuItem("_Close Project");
+        closeProjectMenuItem = new MenuItem("关闭项目(_C)");
         closeProjectMenuItem.setMnemonicParsing(true);
         closeProjectMenuItem.setOnAction(new EventHandler<ActionEvent>() {
             @Override
@@ -565,14 +550,14 @@ public class HomeStage extends AppBaseStage {
 
         binding.topMenuFile.getItems().add(new SeparatorMenuItem());
 
-        final MenuItem exitMenuItem = new MenuItem("Exit");
+        final MenuItem exitMenuItem = new MenuItem("退出");
         exitMenuItem.setOnAction(new WeakEventHandler<>(event -> {
             Platform.exit();
         }));
         binding.topMenuFile.getItems().add(exitMenuItem);
 
         // Menu Help
-        final MenuItem aboutMenuItem = new MenuItem("About " + AppInfo.name);
+        final MenuItem aboutMenuItem = new MenuItem("关于 " + AppInfo.name);
         aboutMenuItem.setOnAction(event -> {
             showAboutDialog();
         });
@@ -586,16 +571,24 @@ public class HomeStage extends AppBaseStage {
 
     private void showNewProjectWizardDialog() {
         new NewProjectWizardDialog(Plugin.TYPE_MOVIE).showAndWait().ifPresent(project -> {
-            WorkingDialog<Integer> workingDialog = new WorkingDialog<>(() -> {
-                ProjectManager.initializeProject(project);
-                return -1;
+            if (Optional.ofNullable(project.getProjectManifestFile()).map(File::exists).orElse(false)) {
+                new Alert(Alert.AlertType.WARNING, "该项目已存在", ButtonType.OK, ButtonType.CANCEL)
+                        .showAndWait();
+                return;
+            }
+            WorkingDialog<Boolean> workingDialog = new WorkingDialog<>(() -> {
+                return ProjectManager.initializeProject(project);
             });
-            workingDialog.setTitle("Creating...");
+            workingDialog.setTitle("创建中...");
             workingDialog.setOnFinishListener((r) -> {
+                if (!r) {
+                    getViewModel().bottomStatus("创建项目失败");
+                    return;
+                }
                 getViewModel().workingProject(project);
                 getViewModel().bottomStatus("");
             });
-            getViewModel().bottomStatus("Creating Project(" + project.getName() + ")...");
+            getViewModel().bottomStatus("正在创建项目(" + project.getName() + ")...");
             workingDialog.run();
         });
     }
@@ -676,7 +669,7 @@ public class HomeStage extends AppBaseStage {
                 Runnable runnableMain = new Runnable() {
                     @Override
                     public void run() {
-                        getViewModel().bottomStatus("Open In VsCode Failed!");
+                        getViewModel().bottomStatus("使用VsCode打开失败!");
                     }
                 };
                 Runnable runnable = new Runnable() {
@@ -730,20 +723,93 @@ public class HomeStage extends AppBaseStage {
             }
         };
         menuItemOpenWithVsCode.setOnAction(menuItemOpenWithVsCodeEventHandler);
-        menuItemOpenWithVsCode.setText("Open In VsCode");
+        menuItemOpenWithVsCode.setText("使用VsCode打开");
         contextMenu.getItems().add(menuItemOpenWithVsCode);
+
+        String menuItemText = "使用文件管理器打开";
+        String commandExec = "";
+        switch (PlatformUtil.getPlatform()) {
+            case WINDOWS -> {
+                menuItemText = "使用Explorer打开";
+                commandExec = "explorer";
+            }
+            case MAC_OSX -> {
+                menuItemText = "使用Finder打开";
+                commandExec = "open";
+            }
+        }
+
+        if (!commandExec.isEmpty()) {
+            MenuItem menuItemOpenWithSystemFileManager = new MenuItem();
+            menuItemOpenWithSystemFileManager.setText(menuItemText);
+            String finalCommandExec = commandExec;
+            menuItemOpenWithSystemFileManager.setOnAction(new EventHandler<ActionEvent>() {
+                @Override
+                public void handle(ActionEvent event) {
+                    TreeItem<File> fileTreeItem = getSelectedFirstFileTreeItem(dirTreeView);
+                    if (fileTreeItem == null) return;
+                    File value = fileTreeItem.getValue();
+                    try {
+                        Runtime.getRuntime().exec(new String[]{finalCommandExec, value.getAbsolutePath()});
+                    } catch (IOException e) {
+                        getViewModel().bottomStatus("打开失败");
+                    }
+                }
+            });
+            contextMenu.getItems().add(menuItemOpenWithSystemFileManager);
+        }
+
+        MenuItem menuItemItemDelete = new MenuItem();
+        menuItemItemDelete.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                TreeItem<File> fileTreeItem = getSelectedFirstFileTreeItem(dirTreeView);
+                if (fileTreeItem == null) return;
+                File value = fileTreeItem.getValue();
+                Alert alert = new AppAlert(Alert.AlertType.WARNING,
+                        String.format("是否删除%s?", value.getName()),
+                        ButtonType.OK, ButtonType.CANCEL);
+                Optional<ButtonType> buttonType = alert.showAndWait();
+                if (buttonType.orElse(ButtonType.CANCEL) != ButtonType.OK) return;
+                TreeItem<File> parent = fileTreeItem.getParent();
+                if (!value.delete()) {
+                    getViewModel().bottomStatus("删除失败");
+                } else {
+                    getViewModel().bottomStatus("删除成功");
+                    if (parent != null) parent.getChildren().remove(fileTreeItem);
+                }
+            }
+        });
+        menuItemItemDelete.setText("删除");
+        contextMenu.getItems().add(menuItemItemDelete);
+
         dirTreeView.setContextMenu(contextMenu);
+    }
+
+    @Nullable
+    private TreeItem<File> getSelectedFirstFileTreeItem(TreeView<File> dirTreeView) {
+        MultipleSelectionModel<TreeItem<File>> selectionModel = dirTreeView.getSelectionModel();
+        ObservableList<TreeItem<File>> selectedItems = selectionModel.getSelectedItems();
+        if (selectedItems == null || selectedItems.isEmpty()) return null;
+        return selectedItems.get(0);
     }
 
     private void addTreeViewItem(File currentFile, TreeItem<File> currentTreeItem, boolean isRecursive) {
         File[] files = currentFile.listFiles();
         if (files == null) return;
         for (File childFile : files) {
+            Project workingProject = ProjectManager.getInstance().getWorkingProject();
+            if (workingProject != null) {
+                if (childFile.getAbsolutePath().equals(workingProject.getBuildDirectory().getAbsolutePath())) {
+                    continue;
+                }
+            }
             TreeItem<File> item = new TreeItem<>(childFile);
             currentTreeItem.getChildren().add(item);
             if (!childFile.isFile() && isRecursive) {
                 item.setExpanded(true);
                 addTreeViewItem(childFile, item, true);
+
             }
         }
     }
@@ -815,9 +881,9 @@ public class HomeStage extends AppBaseStage {
                 onResultListener.onResult(true);
             }
         });
-        workingDialog.setTitle("Opening File " + file.getName());
+        workingDialog.setTitle("正在打开文件 " + file.getName());
         workingDialog.run();
-        getViewModel().bottomStatus("Opening File(" + file.getName() + ")...");
+        getViewModel().bottomStatus("正在打开文件(" + file.getName() + ")...");
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -876,15 +942,15 @@ public class HomeStage extends AppBaseStage {
             if (isSaveSuccess) {
                 getViewModel().bottomStatus("");
             } else {
-                getViewModel().bottomStatus(String.format("Saved file %s failed", file.getName()));
+                getViewModel().bottomStatus(String.format("保存文件 %s 失败", file.getName()));
             }
             if (onResultListener != null) {
                 onResultListener.onResult(isSaveSuccess);
             }
         });
-        workingDialog.setTitle("Saving File " + file.getName());
+        workingDialog.setTitle("正在保存文件 " + file.getName());
         workingDialog.run();
-        getViewModel().bottomStatus("Saving File(" + file.getName() + ")...");
+        getViewModel().bottomStatus("正在保存文件(" + file.getName() + ")...");
     }
 
     @Override

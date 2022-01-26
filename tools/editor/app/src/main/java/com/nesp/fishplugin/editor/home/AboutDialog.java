@@ -15,12 +15,7 @@ public class AboutDialog extends AppBaseDialog<ButtonType> {
     public AboutDialog() {
         DialogAboutViewBinding binding = DialogAboutViewBinding.inflate(R.layout.dialog_about);
         setDialogPane(((DialogPane) binding.getRoot()));
-        setTitle("About " + AppInfo.name);
-
-        Node button = getDialogPane().lookupButton(ButtonType.OK);
-        if (button instanceof Button) {
-            ((Button) button).setText("OK");
-        }
+        setTitle("关于 " + AppInfo.name);
 
         binding.title.setText(AppInfo.name + " V" + BuildConfig.VERSION_NAME);
 

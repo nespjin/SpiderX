@@ -27,7 +27,7 @@
         <!-- additivity 意思是，调用完当前appender，是否继续调用parent logger appender，默认true-->
         <!--        <Logger name="your logger/package name" level="debug" additivity="false"/>-->
 
-        <Logger name="com.nesp.fishplugin.editor.plugin" level="all" additivity="false"/>
+        <Logger name="com.nesp.fishplugin.editor" level="all" additivity="false"/>
 
         <!--默认的Root Logger 级别-->
         <!--        level:日志输出级别，共有8个级别，按照从低到高为：All < Trace < Debug < Info < Warn < Error < Fatal < OFF.-->

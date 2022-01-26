@@ -66,7 +66,7 @@ public class Project {
 
     private void setRootDirectory(File rootDirectory) {
         this.rootDirectory = rootDirectory;
-    }
+    };
 
     public Plugin getTargetPlugin() {
         return targetPlugin;

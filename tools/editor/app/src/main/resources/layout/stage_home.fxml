@@ -26,8 +26,8 @@
                <children>
                   <MenuBar style="-fx-background-color: #F5F5F5; -fx-border-color: #DCDCDC; -fx-border-width: 1;">
                     <menus>
-                      <Menu fx:id="topMenuFile" text="_File" />
-                      <Menu fx:id="topMenuHelp" text="_Help" />
+                      <Menu fx:id="topMenuFile" text="文件(_F)" />
+                      <Menu fx:id="topMenuHelp" text="帮助(_H)" />
                     </menus>
                   </MenuBar>
                   <AnchorPane fx:id="apBuildProgressContainer" style="-fx-background-color: #F5F5F5;">

@@ -16,8 +16,7 @@
 import org.gradle.internal.os.OperatingSystem
 
 project.ext {
-    // TODO: Special your version
-    versionName = '1.0.0'
+    versionName = '1.0.0 翠花一号'
     versionCode = 1
     debug = false
 

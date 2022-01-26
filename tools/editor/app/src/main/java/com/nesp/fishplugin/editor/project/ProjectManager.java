@@ -1,15 +1,21 @@
 package com.nesp.fishplugin.editor.project;
 
-import com.nesp.fishplugin.compiler.Compiler;
+import com.google.gson.Gson;
 import com.nesp.fishplugin.compiler.Loader;
 import com.nesp.fishplugin.core.Result;
 import com.nesp.fishplugin.core.data.Plugin;
 import com.nesp.fishplugin.editor.utils.ZipUtil;
+import org.apache.commons.io.FileUtils;
+import org.json.JSONObject;
+import org.w3c.dom.CDATASection;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Path;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
 
 public final class ProjectManager {
 
@@ -42,6 +48,7 @@ public final class ProjectManager {
         if (!Project.isNameAvailable(name) || pluginType == -1) return null;
         Project project = new Project();
         Plugin targetPlugin = new Plugin();
+        targetPlugin.setName(name);
         targetPlugin.setType(pluginType);
         project.setTargetPlugin(targetPlugin);
         project.setName(name);
@@ -53,23 +60,49 @@ public final class ProjectManager {
      *
      * @param project project
      */
-    public static void initializeProject(Project project) {
-        copyProjectTemplate(project);
+    public static boolean initializeProject(Project project) {
+        boolean b = copyProjectTemplate(project);
+        if (b) {
+            File projectManifestFile = project.getProjectManifestFile();
+            try {
+                String s = FileUtils.readFileToString(projectManifestFile);
+                Plugin targetPlugin = project.getTargetPlugin();
+                Gson gson = new Gson();
+                Plugin plugin = gson.fromJson(s, Plugin.class);
+                plugin.setName(targetPlugin.getName());
+                plugin.setId(targetPlugin.getId());
+                plugin.setType(targetPlugin.getType());
+                plugin.setDeviceFlags(targetPlugin.getDeviceFlags());
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String dateNow = dateFormat.format(new Date());
+                plugin.setTime(dateNow + "," + dateNow);
+                project.setTargetPlugin(plugin);
+
+                Gson gson1 = gson.newBuilder().setPrettyPrinting().create();
+                String s1 = gson1.toJson(plugin);
+                FileUtils.writeStringToFile(projectManifestFile, s1);
+            } catch (IOException e) {
+                return false;
+            }
+        }
+        return b;
     }
 
-    private static void copyProjectTemplate(Project project) {
+    private static boolean copyProjectTemplate(Project project) {
         if (project == null || project.getTargetPlugin() == null
                 || project.getTargetPlugin().getType() != Plugin.TYPE_MOVIE) {
-            return;
+            return false;
         }
         String movieTemplateZipFileName = "movie-project.zip";
         URL resource = Thread.currentThread().getContextClassLoader()
                 .getResource("template/" + movieTemplateZipFileName);
-        if (resource == null) return;
+        if (resource == null) return false;
         try {
             ZipUtil.unzip(new File(resource.toURI()), project.getRootDirectory());
         } catch (URISyntaxException ignored) {
+            return false;
         }
+        return true;
     }
 
     /**
