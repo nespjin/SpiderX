@@ -16,7 +16,7 @@
 import org.gradle.internal.os.OperatingSystem
 
 project.ext {
-    versionName = '0.0.1alpha'
+    versionName = '0.0.1'
     versionCode = 1
     debug = false
 
