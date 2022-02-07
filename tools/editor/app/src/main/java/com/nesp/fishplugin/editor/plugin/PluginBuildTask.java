@@ -3,18 +3,34 @@ package com.nesp.fishplugin.editor.plugin;
 import com.nesp.fishplugin.editor.project.Project;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public interface PluginBuildTask {
+public abstract class PluginBuildTask {
+
+    private final Map<String, Object> parameters = new HashMap<>();
+
+    public Object getParameter(String name) {
+        return parameters.get(name);
+    }
+
+    public void putParameter(String name, Object value) {
+        parameters.put(name, value);
+    }
 
     /**
      * @return name of task.
      */
-    String name();
+    abstract String name();
 
-    Result run(Project workingProject, Object... parameters) throws Exception;
+    abstract Result run(Project workingProject, OnPrintListener onPrintListener, Object... parameters) throws Exception;
 
-    PluginBuildTask[] dependencies();
+    abstract PluginBuildTask[] dependencies();
+
+    public interface OnPrintListener {
+        void print(String message);
+    }
 
     record Result(int code, String msg, Object data, List<Result> printMessages) {
         public static final int CODE_FAILED = -1;
@@ -47,6 +63,14 @@ public interface PluginBuildTask {
 
         Result(Object data) {
             this(CODE_SUCCESS, "", data, new ArrayList<>());
+        }
+
+        public boolean isFailed() {
+            return code == CODE_FAILED;
+        }
+
+        public boolean isSuccess() {
+            return code == CODE_SUCCESS;
         }
     }
 }

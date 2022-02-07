@@ -67,6 +67,8 @@ public class MovieJavaFxJsRuntime extends JavaFxJsRuntime {
                         if (finalRuntimeTaskListener != null) {
                             finalRuntimeTaskListener.onReceiveError(error);
                         }
+                        process.getExecResult().setMessage(error);
+                        process.exitWithError();
                     }
 
                     @Override
@@ -101,6 +103,9 @@ public class MovieJavaFxJsRuntime extends JavaFxJsRuntime {
                         if (finalRuntimeTaskListener != null) {
                             finalRuntimeTaskListener.onTimeout();
                         }
+
+                        process.getExecResult().setMessage("Timeout");
+                        process.exitWithError();
                     }
 
                     @Override
@@ -127,6 +132,16 @@ public class MovieJavaFxJsRuntime extends JavaFxJsRuntime {
                 try {
                     realUrlObj = new URL(realUrl);
                     realUrl = realUrlObj.getProtocol() + "://" + realUrlObj.getHost();
+                    String path = realUrlObj.getPath();
+                    if (path != null && !path.isEmpty()) {
+                        if (!path.startsWith("/")) realUrl += "/";
+                        realUrl += path;
+                    }
+                    String query = realUrlObj.getQuery();
+                    if (query != null && !query.isEmpty()) {
+                        if (!query.startsWith("?")) realUrl += "?";
+                        realUrl += query;
+                    }
                 } catch (MalformedURLException ignored) {
                 }
 
@@ -135,6 +150,8 @@ public class MovieJavaFxJsRuntime extends JavaFxJsRuntime {
                     webView.getEngine().load(realUrl);
                     return;
                 }
+
+                System.out.println("real url = " + realUrl);
 
                 if (Plugin.isPostReq(url)) {
 //                    Map<String, String> data = new HashMap<>();

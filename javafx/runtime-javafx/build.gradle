@@ -37,7 +37,9 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
+    implementation 'com.google.code.gson:gson:2.8.9'
 
+    implementation project(path:':tools')
     implementation project(path:':core')
     implementation project(path:':runtime')
     implementation project(path:':movie-runtime')

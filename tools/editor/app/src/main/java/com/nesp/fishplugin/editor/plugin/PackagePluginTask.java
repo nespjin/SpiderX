@@ -8,7 +8,7 @@ import com.nesp.fishplugin.packager.binary.BinaryPluginFile;
 import java.io.File;
 import java.io.IOException;
 
-public class PackagePluginTask implements PluginBuildTask {
+public class PackagePluginTask extends PluginBuildTask {
 
     @Override
     public String name() {
@@ -16,7 +16,7 @@ public class PackagePluginTask implements PluginBuildTask {
     }
 
     @Override
-    public Result run(Project workingProject, Object... parameters) throws Exception {
+    public Result run(Project workingProject, OnPrintListener onPrintListener, Object... parameters) throws Exception {
         File binaryFile = workingProject.getBuildBinaryFile("plugin");
         PluginFile file = new BinaryPluginFile(binaryFile.getAbsolutePath());
         try {
@@ -34,7 +34,11 @@ public class PackagePluginTask implements PluginBuildTask {
     @Override
     public PluginBuildTask[] dependencies() {
         return new PluginBuildTask[]{
-                new CompilePluginTask(),
+                MoviePluginBuilder.getInstance().getCompilePluginTask(),
+                MoviePluginBuilder.getInstance().getTestHomePageJsTask(),
+                MoviePluginBuilder.getInstance().getTestCategoryPageJsTask(),
+                MoviePluginBuilder.getInstance().getTestSearchPageJsTask(),
+                MoviePluginBuilder.getInstance().getTestDetailPageJsTask(),
         };
     }
 }

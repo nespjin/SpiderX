@@ -172,7 +172,7 @@ Runtime.prototype.createMovieCategory = function () {
 Runtime.prototype.createMovieCategoryGroup = function () {
     return {
         "title": "",
-        "movieClasses": []
+        "movieCategories": []
     }
 }
 

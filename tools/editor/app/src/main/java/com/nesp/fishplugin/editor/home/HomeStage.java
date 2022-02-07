@@ -106,7 +106,7 @@ public class HomeStage extends AppBaseStage {
                         Optional.of(project).map(Project::getTargetPlugin).map(Plugin::getType)
                                 .ifPresent(integer -> {
                                     if (integer == Plugin.TYPE_MOVIE) {
-                                        pluginBuilder = new MoviePluginBuilder();
+                                        pluginBuilder = MoviePluginBuilder.getInstance();
                                     } else {
                                         new AppAlert(Alert.AlertType.WARNING, "不支持改项目",
                                                 ButtonType.OK)
@@ -254,7 +254,7 @@ public class HomeStage extends AppBaseStage {
                         }
 
                         case PluginBuilder.BUILD_STATUS_SUCCESS -> {
-                            viewModel.bottomStatus("构建成功");
+                            viewModel.bottomStatus("构建结束");
                         }
 
                         default -> throw new IllegalStateException("Unexpected value: " + buildState);

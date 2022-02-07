@@ -19,20 +19,79 @@ public class MoviePluginBuilder extends PluginBuilder {
     private final Logger logger = LogManager.getLogger(MoviePluginBuilder.class);
     private Thread workThread;
     private final Gson gson = new Gson();
+    private PluginBuildTask[] pluginBuildTasks;
+
+    private static final class SInstanceHolder {
+        private static final MoviePluginBuilder sInstance = new MoviePluginBuilder();
+    }
+
+    public static MoviePluginBuilder getInstance() {
+        return SInstanceHolder.sInstance;
+    }
+
+    private MoviePluginBuilder() {
+    }
+
+    private final PluginBuildTask buildPluginTask = new BuildPluginTask();
+    private final PluginBuildTask compilePluginTask = new CompilePluginTask();
+    private final PluginBuildTask packagePluginTask = new PackagePluginTask();
+    private final PluginBuildTask testHomePageJsTask = new TestPageTask("home", 1);
+    private final PluginBuildTask testCategoryPageJsTask = new TestPageTask("category", 1);
+    private final PluginBuildTask testSearchPageJsTask = new TestPageTask("search", 1) {
+        {
+            putParameter("keyword", "雪");
+        }
+    };
+    private final PluginBuildTask testDetailPageJsTask = new TestPageTask("detail", 1) {
+        {
+            putParameter("url", "https://www.bei5dy.com/voddetail/96535/");
+        }
+    };
+
+    public PluginBuildTask getBuildPluginTask() {
+        return buildPluginTask;
+    }
+
+    public PluginBuildTask getCompilePluginTask() {
+        return compilePluginTask;
+    }
+
+    public PluginBuildTask getPackagePluginTask() {
+        return packagePluginTask;
+    }
+
+    public PluginBuildTask getTestHomePageJsTask() {
+        return testHomePageJsTask;
+    }
+
+    public PluginBuildTask getTestCategoryPageJsTask() {
+        return testCategoryPageJsTask;
+    }
+
+    public PluginBuildTask getTestSearchPageJsTask() {
+        return testSearchPageJsTask;
+    }
+
+    public PluginBuildTask getTestDetailPageJsTask() {
+        return testDetailPageJsTask;
+    }
 
     @Override
     public PluginBuildTask[] getBuildTasks() {
-        return new PluginBuildTask[]{
-                new BuildPluginTask(),
-                new TestPageTask("home", 0),
-                new TestPageTask("home", 1),
-                new TestPageTask("category", 0),
-                new TestPageTask("category", 1),
-                new TestPageTask("search", 0),
-                new TestPageTask("search", 1),
-                new TestPageTask("detail", 0),
-                new TestPageTask("detail", 1),
-        };
+        if (pluginBuildTasks == null) {
+            pluginBuildTasks = new PluginBuildTask[]{
+                    getBuildPluginTask(),
+//                new TestPageTask("home", 0),
+                    getTestHomePageJsTask(),
+//                new TestPageTask("category", 0),
+                    getTestCategoryPageJsTask(),
+//                new TestPageTask("search", 0),
+                    getTestSearchPageJsTask(),
+//                new TestPageTask("detail", 0),
+                    getTestDetailPageJsTask(),
+            };
+        }
+        return pluginBuildTasks;
     }
 
     @Override
@@ -53,6 +112,7 @@ public class MoviePluginBuilder extends PluginBuilder {
                     return;
                 }
                 List<List<PluginBuildTask>> buildTaskChain = analyseBuildTask(buildTask);
+                System.out.println("buildTaskChain = " + buildTaskChain);
                 final int taskCountInChain = getTaskCountInChain(buildTaskChain);
                 AtomicInteger taskCountRun = new AtomicInteger(0);
                 if (buildTaskChain.isEmpty()) {
@@ -65,10 +125,10 @@ public class MoviePluginBuilder extends PluginBuilder {
                 AtomicDouble lastProgress = new AtomicDouble(0);
 
                 for (List<PluginBuildTask> pluginBuildTasks : buildTaskChain) {
-                    CountDownLatch countDownLatch = new CountDownLatch(pluginBuildTasks.size());
+//                    CountDownLatch countDownLatch = new CountDownLatch(pluginBuildTasks.size());
                     for (PluginBuildTask pluginBuildTask : pluginBuildTasks) {
-                        Thread thread = new Thread(() -> {
-                            boolean isSuccess1;
+//                        Thread thread = new Thread(() -> {
+                            boolean isSuccessLocal;
                             String msg = "";
                             PluginBuildTask.Result result = null;
                             try {
@@ -76,20 +136,23 @@ public class MoviePluginBuilder extends PluginBuilder {
                                         "Start " + pluginBuildTask.name());
                                 publishProgress(onBuildProgressListener, progressData1);
 
-                                result = pluginBuildTask.run(workingProject);
+                                result = pluginBuildTask.run(workingProject, new PluginBuildTask.OnPrintListener() {
+                                    @Override
+                                    public void print(String message) {
+                                        publishProgress(onBuildProgressListener, new ProgressData(-2, 0, message));
+                                    }
+                                });
 
-                                isSuccess1 = result.code() == PluginBuildTask.Result.CODE_SUCCESS;
-                                isSuccess.getAndSet(isSuccess.get() && isSuccess1);
+                                isSuccessLocal = result.isSuccess();
 
                                 msg = result.msg();
 
                                 if (msg.isEmpty()) {
-                                    msg = pluginBuildTask.name() + " " + (isSuccess1 ? "Success" : "Failed");
+                                    msg = pluginBuildTask.name() + " " + (isSuccessLocal ? "Success" : "Failed");
                                 }
 
-                            } catch (Exception e) {
-                                isSuccess1 = false;
-                                isSuccess.getAndSet(false);
+                            } catch (Throwable e) {
+                                isSuccessLocal = false;
                             }
 
                             double progress = (taskCountRun.incrementAndGet() * 1.00 / taskCountInChain) * 0.9;
@@ -114,22 +177,29 @@ public class MoviePluginBuilder extends PluginBuilder {
                                     publishProgress(onBuildProgressListener, progressData1);
                                 }
                             }
-                            progressData1 = new ProgressData(progress, isSuccess1 ? 2 : -1, msg);
+                            progressData1 = new ProgressData(progress, isSuccessLocal ? 2 : -1, msg);
                             publishProgress(onBuildProgressListener, progressData1);
 
-                            countDownLatch.countDown();
-                        });
-                        thread.setDaemon(true);
-                        thread.start();
+                            publishProgress(onBuildProgressListener, new ProgressData(-2, 0,
+                                    "End " + pluginBuildTask.name()));
+
+                            isSuccess.getAndSet(isSuccess.get() && isSuccessLocal);
+//                            countDownLatch.countDown();
+//                        });
+//                        thread.setDaemon(true);
+//                        thread.start();
                     }
-                    try {
+                    /*try {
                         countDownLatch.await();
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         return;
-                    }
+                    }*/
+
+                    if (!isSuccess.get()) break;
                 }
-                ProgressData progressData1 = new ProgressData(1, isSuccess.get() ? 2 : -1, "");
+                ProgressData progressData1 = new ProgressData(1, isSuccess.get() ? 2 : -1,
+                        buildTask.name() + (isSuccess.get() ? " Success" : " Failed"));
                 publishProgress(onBuildProgressListener, progressData1);
             }
         };
@@ -160,13 +230,4 @@ public class MoviePluginBuilder extends PluginBuilder {
             }
         });
     }
-
-    private void testPageWithDsl(String pageId) {
-
-    }
-
-    private void testPageWithJs() {
-
-    }
-
 }

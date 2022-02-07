@@ -7,18 +7,16 @@ class Process(val owner: IRuntime) {
     var isDestroy = false
         private set
 
-    val execResult = ExecResult(-1)
+    val execResult = ExecResult(EXIT_VALUE_NULL)
 
     var onDestroyListener: OnDestroyListener? = null
 
-    @Synchronized
     fun destroy() {
         isDestroy = true
         exit(EXIT_VALUE_BY_USER)
         onDestroyListener?.onDestroy()
     }
 
-    @Synchronized
     fun exit(exitValue: Int) {
         execResult.exitValue = exitValue
         owner.getAllProcesses().remove(this)
@@ -32,9 +30,8 @@ class Process(val owner: IRuntime) {
         exit(EXIT_VALUE_ERROR)
     }
 
-    @Synchronized
     fun waitFor(): ExecResult {
-        while (execResult.exitValue != EXIT_VALUE_NULL) {
+        while (execResult.exitValue == EXIT_VALUE_NULL) {
             try {
                 Thread.sleep(200)
             } catch (e: InterruptedException) {
@@ -46,6 +43,7 @@ class Process(val owner: IRuntime) {
     }
 
     class ExecResult(
+        @Volatile
         var exitValue: Int,
         message: String = "",
         data: Any? = null

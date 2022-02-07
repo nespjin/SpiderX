@@ -65,6 +65,13 @@ public abstract class PluginBuilder {
                 }
             }
         }
+
+        // Add root task
+        r.add(new ArrayList<>() {
+            {
+                add(task);
+            }
+        });
         return r;
     }
 

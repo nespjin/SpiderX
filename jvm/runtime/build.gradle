@@ -12,9 +12,11 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 
     implementation 'org.jsoup:jsoup:1.14.3'
+    implementation 'com.google.code.gson:gson:2.8.9'
 
     implementation project(path: ":core")
     implementation project(path: ":compiler")
+    implementation project(path: ":tools")
 }
 
 test {

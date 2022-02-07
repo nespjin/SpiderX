@@ -2,7 +2,7 @@ package com.nesp.fishplugin.editor.plugin;
 
 import com.nesp.fishplugin.editor.project.Project;
 
-public class BuildPluginTask implements PluginBuildTask {
+public class BuildPluginTask extends PluginBuildTask {
 
     @Override
     public String name() {
@@ -10,13 +10,15 @@ public class BuildPluginTask implements PluginBuildTask {
     }
 
     @Override
-    public Result run(Project workingProject, Object... parameters) throws Exception {
-        return null;
+    Result run(Project workingProject, OnPrintListener onPrintListener, Object... parameters) throws Exception {
+        return Result.success();
     }
 
     @Override
     public PluginBuildTask[] dependencies() {
-        return new PluginBuildTask[]{new CompilePluginTask(), new PackagePluginTask()};
+        return new PluginBuildTask[]{
+                MoviePluginBuilder.getInstance().getPackagePluginTask()
+        };
     }
 
 }

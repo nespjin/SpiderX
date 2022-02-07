@@ -1,17 +1,24 @@
 package com.nesp.fishplugin.runtime.javafx.js;
 
+import com.google.gson.Gson;
 import com.nesp.fishplugin.core.Environment;
 import com.nesp.fishplugin.runtime.CancellationSignal;
 import com.nesp.fishplugin.runtime.js.JsRuntimeTask;
+import com.nesp.fishplugin.tools.code.JsMinifier;
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Worker;
+import javafx.event.EventHandler;
 import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebErrorEvent;
 import javafx.scene.web.WebView;
 import netscape.javascript.JSObject;
 
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
 
@@ -31,13 +38,20 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
 
     private void setLoadFinished(boolean isLoadFinished) {
         this.isLoadFinished = isLoadFinished;
-        if (isLoadFinished) {
-            if (loadTimer != null) loadTimer.cancel();
-        }
     }
 
     public boolean isLoadFinished() {
         return this.isLoadFinished;
+    }
+
+    private final AtomicBoolean isReceivePageOrError = new AtomicBoolean(false);
+
+    public void setReceivePageOrError(boolean receivePageOrError) {
+        isReceivePageOrError.set(receivePageOrError);
+    }
+
+    public boolean isReceivePageOrError() {
+        return isReceivePageOrError.get();
     }
 
     private String js = "";
@@ -68,34 +82,55 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
         this.listener = listener;
     }
 
-    private final JavaFxJsRuntimeInterface javaFxJsRuntimeInterface = new JavaFxJsRuntimeInterface() {
+    public final JavaFxJsRuntimeInterfaceImpl javaFxJsRuntimeInterface = new JavaFxJsRuntimeInterfaceImpl();
+
+    public class JavaFxJsRuntimeInterfaceImpl extends JavaFxJsRuntimeInterface {
 
         @Override
         public void sendPage2Platform(String page) {
             super.sendPage2Platform(page);
+            setReceivePageOrError(true);
             if (listener != null) listener.onReceivePage(page);
+            cancelTimer(timeoutWatcherTimer);
+            timeoutWatcherTimer = null;
         }
 
         @Override
         public void sendError2Platform(String errorMsg) {
             super.sendError2Platform(errorMsg);
+            setReceivePageOrError(true);
+            cancelTimer(timeoutWatcherTimer);
+            timeoutWatcherTimer = null;
             if (listener != null) listener.onReceiveError(errorMsg);
         }
 
         @Override
         public void printHtml(String html) {
             super.printHtml(html);
+            System.out.println(html);
             if (listener != null) listener.onPrintHtml(html);
         }
-    };
+    }
 
     @Override
     public void run() {
-        if (webView == null) {
-            webView = new WebView();
-            initWebView(webView);
+        CountDownLatch countDownLatch = new CountDownLatch(1);
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                if (webView == null) {
+                    webView = new WebView();
+                    initWebView(webView);
+                }
+                JavaFxJsRuntimeTask.this.run(webView);
+                countDownLatch.countDown();
+            }
+        });
+        try {
+            countDownLatch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        run(webView);
     }
 
     private void initWebView(WebView webView) {
@@ -112,84 +147,119 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
         WebEngine engine = webView.getEngine();
         engine.setUserAgent(userAgent);
         engine.setJavaScriptEnabled(true);
-        JSObject window = (JSObject) engine.executeScript("window");
-        window.setMember("runtime", javaFxJsRuntimeInterface);
+        engine.setOnError(new EventHandler<WebErrorEvent>() {
+            @Override
+            public void handle(WebErrorEvent event) {
+                System.out.println("WebEngine Error occurs: " + event.toString());
+                if (listener != null) {
+                    listener.onReceiveError(event.toString());
+                }
+            }
+        });
 
         ChangeListener<Worker.State> listener = new ChangeListener<>() {
             @Override
             public void changed(ObservableValue<? extends Worker.State> observable,
                                 Worker.State oldValue, Worker.State newValue) {
-                if (newValue == Worker.State.SUCCEEDED) {
-                    JSObject win = (JSObject) engine.executeScript("window");
-                }
-            }
-        };
-        engine.getLoadWorker().stateProperty().addListener(listener);
-
-        engine.getLoadWorker().progressProperty().addListener(new ChangeListener<Number>() {
-            @Override
-            public void changed(ObservableValue<? extends Number> observable, Number oldValue,
-                                Number newValue) {
-                if (newValue.doubleValue() == 100) {
-                    if (!isLoadFinished()) execCurrentJs();
-                    setLoading(false);
-                    setLoadFinished(true);
-
-                    if (JavaFxJsRuntimeTask.this.listener != null) {
-                        JavaFxJsRuntimeTask.this.listener.onPageLoadFinished();
-                    }
-                } else {
-                    setLoading(true);
-                    if (newValue.doubleValue() == 0) {
+                System.out.println(newValue);
+                switch (newValue) {
+                    case SCHEDULED -> {
                         // on page start
                         setLoading(true);
-                        setLoadFinished(true);
+                        setLoadFinished(false);
 
                         if (JavaFxJsRuntimeTask.this.listener != null) {
                             JavaFxJsRuntimeTask.this.listener.onPageLoadStart();
                         }
 
-                        if (loadTimer != null) {
-                            loadTimer.cancel();
-                            loadTimer.schedule(new TimerTask() {
-                                @Override
-                                public void run() {
+                        cancelTimer(loadTimer);
+                        loadTimer = new Timer();
+                        loadTimer.schedule(new TimerTask() {
+                            @Override
+                            public void run() {
+                                synchronized (this) {
                                     if (!isLoadFinished()) {
-                                        execCurrentJs();
                                         setLoadFinished(true);
                                         setLoading(false);
                                         if (JavaFxJsRuntimeTask.this.listener != null) {
                                             JavaFxJsRuntimeTask.this.listener.onPageLoadFinished();
                                         }
+                                        Platform.runLater(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                execCurrentJs();
+                                            }
+                                        });
                                     }
+                                }
 
-                                    cancelTimer(loadTimer);
-                                    loadTimer = null;
+                                cancelTimer(loadTimer);
+                                loadTimer = null;
+                            }
+                        }, 10 * 1000, 1);
 
+                        cancelTimer(timeoutWatcherTimer);
+                        timeoutWatcherTimer = new Timer();
+                        timeoutWatcherTimer.schedule(new TimerTask() {
+                            @Override
+                            public void run() {
+                                if (isReceivePageOrError()) {
                                     cancelTimer(timeoutWatcherTimer);
                                     timeoutWatcherTimer = null;
+                                    return;
                                 }
-                            }, 10 * 1000, 1);
+                                if (JavaFxJsRuntimeTask.this.listener != null) {
+                                    JavaFxJsRuntimeTask.this.listener.onTimeout();
+                                }
+                                cancelTimer(timeoutWatcherTimer);
+                                timeoutWatcherTimer = null;
+                            }
+                        }, getTimeout(), 1);
+                    }
+                    case RUNNING -> {
+                        setLoading(true);
+                        setLoadFinished(false);
+                    }
 
-                            cancelTimer(timeoutWatcherTimer);
-                            if (timeoutWatcherTimer != null) {
-                                timeoutWatcherTimer.schedule(new TimerTask() {
-                                    @Override
-                                    public void run() {
-                                        if (isLoadFinished) return;
-                                        if (JavaFxJsRuntimeTask.this.listener != null) {
-                                            JavaFxJsRuntimeTask.this.listener.onTimeout();
-                                        }
-                                        cancelTimer(timeoutWatcherTimer);
-                                        timeoutWatcherTimer = null;
-                                    }
-                                }, getTimeout(), 1);
+                    case SUCCEEDED -> {
+                        synchronized (this) {
+                            if (!isLoadFinished()) {
+                                setLoadFinished(true);
+                                setLoading(false);
+                                if (JavaFxJsRuntimeTask.this.listener != null) {
+                                    JavaFxJsRuntimeTask.this.listener.onPageLoadFinished();
+                                }
+                                execCurrentJs();
                             }
                         }
+
+                    }
+
+                    case FAILED, CANCELLED -> {
+                        setLoading(false);
+                        setLoadFinished(true);
+                    }
+
+                    case READY -> {
+
                     }
                 }
             }
-        });
+        };
+        engine.getLoadWorker().stateProperty().addListener(listener);
+
+        /*engine.getLoadWorker().progressProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue,
+                                Number newValue) {
+                if (newValue.doubleValue() == 1) {
+
+                } else {
+
+
+                }
+            }
+        });*/
     }
 
     private void cancelTimer(Timer timeoutWatcherTimer) {
@@ -211,11 +281,13 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
 
     @Override
     public Object execJs(String js) {
-        var jsTmp = js.replace("\n", "").trim();
+        System.out.println("execJs js = " + js);
+        var jsTmp = new JsMinifier().minify(js).trim();
         jsTmp = "javascript:" + jsTmp;
         var result = "";
         if (webView != null) {
             Object executeScriptResult = webView.getEngine().executeScript(jsTmp);
+            System.out.println("executeScriptResult = " + new Gson().toJson(executeScriptResult));
             if (executeScriptResult instanceof String) {
                 result = (String) executeScriptResult;
             }
@@ -225,13 +297,36 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
 
     @Override
     public void execCurrentJs() {
-        prepareJsRuntime();
-        execJs(js);
 
-        execJsRuntimeInitialize();
-        Object result = execJsRuntimeLoadPage();
-        if (result instanceof String) {
-            if (listener != null) listener.onReceivePage((String) result);
+        JSObject window = (JSObject) webView.getEngine().executeScript("window");
+        window.setMember("runtimeNative", javaFxJsRuntimeInterface);
+
+        try {
+            prepareJsRuntime();
+            execJs(js);
+
+            execJsRuntimeInitialize();
+            Object result = execJsRuntimeLoadPage();
+            cancelTimer(timeoutWatcherTimer); // never call here
+            setReceivePageOrError(true);
+            if (result instanceof String resStr) {
+                if (resStr.isEmpty()) {
+                    if (listener != null) {
+                        listener.onReceiveError("Load Page Failed");
+                    }
+                } else {
+                    if (listener != null) {
+                        listener.onReceivePage(resStr);
+                    }
+                }
+            } else {
+                if (listener != null) listener.onReceiveError("Load Page Failed");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            cancelTimer(timeoutWatcherTimer); // never call here
+            setReceivePageOrError(true);
+            if (listener != null) listener.onReceiveError("Load Page Failed " + e);
         }
     }
 

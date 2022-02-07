@@ -10,9 +10,13 @@
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="modules">
           <set>
+            <option value="$PROJECT_DIR$/../../javafx/movie-runtime-javafx" />
+            <option value="$PROJECT_DIR$/../../javafx/runtime-javafx" />
             <option value="$PROJECT_DIR$/../../jvm/compiler" />
             <option value="$PROJECT_DIR$/../../jvm/core" />
+            <option value="$PROJECT_DIR$/../../jvm/movie-runtime" />
             <option value="$PROJECT_DIR$/../../jvm/packager" />
+            <option value="$PROJECT_DIR$/../../jvm/runtime" />
             <option value="$PROJECT_DIR$/../../jvm/tools" />
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
