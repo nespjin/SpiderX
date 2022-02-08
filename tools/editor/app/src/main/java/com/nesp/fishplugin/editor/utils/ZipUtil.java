@@ -51,8 +51,8 @@ public final class ZipUtil {
                         while ((len = inputStream.read(buffer)) != -1) {
                             outputStream.write(buffer, 0, len);
                         }
+                        outputStream.flush();
                     }
-
                 }
             }
         } catch (IOException e) {

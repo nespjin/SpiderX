@@ -4,18 +4,17 @@ import com.google.gson.Gson;
 import com.nesp.fishplugin.compiler.Loader;
 import com.nesp.fishplugin.core.Result;
 import com.nesp.fishplugin.core.data.Plugin;
+import com.nesp.fishplugin.editor.app.Storage;
 import com.nesp.fishplugin.editor.utils.ZipUtil;
 import org.apache.commons.io.FileUtils;
-import org.json.JSONObject;
-import org.w3c.dom.CDATASection;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 
 public final class ProjectManager {
 
@@ -26,6 +25,8 @@ public final class ProjectManager {
     public static ProjectManager getInstance() {
         return SInstanceHolder.sInstance;
     }
+
+    private final Logger logger = LogManager.getLogger(ProjectManager.class);
 
     private Project workingProject = null;
 
@@ -82,6 +83,7 @@ public final class ProjectManager {
                 String s1 = gson1.toJson(plugin);
                 FileUtils.writeStringToFile(projectManifestFile, s1);
             } catch (IOException e) {
+                LogManager.getLogger(ProjectManager.class).error("initializeProject failed", e);
                 return false;
             }
         }
@@ -94,12 +96,17 @@ public final class ProjectManager {
             return false;
         }
         String movieTemplateZipFileName = "movie-project.zip";
-        URL resource = Thread.currentThread().getContextClassLoader()
-                .getResource("template/" + movieTemplateZipFileName);
+        InputStream resource = Thread.currentThread().getContextClassLoader()
+                .getResourceAsStream("template/" + movieTemplateZipFileName);
         if (resource == null) return false;
         try {
-            ZipUtil.unzip(new File(resource.toURI()), project.getRootDirectory());
-        } catch (URISyntaxException ignored) {
+            File movieTemplateFileTmp =
+                    new File(Storage.getProjectsDir(), movieTemplateZipFileName);
+            FileUtils.writeByteArrayToFile(movieTemplateFileTmp, resource.readAllBytes());
+            ZipUtil.unzip(movieTemplateFileTmp, project.getRootDirectory());
+            movieTemplateFileTmp.delete();
+        } catch (IOException e) {
+            LogManager.getLogger(ProjectManager.class).error("copyProjectTemplate failed", e);
             return false;
         }
         return true;

@@ -4,6 +4,7 @@ import com.nesp.fishplugin.core.Result
 import com.nesp.fishplugin.core.data.Page
 import com.nesp.fishplugin.core.data.Plugin
 import com.nesp.fishplugin.tools.code.JsMinifier
+import org.apache.logging.log4j.LogManager
 import java.io.File
 import kotlin.io.path.Path
 
@@ -123,8 +124,11 @@ object Compiler {
         // Remove ref if compile success
         plugin.ref = null
 
-        // TODO: Compress Js code
-        compressJsCode(plugin)
+        try {
+            compressJsCode(plugin)
+        } catch (e: Exception) {
+//            return CompileResult(Result.CODE_FAILED, message = "Error when compress js code:\n$e")
+        }
         // TODO: Compress plugin
         compressPlugin()
 
@@ -133,6 +137,7 @@ object Compiler {
 
     private fun compressJsCode(plugin: Plugin) {
         for (page in plugin.pages) {
+//            LogManager.getLogger(Compiler::class.java).info("compressJsCode page.js:\n" + page.js)
             page.js = JsMinifier().minify(page.js)
         }
     }

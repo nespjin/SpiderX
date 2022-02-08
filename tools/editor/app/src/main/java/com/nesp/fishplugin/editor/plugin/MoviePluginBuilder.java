@@ -1,24 +1,18 @@
 package com.nesp.fishplugin.editor.plugin;
 
 import com.google.common.util.concurrent.AtomicDouble;
-import com.google.gson.Gson;
 import com.nesp.fishplugin.editor.project.Project;
 import com.nesp.fishplugin.editor.project.ProjectManager;
 import com.nesp.sdk.java.util.OnResultListener;
 import javafx.application.Platform;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MoviePluginBuilder extends PluginBuilder {
 
-    private final Logger logger = LogManager.getLogger(MoviePluginBuilder.class);
     private Thread workThread;
-    private final Gson gson = new Gson();
     private PluginBuildTask[] pluginBuildTasks;
 
     private static final class SInstanceHolder {
@@ -128,62 +122,62 @@ public class MoviePluginBuilder extends PluginBuilder {
 //                    CountDownLatch countDownLatch = new CountDownLatch(pluginBuildTasks.size());
                     for (PluginBuildTask pluginBuildTask : pluginBuildTasks) {
 //                        Thread thread = new Thread(() -> {
-                            boolean isSuccessLocal;
-                            String msg = "";
-                            PluginBuildTask.Result result = null;
-                            try {
-                                ProgressData progressData1 = new ProgressData(-2, 0,
-                                        "Start " + pluginBuildTask.name());
-                                publishProgress(onBuildProgressListener, progressData1);
-
-                                result = pluginBuildTask.run(workingProject, new PluginBuildTask.OnPrintListener() {
-                                    @Override
-                                    public void print(String message) {
-                                        publishProgress(onBuildProgressListener, new ProgressData(-2, 0, message));
-                                    }
-                                });
-
-                                isSuccessLocal = result.isSuccess();
-
-                                msg = result.msg();
-
-                                if (msg.isEmpty()) {
-                                    msg = pluginBuildTask.name() + " " + (isSuccessLocal ? "Success" : "Failed");
-                                }
-
-                            } catch (Throwable e) {
-                                isSuccessLocal = false;
-                            }
-
-                            double progress = (taskCountRun.incrementAndGet() * 1.00 / taskCountInChain) * 0.9;
-                            for (double i = lastProgress.get(); i < progress; i += 0.001) {
-                                try {
-                                    ProgressData progressData1 = new ProgressData(i, 0, "");
-                                    publishProgress(onBuildProgressListener, progressData1);
-                                    Thread.sleep(1);
-                                } catch (InterruptedException ignored) {
-                                }
-                            }
-
-                            lastProgress.set(progress);
-                            ProgressData progressData1;
-
-                            if (result == null) {
-                                result = PluginBuildTask.Result.fail("Unknown Error");
-                            }
-                            if (!result.printMessages().isEmpty()) {
-                                for (PluginBuildTask.Result printMessage : result.printMessages()) {
-                                    progressData1 = new ProgressData(-2, 0, printMessage.msg());
-                                    publishProgress(onBuildProgressListener, progressData1);
-                                }
-                            }
-                            progressData1 = new ProgressData(progress, isSuccessLocal ? 2 : -1, msg);
+                        boolean isSuccessLocal;
+                        String msg = "";
+                        PluginBuildTask.Result result = null;
+                        try {
+                            ProgressData progressData1 = new ProgressData(-2, 0,
+                                    "Start " + pluginBuildTask.name());
                             publishProgress(onBuildProgressListener, progressData1);
 
-                            publishProgress(onBuildProgressListener, new ProgressData(-2, 0,
-                                    "End " + pluginBuildTask.name()));
+                            result = pluginBuildTask.run(workingProject, new PluginBuildTask.OnPrintListener() {
+                                @Override
+                                public void print(String message) {
+                                    publishProgress(onBuildProgressListener, new ProgressData(-2, 0, message));
+                                }
+                            });
 
-                            isSuccess.getAndSet(isSuccess.get() && isSuccessLocal);
+                            isSuccessLocal = result.isSuccess();
+
+                            msg = result.msg();
+
+                            if (msg.isEmpty()) {
+                                msg = pluginBuildTask.name() + " " + (isSuccessLocal ? "Success" : "Failed");
+                            }
+
+                        } catch (Throwable e) {
+                            isSuccessLocal = false;
+                        }
+
+                        double progress = (taskCountRun.incrementAndGet() * 1.00 / taskCountInChain) * 0.9;
+                        for (double i = lastProgress.get(); i < progress; i += 0.001) {
+                            try {
+                                ProgressData progressData1 = new ProgressData(i, 0, "");
+                                publishProgress(onBuildProgressListener, progressData1);
+                                Thread.sleep(1);
+                            } catch (InterruptedException ignored) {
+                            }
+                        }
+
+                        lastProgress.set(progress);
+                        ProgressData progressData1;
+
+                        if (result == null) {
+                            result = PluginBuildTask.Result.fail("Unknown Error");
+                        }
+                        if (!result.printMessages().isEmpty()) {
+                            for (PluginBuildTask.Result printMessage : result.printMessages()) {
+                                progressData1 = new ProgressData(-2, 0, printMessage.msg());
+                                publishProgress(onBuildProgressListener, progressData1);
+                            }
+                        }
+                        progressData1 = new ProgressData(progress, isSuccessLocal ? 2 : -1, msg);
+                        publishProgress(onBuildProgressListener, progressData1);
+
+                        publishProgress(onBuildProgressListener, new ProgressData(-2, 0,
+                                "End " + pluginBuildTask.name()));
+
+                        isSuccess.getAndSet(isSuccess.get() && isSuccessLocal);
 //                            countDownLatch.countDown();
 //                        });
 //                        thread.setDaemon(true);

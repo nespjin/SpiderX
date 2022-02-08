@@ -332,6 +332,19 @@ public class HomeStage extends AppBaseStage {
         initializeViews();
         stage.setOpacity(0);
         getStage().focusedProperty().addListener((observable, oldValue, newValue) -> onFocusedChanged(newValue));
+
+        /*OkHttpClient okHttpClient = new OkHttpClient();
+        okHttpClient.newCall(new Request.Builder().get().url("https://www.baidu.com").build()).enqueue(new okhttp3.Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                logger.error("error when request net", e);
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                logger.info("request net result " + response.toString());
+            }
+        });*/
     }
 
     @SuppressWarnings("unchecked")
@@ -566,6 +579,7 @@ public class HomeStage extends AppBaseStage {
 
     private void closeProject() {
         // do other
+        getViewModel().workingProject(new Project());
         getViewModel().workingProject(null);
     }
 
@@ -577,7 +591,12 @@ public class HomeStage extends AppBaseStage {
                 return;
             }
             WorkingDialog<Boolean> workingDialog = new WorkingDialog<>(() -> {
-                return ProjectManager.initializeProject(project);
+                try {
+                    return ProjectManager.initializeProject(project);
+                } catch (Exception e) {
+                    LogManager.getLogger(HomeStage.class).error("initializeProject", e);
+                    return false;
+                }
             });
             workingDialog.setTitle("创建中...");
             workingDialog.setOnFinishListener((r) -> {
@@ -823,7 +842,7 @@ public class HomeStage extends AppBaseStage {
 
     public BooleanProperty hasFileOpenedProperty() {
         if (hasFileOpened == null) {
-            hasFileOpened = new SimpleBooleanProperty() {
+            hasFileOpened = new SimpleBooleanProperty(true) {
                 @Override
                 protected void invalidated() {
                     StageHomeViewBinding binding = getBinding();
@@ -859,7 +878,7 @@ public class HomeStage extends AppBaseStage {
         if (file == null || !file.exists()) return;
 
         WorkingDialog<String> workingDialog = new WorkingDialog<>(() -> {
-            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(file, StandardCharsets.UTF_8))) {
                 StringBuilder fileContent = new StringBuilder();
                 String str;
                 while ((str = reader.readLine()) != null) {

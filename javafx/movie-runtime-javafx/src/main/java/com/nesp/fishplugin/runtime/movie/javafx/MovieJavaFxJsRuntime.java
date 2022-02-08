@@ -14,6 +14,8 @@ import com.nesp.fishplugin.runtime.movie.data.Movie;
 import com.nesp.fishplugin.runtime.movie.data.MovieCategoryPage;
 import com.nesp.fishplugin.runtime.movie.data.SearchPage;
 import javafx.scene.web.WebView;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -21,6 +23,7 @@ import java.net.URL;
 public class MovieJavaFxJsRuntime extends JavaFxJsRuntime {
 
     private final Gson gson = new Gson();
+    private final Logger logger = LogManager.getLogger(MovieJavaFxJsRuntime.class);
 
     @Override
     public Process exec(Page page, Object... parameters) {
@@ -156,9 +159,19 @@ public class MovieJavaFxJsRuntime extends JavaFxJsRuntime {
                 if (Plugin.isPostReq(url)) {
 //                    Map<String, String> data = new HashMap<>();
 //                    realUrlObj.getQuery().split("&")
-                    webView.getEngine().load(realUrl);
+                    try {
+                        webView.getEngine().load(realUrl);
+                    } catch (Exception e) {
+                        logger.error("error when run ", e);
+                        process.exitWithError();
+                    }
                 } else {
-                    webView.getEngine().load(realUrl);
+                    try {
+                        webView.getEngine().load(realUrl);
+                    } catch (Exception e) {
+                        logger.error("error when run ", e);
+                        process.exitWithError();
+                    }
                 }
             }
         });

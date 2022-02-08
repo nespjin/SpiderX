@@ -4,11 +4,15 @@ import com.google.gson.Gson;
 import com.nesp.fishplugin.compiler.Compiler;
 import com.nesp.fishplugin.editor.project.Project;
 import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
 
 public class CompilePluginTask extends PluginBuildTask {
+
+    private final Logger logger = LogManager.getLogger(CompilePluginTask.class);
 
     @Override
     public String name() {
@@ -26,6 +30,7 @@ public class CompilePluginTask extends PluginBuildTask {
         try {
             compileResult = Compiler.compileFromDisk(projectManifestFile.getPath());
         } catch (Exception e) {
+            logger.error("run", e);
             return Result.fail("Compile the file " + projectManifestFile.getName() +
                     " failed: \n" + e);
         }

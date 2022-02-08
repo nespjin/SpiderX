@@ -22,6 +22,8 @@ final def CUSTOM_JRE_OUT_PATH = './build/jre'
 final def CUSTOM_JRE_MODULES =
         'java.sql,' +
                 'java.naming,' +
+                'jdk.crypto.cryptoki,' +
+                'jdk.crypto.ec,' +
                 'javafx.base,' +
                 'javafx.controls,' +
                 'javafx.fxml,' +
@@ -105,7 +107,7 @@ task deployApp(type: Exec) {
             '--icon', "${argWrap()}$ICON${argWrap()}",
             '--runtime-image', "${argWrap()}$CUSTOM_JRE_OUT_PATH${argWrap()}",
             '--app-version', "${argWrap()}$APP_VERSION${argWrap()}",
-            '--copyright', "${argWrap()}Copyright2021 © NESP Technology. All Rights Reserved${argWrap()}",
+            '--copyright', "${argWrap()}Copyright2022 © NESP Technology. All Rights Reserved${argWrap()}",
             '--license-file', "${argWrap()}../LICENSE_APACHE.txt${argWrap()}",
             '--verbose',
 
@@ -126,7 +128,9 @@ task deployApp(type: Exec) {
             '--java-options', "${argWrap()}-Dkotlinx.coroutines.debug=off${argWrap()}",
             '--java-options', "${argWrap()}-Dsun.tools.attach.tmp.only=true${argWrap()}",
             '--java-options', "${argWrap()}-Djdk.gtk.version=2${argWrap()}",
-
+            '--java-options', "${argWrap()}-Dfile.encoding=UTF-8${argWrap()}",
+//            '--java-options', "${argWrap()}-Dcom.sun.webkit.useHTTP2Loader=false${argWrap()}",
+//            '--java-options', "${argWrap()}-Djavax.net.debug=ssl:handshake${argWrap()}",
             '--install-dir', "${argWrap()}${getInstallLocation()}${argWrap()}",
             '--type', "${argWrap()}${getBinaryType()}${argWrap()}"]
 

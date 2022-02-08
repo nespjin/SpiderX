@@ -14,13 +14,26 @@ import javafx.stage.Stage;
  **/
 public class App extends ApplicationContext {
 
+    private static App instance = null;
+
+    public static App getInstance() {
+        return instance;
+    }
+
     @Override
     public void start(final Stage primaryStage) throws Exception {
+        instance = this;
         LauncherStage.showWindow();
         primaryStage.hide();
     }
 
     public static void main(String[] args) {
         Application.launch(App.class, args);
+    }
+
+    @Override
+    public void stop() throws Exception {
+        instance = null;
+        super.stop();
     }
 }

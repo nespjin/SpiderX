@@ -66,7 +66,7 @@ public class TestPageTask extends PluginBuildTask {
                         && !((String) urlParam).isEmpty()) {
                     page.setUrl((String) urlParam);
                 }
-                optOnPrintListener.ifPresent(onPrintListener1 -> onPrintListener1.print("\nTest " + page.getId() + " ..."));
+                optOnPrintListener.ifPresent(onPrintListener1 -> onPrintListener1.print("Test " + page.getId() + " ..."));
                 com.nesp.fishplugin.runtime.Process process =
                         new MovieJavaFxJsRuntime().exec(page, new JavaFxJsRuntimeTaskListener() {
                             @Override

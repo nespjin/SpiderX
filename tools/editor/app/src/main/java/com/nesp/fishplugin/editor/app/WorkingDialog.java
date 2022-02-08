@@ -5,13 +5,15 @@ import com.nesp.fishplugin.editor.R;
 import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.event.EventHandler;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.DialogEvent;
 import javafx.scene.control.DialogPane;
 import javafx.util.Callback;
-
-import java.util.Timer;
-import java.util.TimerTask;
+import org.apache.logging.log4j.LogManager;
 
 public class WorkingDialog<R1> extends AppBaseDialog<ButtonType> {
 
@@ -53,9 +55,17 @@ public class WorkingDialog<R1> extends AppBaseDialog<ButtonType> {
             @Override
             public ButtonType call(ButtonType param) {
                 if (param == ButtonType.CANCEL) {
-                    interrupt();
+                    close();
                 }
                 return param;
+            }
+        });
+
+        onCloseRequestProperty().addListener(new ChangeListener<EventHandler<DialogEvent>>() {
+            @Override
+            public void changed(ObservableValue<? extends EventHandler<DialogEvent>> observable,
+                                EventHandler<DialogEvent> oldValue, EventHandler<DialogEvent> newValue) {
+                interrupt();
             }
         });
 
@@ -74,7 +84,11 @@ public class WorkingDialog<R1> extends AppBaseDialog<ButtonType> {
                 public void run() {
                     R1 r = null;
                     if (workingRunnable != null) {
-                        r = workingRunnable.run();
+                        try {
+                            r = workingRunnable.run();
+                        } catch (Exception e) {
+                            LogManager.getLogger(WorkingDialog.class).error("error when run", e);
+                        }
                     }
                     isDone[0] = true;
 

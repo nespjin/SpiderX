@@ -14,7 +14,14 @@ import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebErrorEvent;
 import javafx.scene.web.WebView;
 import netscape.javascript.JSObject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.security.GeneralSecurityException;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
@@ -22,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
 
+    private final Logger logger = LogManager.getLogger(JavaFxJsRuntimeTask.class);
     private boolean isLoading = false;
 
     private void setLoading(boolean isLoading) {
@@ -162,6 +170,7 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
             public void changed(ObservableValue<? extends Worker.State> observable,
                                 Worker.State oldValue, Worker.State newValue) {
                 System.out.println(newValue);
+                logger.info("Worker.State changed " + newValue);
                 switch (newValue) {
                     case SCHEDULED -> {
                         // on page start
@@ -232,10 +241,17 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
                                 execCurrentJs();
                             }
                         }
-
                     }
 
-                    case FAILED, CANCELLED -> {
+                    case FAILED -> {
+                        setLoading(false);
+                        setLoadFinished(true);
+                        if (JavaFxJsRuntimeTask.this.listener != null) {
+                            JavaFxJsRuntimeTask.this.listener.onReceiveError("Page load Failed:\n" + webView.getEngine().getLoadWorker().getException());
+                        }
+                        setReceivePageOrError(true);
+                    }
+                    case CANCELLED -> {
                         setLoading(false);
                         setLoadFinished(true);
                     }
@@ -247,6 +263,30 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
             }
         };
         engine.getLoadWorker().stateProperty().addListener(listener);
+
+        TrustManager[] trustAllCerts = new TrustManager[]{
+                new X509TrustManager() {
+                    public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                        return null;
+                    }
+
+                    public void checkClientTrusted(
+                            java.security.cert.X509Certificate[] certs, String authType) {
+                    }
+
+                    public void checkServerTrusted(
+                            java.security.cert.X509Certificate[] certs, String authType) {
+                    }
+                }
+        };
+        // Install the all-trusting trust manager
+        try {
+            SSLContext sc = SSLContext.getInstance("SSL");
+            sc.init(null, trustAllCerts, new java.security.SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+        } catch (GeneralSecurityException e) {
+            logger.error("SSLContext Failed: ", e);
+        }
 
         /*engine.getLoadWorker().progressProperty().addListener(new ChangeListener<Number>() {
             @Override
