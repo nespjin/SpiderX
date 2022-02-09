@@ -156,7 +156,7 @@ task deployApp(type: Exec) {
         command.addAll([
                 '--mac-package-identifier', "com.nesp.fishplugin.editor",
                 '--mac-package-name', APP_NAME,
-                '--mac-package-signing-prefix', 'com.nesp.fishplugin.editor.',
+                '--mac-package-signing-prefix', 'com.nesp.fishplugin.editor',
                 '--mac-app-category', 'Utilities.'
         ])
     }
