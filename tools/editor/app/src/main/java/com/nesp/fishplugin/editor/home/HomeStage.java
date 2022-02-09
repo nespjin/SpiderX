@@ -94,35 +94,34 @@ public class HomeStage extends AppBaseStage {
                     // On Project Changed
                     invalidateProjectView();
                     setTitle(project);
-
                     // stop build at first
                     buildState(PluginBuilder.BUILD_STATUS_STOP);
 
                     if (project != null) {
                         startWatchProjectDir();
 
-                        binding.borderPanelContent.setCenter(binding.taFileEditor);
-
                         Optional.of(project).map(Project::getTargetPlugin).map(Plugin::getType)
                                 .ifPresent(integer -> {
                                     if (integer == Plugin.TYPE_MOVIE) {
                                         pluginBuilder = MoviePluginBuilder.getInstance();
                                     } else {
-                                        new AppAlert(Alert.AlertType.WARNING, "不支持改项目",
+                                        new AppAlert(Alert.AlertType.WARNING, "不支持该项目",
                                                 ButtonType.OK)
                                                 .showAndWait();
                                         closeProject();
                                         return;
                                     }
+                                    binding.cbBuildTYpe.getItems().clear();
                                     binding.cbBuildTYpe.getItems()
                                             .addAll(Arrays.asList(pluginBuilder.getBuildTaskDisplayNames()));
                                     binding.cbBuildTYpe.getSelectionModel().select(0);
                                 });
                     } else {
-                        binding.borderPanelContent.setCenter(null);
                         pluginBuilder = null;
                         binding.cbBuildTYpe.getItems().clear();
                     }
+
+                    hasFileOpened(false);
                 }
 
                 @Override
@@ -851,6 +850,7 @@ public class HomeStage extends AppBaseStage {
                             binding.borderPanelContent.setCenter(binding.taFileEditor);
                         }
                     } else {
+                        currentFileOpened = null;
                         binding.taFileEditor.clear();
                         binding.borderPanelContent.setCenter(null);
                     }

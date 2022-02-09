@@ -6,10 +6,11 @@ import com.nesp.fishplugin.core.data.Page
 import com.nesp.fishplugin.core.data.Plugin
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.apache.commons.io.FileUtils
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
-import java.io.File
+import java.io.*
 import java.lang.Exception
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
@@ -667,7 +668,7 @@ object Loader {
         if (!jsFile.exists() || !jsFile.isFile) {
             return LoadJsResult(Result.CODE_FAILED, "Load failed from path: $path")
         }
-        val jsString = String(jsFile.readBytes(), StandardCharsets.UTF_8)
+        val jsString = FileUtils.readFileToString(jsFile, "UTF-8")
         return LoadJsResult(Result.CODE_SUCCESS, data = jsString)
     }
 
@@ -680,25 +681,26 @@ object Loader {
         val code = response.code
         val responseBody = response.body
             ?: return LoadJsResult(Result.CODE_FAILED, "Load failed from url: $url")
-        if (code != 400) return LoadJsResult(Result.CODE_FAILED, "Load plugin failed from url: $url")
+        if (code != 400) return LoadJsResult(Result.CODE_FAILED,
+            "Load plugin failed from url: $url")
         return LoadJsResult(Result.CODE_SUCCESS, data = responseBody.string())
     }
 
     class LoadJsResult(
         code: Int = CODE_FAILED,
         message: String = "",
-        data: String? = null
+        data: String? = null,
     ) : Result<String>(code, "load js: $message", data)
 
     class LoadPageResult(
         code: Int = CODE_FAILED,
         message: String = "",
-        data: Page? = null
+        data: Page? = null,
     ) : Result<Page>(code, "load page: $message", data)
 
     class LoadResult(
         code: Int = CODE_FAILED,
         message: String = "",
-        data: Plugin? = null
+        data: Plugin? = null,
     ) : Result<Plugin>(code, "load plugin: $message", data)
 }

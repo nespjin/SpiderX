@@ -1,6 +1,7 @@
 package com.nesp.fishplugin.tools.code;
 
 import com.yahoo.platform.yui.compressor.JavaScriptCompressor;
+import org.apache.logging.log4j.LogManager;
 import org.mozilla.javascript.EvaluatorException;
 
 import java.io.IOException;
@@ -30,15 +31,18 @@ public class JsMinifier implements CodeMinifier {
         @Override
         public void warning(String s, String s1, int i, String s2, int i1) {
             System.out.println(s + " " + s1 + " " + i + " " + s2 + " " + i1);
+            LogManager.getLogger(JsMinifier.class).warn(s + " " + s1 + " " + i + " " + s2 + " " + i1);
         }
 
         @Override
         public void error(String s, String s1, int i, String s2, int i1) {
             System.err.println(s + " " + s1 + " " + i + " " + s2 + " " + i1);
+            LogManager.getLogger(JsMinifier.class).error(s + " " + s1 + " " + i + " " + s2 + " " + i1);
         }
 
         @Override
         public EvaluatorException runtimeError(String s, String s1, int i, String s2, int i1) {
+            LogManager.getLogger(JsMinifier.class).error(s + " " + s1 + " " + i + " " + s2 + " " + i1);
             return new EvaluatorException(s + " " + s1 + " " + i + " " + s2 + " " + i1);
         }
     }

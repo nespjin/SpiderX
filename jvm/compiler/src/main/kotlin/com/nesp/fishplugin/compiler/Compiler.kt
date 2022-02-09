@@ -127,7 +127,8 @@ object Compiler {
         try {
             compressJsCode(plugin)
         } catch (e: Exception) {
-//            return CompileResult(Result.CODE_FAILED, message = "Error when compress js code:\n$e")
+            return CompileResult(Result.CODE_FAILED,
+                message = "Error when compress js code:\n${e.stackTraceToString()}")
         }
         // TODO: Compress plugin
         compressPlugin()
@@ -137,7 +138,7 @@ object Compiler {
 
     private fun compressJsCode(plugin: Plugin) {
         for (page in plugin.pages) {
-//            LogManager.getLogger(Compiler::class.java).info("compressJsCode page.js:\n" + page.js)
+            LogManager.getLogger(Compiler::class.java).info("compressJsCode page.js:\n" + page.js)
             page.js = JsMinifier().minify(page.js)
         }
     }

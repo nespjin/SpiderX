@@ -170,7 +170,7 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
             public void changed(ObservableValue<? extends Worker.State> observable,
                                 Worker.State oldValue, Worker.State newValue) {
                 System.out.println(newValue);
-                logger.info("Worker.State changed " + newValue);
+//                logger.info("Worker.State changed " + newValue);
                 switch (newValue) {
                     case SCHEDULED -> {
                         // on page start
