@@ -154,9 +154,9 @@ task deployApp(type: Exec) {
         ])
     } else if (OperatingSystem.current().isMacOsX()) {
         command.addAll([
-                '--mac-package-identifier', "com.nesp.password",
+                '--mac-package-identifier', "com.nesp.fishplugin.editor",
                 '--mac-package-name', APP_NAME,
-                '--mac-package-signing-prefix', 'com.nesp.password.',
+                '--mac-package-signing-prefix', 'com.nesp.fishplugin.editor.',
                 '--mac-app-category', 'Utilities.'
         ])
     }
