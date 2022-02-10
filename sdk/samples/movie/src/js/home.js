@@ -1,58 +1,46 @@
-function loadMainVideoPage() {
-    try {
-        let mMainVideoPage = {
-            "slideVideos": [],
-            "newPlay": [],
-            "newMovie": [],
-            "newSoap": [],
-            "newVariety": [],
-            "newAnim": []
-        };
-
-        function getVideos(ele) {
-            let videoLis = ele.getElementsByTagName("li");
-            let videos = [];
-            for (let i = 0; i < videoLis.length; i++) {
-                let videoItemContentEle = videoLis[i].getElementsByTagName("a")[0];
-                let video = {};
-                video.infoUrl = window.location.protocol + "//" + window.location.host + videoItemContentEle.attributes["href"].value;
-                video.name = videoItemContentEle.attributes["title"].value;
-                try {
-                    video.score = videoItemContentEle.getElementsByClassName("score")[0].textContent;
-                } catch (e) {
-                }
-                try {
-                    video.title = videoItemContentEle.getElementsByClassName("title")[0].textContent;
-                } catch (e) {
-                }
-                try {
-                    video.coverImageUrl = videoItemContentEle.getElementsByTagName("img")[0].attributes["src"].value;
-                } catch (e) {
-                }
-                videos.push(video);
-            }
-            return videos;
-        }
-
-        let swiperItems = document.getElementsByClassName("swiper-wrapper")[0].getElementsByTagName("a");
-        for (let i = 0; i < swiperItems.length; i++) {
-            let swiperItem = swiperItems[i];
-            let img = swiperItem.getElementsByTagName("img")[0];
-            let video = {"videoSourceName": "笨笨鸡"};
-            video.infoUrl = window.location.protocol + "//" + window.location.host + swiperItem.attributes["href"].value;
-            video.coverImageUrl = img.attributes["src"].value;
-            video.title = img.attributes["title"].value;
-            mMainVideoPage.slideVideos.push(video);
-        }
-        mMainVideoPage.newMovie = getVideos(document.querySelector("body > div:nth-child(10)"));
-        mMainVideoPage.newSoap = getVideos(document.querySelector("body > div:nth-child(12)"));
-        mMainVideoPage.newVariety = getVideos(document.querySelector("body > div:nth-child(16) > div:nth-child(1)"));
-        mMainVideoPage.newAnim = getVideos(document.querySelector("body > div:nth-child(14) > div:nth-child(1)"));
-        console.log(JSON.stringify(mMainVideoPage));
-        window.videoPluginEngine.sendMainVideoPage(JSON.stringify(mMainVideoPage));
-    } catch (e) {
-        window.videoPluginEngine.sendError(e.toString());
+function JsRuntime_LoadPage() {
+    let homePage = runtime.createHomePage();
+   
+    // 轮播图
+    let slideContainer = document.getElementsByClassName("flickity-slider")[1];
+    let slideItemContainers = slideContainer.getElementsByClassName("col-md-2 col-xs-1 list");
+    for (let i = 0; i < slideItemContainers.length; i++) {
+        var slideItem = slideItemContainers[i].getElementsByTagName("a")[0];
+        var movie = runtime.createMovie();
+        movie.name = slideItem.getAttribute("title");
+        movie.status = movie.name;
+        movie.coverImageUrl = (/[a-zA-z]+:\/\/[^\s^\"]*/g).exec(slideItem.style.background)[0];
+        movie.detailUrl = slideItem.href;
+        homePage.slideMovies.push(movie);
     }
-}
 
-loadMainVideoPage();
+    // 添加各分类部分
+    for (let i = 0; i < 4; i++) {
+        getMovies(i, document.querySelector("body > div:nth-child(3) > div > div:nth-child(" + (2 + i) + ")"))
+    }
+
+    function getMovies(i, container) {
+        let itemEles = container.getElementsByClassName("stui-vodlist clearfix")[0]
+            .getElementsByTagName("li");
+        for (let i = 0; i < itemEles.length; i++) {
+            let itemEle = itemEles[i].getElementsByTagName("a")[0];
+            var movieItem = runtime.createMovie();
+            movieItem.name = itemEle.getAttribute("title");
+            movieItem.detailUrl = itemEle.href;
+            movieItem.coverImageUrl = itemEle.getAttribute("data-original");
+            movieItem.status = itemEle.getElementsByTagName("span")[1].innerText;
+            if (i == 0) {
+                homePage.newMovie.push(movieItem);
+            } else if (i == 1) {
+                homePage.newSoap.push(movieItem);
+            } else if (i == 2) {
+                homePage.newVariety.push(movieItem);
+            } else if (i == 3) {
+                homePage.newAnim.push(movieItem);
+            }
+        }
+    }
+
+    // 直接返回Page 或调用 runtime.sendPage(homePage);
+    return JSON.stringify(homePage);
+}

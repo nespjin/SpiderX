@@ -1,12 +1,14 @@
 {
-  "name": "笨笨鸡",
+  "name": "被窝电影",
+  "id": "com.example.fishplugin.movie.beiwodianying",
+  "author": "",
   "version": "1.0.0+1",
   "runtime": "1-3",
-  "time": "2022-01-15 22:00:11,2022-01-01 08:00:11",
+  "time": "2022-01-26 12:49:23,2022-01-26 12:49:23",
   "tags": [
     "Sample"
   ],
-  "deviceFlags": "00000111",
+  "deviceFlags": 1,
   "type": 0,
   "ref": {
     "categoryJs": "path:./js/category.js"
@@ -14,36 +16,37 @@
   "pages": [
     {
       "id": "home",
-      "url": "http://m.benbenji.com/",
+      "url": "https://www.bei5dy.com/",
       "js": "path:./js/home.js"
     },
     {
       "id": "category_movie",
-      "url": "http://m.benbenji.com/dy/index_1_______1.html",
+      "url": "https://www.bei5dy.com/vodshow/dianying-----------/",
       "js": "{{categoryJs}}"
     },
     {
       "id": "category_soap",
-      "url": "http://m.benbenji.com/dsj/index_1_______1.html",
+      "url": "https://www.bei5dy.com/vodshow/dianshiju-----------/",
       "js": "{{categoryJs}}"
     },
     {
       "id": "category_variety",
-      "url": "http://m.benbenji.com/arts/",
+      "url": "https://www.bei5dy.com/vodshow/zongyi---%E7%BB%BC%E8%89%BA--------/",
       "js": "{{categoryJs}}"
     },
     {
       "id": "category_anim",
-      "url": "http://m.benbenji.com/dm/",
+      "url": "https://www.bei5dy.com/vodshow/dongman---%E5%8A%A8%E6%BC%AB--------/",
       "js": "{{categoryJs}}"
     },
     {
       "id": "search",
-      "url": "http://m.benbenji.com/vod-search-wd-{{st}}-p-1.html",
+      "url": "https://www.bei5dy.com/vodsearch/-------------/?wd=@st",
       "js": "path:./js/search.js"
     },
     {
       "id": "detail",
+      "url": "",
       "js": "path:./js/detail.js"
     }
   ]
