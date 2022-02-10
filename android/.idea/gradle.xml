@@ -17,6 +17,7 @@
             <option value="$PROJECT_DIR$/../jvm/core" />
             <option value="$PROJECT_DIR$/../jvm/movie-runtime" />
             <option value="$PROJECT_DIR$/../jvm/runtime" />
+            <option value="$PROJECT_DIR$/../jvm/tools" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

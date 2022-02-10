@@ -16,9 +16,11 @@ include ':movie-runtime'
 include ':app'
 include ':runtime-android'
 include ':movie-runtime-android'
+include ':tools'
 
 
 project(':core').projectDir = new File('../jvm/core')
 project(':compiler').projectDir = new File('../jvm/compiler')
 project(':runtime').projectDir = new File('../jvm/runtime')
 project(':movie-runtime').projectDir = new File('../jvm/movie-runtime')
+project(':tools').projectDir = new File('../jvm/tools')
