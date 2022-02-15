@@ -46,8 +46,8 @@ public class LauncherStage extends AppBaseStage {
         setResizable(false);
         stage.setMinWidth(600);
         stage.setMaxWidth(600);
-        stage.setMinHeight(400);
-        stage.setMaxHeight(400);
+        stage.setMinHeight(370);
+        stage.setMaxHeight(370);
 
         Transition hideTransition = new Transition() {
             {
