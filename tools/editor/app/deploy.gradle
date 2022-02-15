@@ -66,12 +66,14 @@ final def APP_NAME = 'PluginEditor'
 
 final def APP_VERSION_LINUX = String.valueOf("${project.versionName}-${project.versionCode}")
 final def APP_VERSION_WIN = String.valueOf(project.versionName)
+final def APP_VERSION_MACOS = String.valueOf(project.versionCode)
 
 final def DESCRIPTION = 'The Editor for FishPlugin'
 final def VENDOR = 'NESP Technology'
 
 final def ICON_LINUX = 'src/main/resources/drawable/ic_launcher_497_497.png'
 final def ICON_WIN = 'src/main/resources/drawable/ic_launcher_497_497.ico'
+final def ICON_MACOS = 'src/main/resources/drawable/ic_launcher_497_497.icns'
 
 final def BUILD_TYPE = 'alpha'
 final def BUILD_PACKAGE_NAME = APP_NAME.toLowerCase()
@@ -87,11 +89,15 @@ task deployApp(type: Exec) {
     def ICON = ICON_LINUX
     if (OperatingSystem.current().isWindows()) {
         ICON = ICON_WIN
+    } else if (OperatingSystem.current().isMacOsX()) {
+        ICON = ICON_MACOS
     }
 
     def APP_VERSION = APP_VERSION_LINUX
     if (OperatingSystem.current().isWindows()) {
         APP_VERSION = APP_VERSION_WIN
+    } else if (OperatingSystem.current().isMacOsX()) {
+        APP_VERSION = APP_VERSION_MACOS
     }
 
     // command options
@@ -185,7 +191,8 @@ final static def getBinaryType() {
     } else if (OperatingSystem.current().isLinux()) {
         return 'deb'
     } else if (OperatingSystem.current().isMacOsX()) {
-        return 'pkg'
+//        return 'pkg'
+        return 'dmg'
     }
     return ""
 }
@@ -196,7 +203,7 @@ final static def getInstallLocation() {
     } else if (OperatingSystem.current().isLinux()) {
         return '/opt/nesp'
     } else if (OperatingSystem.current().isMacOsX()) {
-        return '/opt/nesp'
+        return '/Applications'
     }
     return ""
 }
