@@ -32,7 +32,7 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
     private final Logger logger = LogManager.getLogger(JavaFxJsRuntimeTask.class);
     private boolean isLoading = false;
 
-    private void setLoading(boolean isLoading) {
+    private synchronized void setLoading(boolean isLoading) {
         this.isLoading = isLoading;
     }
 
@@ -186,7 +186,7 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
                         loadTimer.schedule(new TimerTask() {
                             @Override
                             public void run() {
-                                synchronized (this) {
+                                synchronized (JavaFxJsRuntimeTask.this) {
                                     if (!isLoadFinished()) {
                                         setLoadFinished(true);
                                         setLoading(false);
@@ -231,7 +231,7 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
                     }
 
                     case SUCCEEDED -> {
-                        synchronized (this) {
+                        synchronized (JavaFxJsRuntimeTask.this) {
                             if (!isLoadFinished()) {
                                 setLoadFinished(true);
                                 setLoading(false);
@@ -336,7 +336,7 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
     }
 
     @Override
-    public void execCurrentJs() {
+    public synchronized void execCurrentJs() {
 
         JSObject window = (JSObject) webView.getEngine().executeScript("window");
         window.setMember("runtimeNative", javaFxJsRuntimeInterface);
@@ -371,12 +371,12 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
     }
 
     @Override
-    public boolean isRunning() {
+    public synchronized boolean isRunning() {
         return isLoading;
     }
 
     @Override
-    public void awaitFinish() {
+    public synchronized void awaitFinish() {
         while (isLoading) {
             try {
                 Thread.sleep(50);
@@ -388,7 +388,7 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
     }
 
     @Override
-    public void awaitFinish(CancellationSignal cancellationSignal) {
+    public synchronized void awaitFinish(CancellationSignal cancellationSignal) {
         while (isLoading) {
             if (cancellationSignal != null) {
                 cancellationSignal.throwIfCanceled();

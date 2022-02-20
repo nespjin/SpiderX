@@ -4,6 +4,7 @@
     <bytecodeTargetLevel target="1.8">
       <module name="android.app" target="11" />
       <module name="android.movie-runtime-android" target="11" />
+      <module name="android.runtime" target="11" />
       <module name="android.runtime-android" target="11" />
       <module name="com.nesp.fishplugin.runtime.android.runtime" target="11" />
     </bytecodeTargetLevel>

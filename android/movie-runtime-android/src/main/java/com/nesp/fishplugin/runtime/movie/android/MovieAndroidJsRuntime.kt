@@ -1,6 +1,7 @@
 package com.nesp.fishplugin.runtime.movie.android
 
 import android.content.Context
+import android.util.Log
 import android.webkit.WebView
 import com.google.gson.Gson
 import com.nesp.fishplugin.core.data.Page
@@ -16,6 +17,7 @@ import com.nesp.fishplugin.runtime.movie.data.Movie
 import com.nesp.fishplugin.runtime.movie.data.MovieCategoryPage
 import com.nesp.fishplugin.runtime.movie.data.SearchPage
 import java.net.URL
+import java.nio.charset.MalformedInputException
 import java.nio.charset.StandardCharsets
 
 /**
@@ -57,6 +59,8 @@ class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
 
                     override fun onReceiveError(error: String) {
                         runtimeTaskListener?.onReceiveError(error)
+                        process.execResult.message = error
+                        process.exitWithError()
                     }
 
                     override fun onReceivePage(pageJson: String) {
@@ -88,6 +92,7 @@ class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
 
                     override fun onTimeout() {
                         runtimeTaskListener?.onTimeout()
+                        process.execResult.message = "Timeout"
                         process.exitWithError()
                     }
 
@@ -104,21 +109,32 @@ class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
                 val url = page.url
                 this.js = page.js
 
-                val realUrl = Plugin.removeReqPrefix(url)
+                var realUrl = Plugin.removeReqPrefix(url)
                 val realUrlObj = URL(realUrl)
+                try {
+                    realUrl = realUrlObj.protocol + "://" + realUrlObj.host
+                    val path = realUrlObj.path
+                    if (path != null && path.isNotEmpty()) {
+                        if (!path.startsWith("/")) realUrl += "/"
+                        realUrl += path
+                    }
+                    val query = realUrlObj.query
+                    if (query != null && query.isNotEmpty()) {
+                        if (!query.startsWith("?")) realUrl += "?"
+                        realUrl += query
+                    }
+                } catch (ignored: MalformedInputException) {
+                }
 
                 val s = htmlDocumentStringCache[realUrl]
                 if (!s.isNullOrEmpty()) {
                     // Load from cache
-                    jsEngine.loadDataWithBaseURL(
-                        "${realUrlObj.protocol}://${realUrlObj.host}", s,
-                        "text/html",
-                        "utf-8",
-                        null
-                    )
+                    jsEngine.loadDataWithBaseURL(realUrl, s, "text/html", "utf-8", null)
                     return
                 }
 
+                Log.i(TAG, "run: realUrl = $realUrl")
+                
                 if (Plugin.isPostReq(url)) {
                     // Post
                     val query = if (realUrlObj.query != null) {

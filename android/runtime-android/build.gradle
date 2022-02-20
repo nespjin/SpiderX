@@ -62,6 +62,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.9'
 
     implementation project(path: ":core")
+    implementation project(path: ":tools")
     implementation project(path: ':runtime')
     implementation project(path: ':movie-runtime')
 }
