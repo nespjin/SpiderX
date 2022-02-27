@@ -338,11 +338,16 @@ abstract class AndroidJsRuntimeTask(context: Context) : JsRuntimeTask<WebView>()
 
                 // timeoutWatcherTimer is not perform anyway
                 cancelTimer(timeoutWatcherTimer)
+                timeoutWatcherTimer = Timer()
                 timeoutWatcherTimer?.schedule(object : TimerTask() {
                     override fun run() {
-                        if (isLoadFinished) return
+                        if (isReceivePageOrError()){
+                            cancelTimer(timeoutWatcherTimer)
+                            timeoutWatcherTimer = null
+                            return
+                        }
                         listener?.onTimeout()
-                        timeoutWatcherTimer?.cancel()
+                        cancelTimer(timeoutWatcherTimer)
                         timeoutWatcherTimer = null
                     }
                 }, timeout, 1)
