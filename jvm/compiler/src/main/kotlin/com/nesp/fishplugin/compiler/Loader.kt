@@ -42,12 +42,12 @@ object Loader {
      * Load plugin from disk
      */
     @JvmStatic
-    fun loadPluginFromDisk(path: String): LoadResult {
+    fun loadPluginFromDisk(path: String, deviceType: Int): LoadResult {
         val pluginFile = File(path)
         if (!pluginFile.exists() || !pluginFile.isFile)
             return LoadResult(Result.CODE_FAILED, "Load plugin failed from path:$path")
         val pluginString = String(pluginFile.readBytes(), StandardCharsets.UTF_8)
-        val loadPluginFromJsonString = loadPluginFromJsonString(pluginString)
+        val loadPluginFromJsonString = loadPluginFromJsonString(pluginString, deviceType)
         if (loadPluginFromJsonString.data != null) {
             return load(loadPluginFromJsonString.data!!)
         }
@@ -58,7 +58,7 @@ object Loader {
      * Load plugin from url
      */
     @JvmStatic
-    fun loadPluginFromUrl(url: String): LoadResult {
+    fun loadPluginFromUrl(url: String, deviceType: Int): LoadResult {
         val request = Request.Builder().get().url(url).build()
         val response = httpClient.newCall(request).execute()
         val code = response.code
@@ -68,7 +68,7 @@ object Loader {
                 "Load plugin failed from url:$url"
             )
         if (code != 400) return LoadResult(Result.CODE_FAILED, "Load plugin failed from url:$url")
-        val loadPluginFromJsonString = loadPluginFromJsonString(responseBody.string())
+        val loadPluginFromJsonString = loadPluginFromJsonString(responseBody.string(), deviceType)
         if (loadPluginFromJsonString.data != null) {
             return load(loadPluginFromJsonString.data!!)
         }
@@ -78,11 +78,10 @@ object Loader {
     /**
      * Create instance of plugin and pick the correct field value according to device type.
      */
-    private fun loadPluginFromJsonString(jsonString: String): LoadResult {
+    private fun loadPluginFromJsonString(jsonString: String, deviceType: Int): LoadResult {
         if (jsonString.isEmpty()) return LoadResult(Result.CODE_FAILED, "The json is empty")
         try {
             val jsonPluginRoot = JSONObject(jsonString)
-            val deviceType = Environment.shared.getDeviceType()
 
             val plugin = Plugin()
 
@@ -106,20 +105,20 @@ object Loader {
                     if (parent.startsWith("http://", true)
                         || parent.startsWith("https://", true)
                     ) {
-                        val loadPluginFromUrl = loadPluginFromUrl(parent)
+                        val loadPluginFromUrl = loadPluginFromUrl(parent, deviceType)
                         if (loadPluginFromUrl.code != Result.CODE_SUCCESS) {
                             return loadPluginFromUrl
                         }
                         plugin.parent = loadPluginFromUrl.data
                     } else {
-                        val loadPluginFromDisk = loadPluginFromDisk(parent)
+                        val loadPluginFromDisk = loadPluginFromDisk(parent, deviceType)
                         if (loadPluginFromDisk.code != Result.CODE_SUCCESS) {
                             return loadPluginFromDisk
                         }
                         plugin.parent = loadPluginFromDisk.data
                     }
                 } else {
-                    val loadParentPluginFromJsonString = loadPluginFromJsonString(parent.toString())
+                    val loadParentPluginFromJsonString = loadPluginFromJsonString(parent.toString(), deviceType)
                     if (loadParentPluginFromJsonString.code != Result.CODE_SUCCESS) {
                         return loadParentPluginFromJsonString
                     }
@@ -681,8 +680,10 @@ object Loader {
         val code = response.code
         val responseBody = response.body
             ?: return LoadJsResult(Result.CODE_FAILED, "Load failed from url: $url")
-        if (code != 400) return LoadJsResult(Result.CODE_FAILED,
-            "Load plugin failed from url: $url")
+        if (code != 400) return LoadJsResult(
+            Result.CODE_FAILED,
+            "Load plugin failed from url: $url"
+        )
         return LoadJsResult(Result.CODE_SUCCESS, data = responseBody.string())
     }
 

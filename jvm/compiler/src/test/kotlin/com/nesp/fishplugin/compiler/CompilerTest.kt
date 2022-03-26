@@ -1,6 +1,7 @@
 package com.nesp.fishplugin.compiler
 
 import com.google.gson.Gson
+import com.nesp.fishplugin.core.Environment
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -74,7 +75,7 @@ internal class CompilerTest {
 //            }
 //            ]
 //        }
-        val compileFromDisk = Compiler.compileFromDisk("./plugin.json")
+        val compileFromDisk = Compiler.compileFromDisk("./plugin.json", Environment.shared.getDeviceType())
         println("compile: message = " + compileFromDisk.message)
         println("compile: data = " + gson.toJson(compileFromDisk.data))
     }

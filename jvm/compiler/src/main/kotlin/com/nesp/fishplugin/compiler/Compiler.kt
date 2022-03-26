@@ -11,9 +11,9 @@ import kotlin.io.path.Path
 object Compiler {
 
     @JvmStatic
-    fun compileFromDisk(path: String): CompileResult {
+    fun compileFromDisk(path: String, deviceType: Int): CompileResult {
         // Load plugin
-        val loadResult = Loader.loadPluginFromDisk(path)
+        val loadResult = Loader.loadPluginFromDisk(path, deviceType)
         if (loadResult.code != Result.CODE_SUCCESS) {
             return CompileResult(Result.CODE_FAILED, loadResult.message)
         }
@@ -21,9 +21,9 @@ object Compiler {
     }
 
     @JvmStatic
-    fun compileFromUrl(url: String): CompileResult {
+    fun compileFromUrl(url: String, deviceType: Int): CompileResult {
         // Load plugin
-        val loadResult = Loader.loadPluginFromUrl(url)
+        val loadResult = Loader.loadPluginFromUrl(url, deviceType)
         if (loadResult.code != Result.CODE_SUCCESS) {
             return CompileResult(Result.CODE_FAILED, loadResult.message)
         }
@@ -127,8 +127,10 @@ object Compiler {
         try {
             compressJsCode(plugin)
         } catch (e: Exception) {
-            return CompileResult(Result.CODE_FAILED,
-                message = "Error when compress js code:\n${e.stackTraceToString()}")
+            return CompileResult(
+                Result.CODE_FAILED,
+                message = "Error when compress js code:\n${e.stackTraceToString()}"
+            )
         }
         // TODO: Compress plugin
         compressPlugin()
