@@ -18,7 +18,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.TextFlow?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="500.0" minWidth="700" prefHeight="700.0" prefWidth="1020.0" stylesheets="@../styles/styles.css" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="500.0" minWidth="700" prefHeight="700.0" prefWidth="1020.0" stylesheets="@../styles/styles.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
     <children>
       <BorderPane fx:id="borderPanelContent" prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: #DCDCDC;" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <top>
@@ -39,7 +39,8 @@
                      <children>
                         <HBox alignment="CENTER" spacing="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="12.0" AnchorPane.topAnchor="0.0">
                            <children>
-                              <ComboBox fx:id="cbBuildTYpe" prefWidth="150.0" promptText="None" />
+                              <ComboBox fx:id="cbDeviceType" prefWidth="150.0" promptText="None" />
+                              <ComboBox fx:id="cbBuildType" prefWidth="150.0" promptText="None" />
                               <ImageView fx:id="ivBuildStart" fitHeight="20.0" fitWidth="20.0" pickOnBounds="true" preserveRatio="true">
                                  <image>
                                     <Image url="@../drawable/ic_start_build.png" />

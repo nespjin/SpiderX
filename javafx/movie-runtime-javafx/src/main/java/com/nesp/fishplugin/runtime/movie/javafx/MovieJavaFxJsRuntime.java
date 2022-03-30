@@ -1,6 +1,7 @@
 package com.nesp.fishplugin.runtime.movie.javafx;
 
 import com.google.gson.Gson;
+import com.nesp.fishplugin.core.Environment;
 import com.nesp.fishplugin.core.data.Page;
 import com.nesp.fishplugin.core.data.Plugin;
 import com.nesp.fishplugin.runtime.Process;
@@ -25,6 +26,16 @@ public class MovieJavaFxJsRuntime extends JavaFxJsRuntime {
     private final Gson gson = new Gson();
     private final Logger logger = LogManager.getLogger(MovieJavaFxJsRuntime.class);
 
+    private int deviceType = Environment.getShared().getDeviceType();
+
+    public void setDeviceType(int deviceType) {
+        this.deviceType = deviceType;
+    }
+
+    public int getDeviceType() {
+        return deviceType;
+    }
+
     @Override
     public Process exec(Page page, Object... parameters) {
         Process process = super.exec(page, parameters);
@@ -46,6 +57,8 @@ public class MovieJavaFxJsRuntime extends JavaFxJsRuntime {
         JavaFxJsRuntimeTaskListener finalRuntimeTaskListener = runtimeTaskListener;
         runTask(new JavaFxJsRuntimeTask() {
             {
+                setDeviceType(MovieJavaFxJsRuntime.this.getDeviceType());
+
                 // Bind listener
                 setListener(new JavaFxJsRuntimeTaskListener() {
                     @Override

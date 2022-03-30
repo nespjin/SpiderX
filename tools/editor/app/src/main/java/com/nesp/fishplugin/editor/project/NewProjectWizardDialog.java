@@ -140,8 +140,8 @@ public class NewProjectWizardDialog extends AppBaseDialog<Project> {
                     if (binding.cbTable.isSelected()) {
                         flags |= Plugin.DEVICE_FLAG_TABLE;
                     }
-                    if (binding.cbPhone.isSelected()) {
-                        flags |= Plugin.DEVICE_FLAG_PHONE;
+                    if (binding.cbDesktop.isSelected()) {
+                        flags |= Plugin.DEVICE_FLAG_DESKTOP;
                     }
                     if (flags == 0) return null;
                     targetPlugin.setDeviceFlags(flags);

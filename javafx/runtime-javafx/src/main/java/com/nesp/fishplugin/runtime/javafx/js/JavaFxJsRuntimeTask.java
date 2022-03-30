@@ -90,6 +90,16 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
         this.listener = listener;
     }
 
+    private int deviceType = Environment.getShared().getDeviceType();
+
+    public void setDeviceType(int deviceType) {
+        this.deviceType = deviceType;
+    }
+
+    public int getDeviceType() {
+        return deviceType;
+    }
+
     public final JavaFxJsRuntimeInterfaceImpl javaFxJsRuntimeInterface = new JavaFxJsRuntimeInterfaceImpl();
 
     public class JavaFxJsRuntimeInterfaceImpl extends JavaFxJsRuntimeInterface {
@@ -143,10 +153,9 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
 
     private void initWebView(WebView webView) {
         if (webView == null) return;
-        Environment environment = Environment.getShared();
         var userAgent =
                 "Mozilla/5.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Mobile Safari/537.36";
-        if (!environment.isMobilePhone()) {
+        if (getDeviceType() != Environment.DEVICE_TYPE_MOBILE_PHONE) {
             // Using PC
             userAgent =
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36";
@@ -321,9 +330,9 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
 
     @Override
     public Object execJs(String js) {
-        System.out.println("execJs js = " + js);
         var jsTmp = new JsMinifier().minify(js).trim();
         jsTmp = "javascript:" + jsTmp;
+        System.out.println("execJs js = " + jsTmp);
         var result = "";
         if (webView != null) {
             Object executeScriptResult = webView.getEngine().executeScript(jsTmp);

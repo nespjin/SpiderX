@@ -68,7 +68,11 @@ public class TestPageTask extends PluginBuildTask {
                 }
                 optOnPrintListener.ifPresent(onPrintListener1 -> onPrintListener1.print("Test " + page.getId() + " ..."));
                 com.nesp.fishplugin.runtime.Process process =
-                        new MovieJavaFxJsRuntime().exec(page, new JavaFxJsRuntimeTaskListener() {
+                        new MovieJavaFxJsRuntime() {
+                            {
+                                setDeviceType((int) getParameter("deviceType"));
+                            }
+                        }.exec(page, new JavaFxJsRuntimeTaskListener() {
                             @Override
                             public void onPageLoadStart() {
                                 super.onPageLoadStart();

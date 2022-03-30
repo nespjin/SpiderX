@@ -1,5 +1,6 @@
 package com.nesp.fishplugin.editor.home;
 
+import com.nesp.fishplugin.core.Environment;
 import com.nesp.fishplugin.core.Result;
 import com.nesp.fishplugin.core.data.Plugin;
 import com.nesp.fishplugin.editor.AppInfo;
@@ -100,25 +101,49 @@ public class HomeStage extends AppBaseStage {
                     if (project != null) {
                         startWatchProjectDir();
 
-                        Optional.of(project).map(Project::getTargetPlugin).map(Plugin::getType)
-                                .ifPresent(integer -> {
-                                    if (integer == Plugin.TYPE_MOVIE) {
-                                        pluginBuilder = MoviePluginBuilder.getInstance();
-                                    } else {
-                                        new AppAlert(Alert.AlertType.WARNING, "不支持该项目",
-                                                ButtonType.OK)
-                                                .showAndWait();
-                                        closeProject();
-                                        return;
-                                    }
-                                    binding.cbBuildTYpe.getItems().clear();
-                                    binding.cbBuildTYpe.getItems()
-                                            .addAll(Arrays.asList(pluginBuilder.getBuildTaskDisplayNames()));
-                                    binding.cbBuildTYpe.getSelectionModel().select(0);
-                                });
+                        Optional<Project> optionalProject = Optional.of(project);
+                        optionalProject.map(Project::getTargetPlugin).map(Plugin::getType).ifPresent(pluginType -> {
+                            if (pluginType == Plugin.TYPE_MOVIE) {
+                                pluginBuilder = MoviePluginBuilder.getInstance();
+                            } else {
+                                new AppAlert(Alert.AlertType.WARNING, "不支持该项目",
+                                        ButtonType.OK)
+                                        .showAndWait();
+                                closeProject();
+                                return;
+                            }
+                            binding.cbBuildType.getItems().clear();
+                            binding.cbBuildType.getItems()
+                                    .addAll(Arrays.asList(pluginBuilder.getBuildTaskDisplayNames()));
+                            binding.cbBuildType.getSelectionModel().select(0);
+                        });
+
+                        optionalProject.map(Project::getTargetPlugin).ifPresent(targetPlugin -> {
+                            binding.cbDeviceType.getItems().clear();
+                            if (targetPlugin.isSupportMobilePhone()) {
+                                binding.cbDeviceType.getItems().add("Mobile");
+                            }
+                            if (targetPlugin.isSupportTable()) {
+                                binding.cbDeviceType.getItems().add("Table");
+                            }
+                            if (targetPlugin.isSupportDesktop()) {
+                                binding.cbDeviceType.getItems().add("Desktop");
+                            }
+
+                            if (binding.cbDeviceType.getItems().size() == 0) {
+                                new AppAlert(Alert.AlertType.WARNING, "不受支持的设备类型",
+                                        ButtonType.OK)
+                                        .showAndWait();
+                                closeProject();
+                                return;
+                            }
+
+                            binding.cbDeviceType.getSelectionModel().select(0);
+                        });
                     } else {
                         pluginBuilder = null;
-                        binding.cbBuildTYpe.getItems().clear();
+                        binding.cbBuildType.getItems().clear();
+                        binding.cbDeviceType.getItems().clear();
                     }
 
                     hasFileOpened(false);
@@ -168,7 +193,7 @@ public class HomeStage extends AppBaseStage {
                                         return;
                                     }
                                     binding.textFlowBuildOutput.getChildren().clear();
-                                    int selectedIndex = binding.cbBuildTYpe.getSelectionModel().getSelectedIndex();
+                                    int selectedIndex = binding.cbBuildType.getSelectionModel().getSelectedIndex();
                                     OnBuildProgressListener onBuildProgressListener = new OnBuildProgressListener() {
                                         @Override
                                         public void onProgress(double progress, int lineType, String line) {
@@ -413,6 +438,16 @@ public class HomeStage extends AppBaseStage {
 
         StageHomeViewBinding binding = getBinding();
 
+        binding.cbDeviceType.getSelectionModel().selectedIndexProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+                ProjectManager.switchDeviceType(ProjectManager.getInstance().getWorkingProject(), getSelectedDeviceType());
+                if (currentFileOpened != null) {
+                    openFile(currentFileOpened);
+                }
+            }
+        });
+
         binding.ivBuildStart.disableProperty().addListener(new ChangeListener<Boolean>() {
             @Override
             public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
@@ -463,18 +498,17 @@ public class HomeStage extends AppBaseStage {
                 };
             }
         });
-        dirTreeView.getSelectionModel().selectedItemProperty()
-                .addListener((observable, oldValue, newValue) -> {
-                    if (newValue == null) return;
-                    File value = newValue.getValue();
-                    if (value.isFile())
-                        openFile(value);
-                    else {
-                        newValue.getChildren().clear();
-                        addTreeViewItem(value, newValue, false);
-                    }
+        dirTreeView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null) return;
+            File value = newValue.getValue();
+            if (value.isFile())
+                openFile(value);
+            else {
+                newValue.getChildren().clear();
+                addTreeViewItem(value, newValue, false);
+            }
 
-                });
+        });
 
         initializeEditor();
 
@@ -494,6 +528,20 @@ public class HomeStage extends AppBaseStage {
 
         viewModel.onBottomStatusInvalidate(null);
         viewModel.onWorkingProjectInvalidate(null);
+    }
+
+    private int getSelectedDeviceType() {
+        StageHomeViewBinding binding = getBinding();
+        switch (binding.cbDeviceType.getSelectionModel().getSelectedIndex()) {
+            case 0:
+                return Environment.DEVICE_TYPE_MOBILE_PHONE;
+            case 1:
+                return Environment.DEVICE_TYPE_TABLE;
+            case 2:
+                return Environment.DEVICE_TYPE_DESKTOP;
+            default:
+                return -1;
+        }
     }
 
     private void initializeTopMenu() {

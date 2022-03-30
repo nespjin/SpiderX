@@ -28,7 +28,7 @@ public class CompilePluginTask extends PluginBuildTask {
         }
         Compiler.CompileResult compileResult;
         try {
-            compileResult = Compiler.compileFromDisk(projectManifestFile.getPath());
+            compileResult = Compiler.compileFromDisk(projectManifestFile.getPath(), (int) getParameter("deviceType"));
         } catch (Exception e) {
             logger.error("run", e);
             return Result.fail("Compile the file " + projectManifestFile.getName() +

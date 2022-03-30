@@ -1,6 +1,7 @@
 package com.nesp.fishplugin.editor.plugin;
 
 import com.google.common.util.concurrent.AtomicDouble;
+import com.nesp.fishplugin.core.Environment;
 import com.nesp.fishplugin.editor.project.Project;
 import com.nesp.fishplugin.editor.project.ProjectManager;
 import com.nesp.sdk.java.util.OnResultListener;
@@ -47,7 +48,18 @@ public class MoviePluginBuilder extends PluginBuilder {
     }
 
     public PluginBuildTask getCompilePluginTask() {
+        compilePluginTask.putParameter("deviceType", getDeviceType());
         return compilePluginTask;
+    }
+
+    private int deviceType = Environment.getShared().getDeviceType();
+
+    public void setDeviceType(int deviceType) {
+        this.deviceType = deviceType;
+    }
+
+    public int getDeviceType() {
+        return deviceType;
     }
 
     public PluginBuildTask getPackagePluginTask() {
@@ -55,18 +67,22 @@ public class MoviePluginBuilder extends PluginBuilder {
     }
 
     public PluginBuildTask getTestHomePageJsTask() {
+        testHomePageJsTask.putParameter("deviceType", getDeviceType());
         return testHomePageJsTask;
     }
 
     public PluginBuildTask getTestCategoryPageJsTask() {
+        testCategoryPageJsTask.putParameter("deviceType", getDeviceType());
         return testCategoryPageJsTask;
     }
 
     public PluginBuildTask getTestSearchPageJsTask() {
+        testSearchPageJsTask.putParameter("deviceType", getDeviceType());
         return testSearchPageJsTask;
     }
 
     public PluginBuildTask getTestDetailPageJsTask() {
+        testDetailPageJsTask.putParameter("deviceType", getDeviceType());
         return testDetailPageJsTask;
     }
 
@@ -182,6 +198,7 @@ public class MoviePluginBuilder extends PluginBuilder {
 //                        });
 //                        thread.setDaemon(true);
 //                        thread.start();
+                        if (!isSuccess.get()) break;
                     }
                     /*try {
                         countDownLatch.await();

@@ -2,9 +2,11 @@ package com.nesp.fishplugin.editor.project;
 
 import com.google.gson.Gson;
 import com.nesp.fishplugin.compiler.Loader;
+import com.nesp.fishplugin.core.Environment;
 import com.nesp.fishplugin.core.Result;
 import com.nesp.fishplugin.core.data.Plugin;
 import com.nesp.fishplugin.editor.app.Storage;
+import com.nesp.fishplugin.editor.plugin.MoviePluginBuilder;
 import com.nesp.fishplugin.editor.utils.ZipUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
@@ -119,11 +121,24 @@ public final class ProjectManager {
      * @return result
      */
     public static Result<Project> openProject(File projectDir) {
-        File projectManifestFile = Project.findProjectManifestFile(projectDir);
+        Project project = new Project();
+        project.setName(projectDir.getName());
+        Result<Boolean> switchDeviceType = switchDeviceType(project, -1);
+        if (switchDeviceType.getCode() == Result.CODE_FAILED) {
+            return Result.fail(switchDeviceType.getMessage());
+        }
+        return Result.success(project);
+    }
+
+    public static Result<Boolean> switchDeviceType(Project project, int deviceType) {
+        if (project == null)
+            return Result.fail("switchDeviceType the project is null.");
+
+        File projectManifestFile = project.getProjectManifestFile();
         if (projectManifestFile == null)
             return Result.fail("The file " + Project.PLUGIN_MANIFEST_FILE_NAME + " not found");
 
-        Loader.LoadResult loadResult = Loader.loadPluginFromDisk(projectManifestFile.getPath());
+        Loader.LoadResult loadResult = Loader.loadPluginFromDisk(projectManifestFile.getPath(), deviceType);
         if (loadResult.getCode() != Result.CODE_SUCCESS) {
             String message = loadResult.getMessage();
             if (message.isEmpty())
@@ -131,13 +146,25 @@ public final class ProjectManager {
             return Result.fail(message);
         }
 
-        Plugin data = loadResult.getData();
-        Project project = new Project();
-        project.setName(projectDir.getName());
-        project.setTargetPlugin(data);
+        Plugin targetPlugin = loadResult.getData();
+        if (targetPlugin == null) {
+            return Result.fail("switchDeviceType targetPlugin is null");
+        }
 
-        return Result.success(project);
+        if (deviceType < 0) {
+            if (targetPlugin.isSupportMobilePhone()) {
+                return switchDeviceType(project, Environment.DEVICE_TYPE_MOBILE_PHONE);
+            } else if (targetPlugin.isSupportTable()) {
+                return switchDeviceType(project, Environment.DEVICE_TYPE_TABLE);
+            } else if (targetPlugin.isSupportDesktop()) {
+                return switchDeviceType(project, Environment.DEVICE_TYPE_DESKTOP);
+            }
+            return Result.fail("switchDeviceType device type is not supported");
+        }
+
+        MoviePluginBuilder.getInstance().setDeviceType(deviceType);
+        project.setTargetPlugin(targetPlugin);
+
+        return Result.success(true);
     }
-
-
 }
