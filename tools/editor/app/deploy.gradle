@@ -115,6 +115,7 @@ task deployApp(type: Exec) {
             '--app-version', "${argWrap()}$APP_VERSION${argWrap()}",
             '--copyright', "${argWrap()}Copyright2022 © NESP Technology. All Rights Reserved${argWrap()}",
             '--license-file', "${argWrap()}../LICENSE_APACHE.txt${argWrap()}",
+            '--resource-dir',"${argWrap()}./pkg-res${argWrap()}",
             '--verbose',
 
             // Java vm options
