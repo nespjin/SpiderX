@@ -22,7 +22,7 @@ public abstract class PluginBuildTask {
     /**
      * @return name of task.
      */
-    abstract String name();
+    public abstract String name();
 
     abstract Result run(Project workingProject, OnPrintListener onPrintListener, Object... parameters) throws Exception;
 

@@ -35,6 +35,10 @@ public final class SingletonFactory {
 
     private static final Map<String, WeakReference<Object>> weakReferenceInstances = new WeakHashMap<>();
 
+    public static void removeInstance(final Class<?> clazz) {
+        instances.remove(clazz.getName());
+    }
+
     public static <T> T getInstance(final Class<T> clazz) {
         return getInstance(clazz, null);
     }
@@ -64,6 +68,10 @@ public final class SingletonFactory {
             }
         }
         return (T) instance;
+    }
+
+    public static void removeWeakInstance(final Class<?> clazz) {
+        weakReferenceInstances.remove(clazz.getName());
     }
 
     public static <T> T getWeakInstance(final Class<T> clazz) {

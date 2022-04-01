@@ -13,6 +13,7 @@ import com.nesp.fishplugin.editor.plugin.PluginBuilder;
 import com.nesp.fishplugin.editor.project.NewProjectWizardDialog;
 import com.nesp.fishplugin.editor.project.Project;
 import com.nesp.fishplugin.editor.project.ProjectManager;
+import com.nesp.fishplugin.editor.utils.DragResizer;
 import com.nesp.sdk.java.lang.SingletonFactory;
 import com.nesp.sdk.java.util.OnResultListener;
 import com.nesp.sdk.javafx.platform.PlatformUtil;
@@ -448,6 +449,17 @@ public class HomeStage extends AppBaseStage {
             }
         });
 
+        binding.cbBuildType.getSelectionModel().selectedItemProperty().addListener(new ChangeListener() {
+            @Override
+            public void changed(ObservableValue observable, Object oldValue, Object newValue) {
+                if (newValue.equals(MoviePluginBuilder.getInstance().getBuildPluginTask().name())) {
+                    binding.cbDeviceType.setVisible(false);
+                } else {
+                    binding.cbDeviceType.setVisible(true);
+                }
+            }
+        });
+
         binding.ivBuildStart.disableProperty().addListener(new ChangeListener<Boolean>() {
             @Override
             public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
@@ -512,6 +524,14 @@ public class HomeStage extends AppBaseStage {
 
         initializeEditor();
 
+//        binding.vbBottom.setOnMouseMoved(new EventHandler<MouseEvent>() {
+//            @Override
+//            public void handle(MouseEvent event) {
+//                binding.vbBottom
+//            }
+//        });
+        DragResizer.makeResizable(binding.textFlowBuildOutput);
+
         binding.ivCloseBuildOutput.setOnMouseClicked(new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent event) {
@@ -520,6 +540,7 @@ public class HomeStage extends AppBaseStage {
                 }
             }
         });
+
         binding.textFlowBuildOutput.maxWidthProperty().bind(binding.vbBottom.widthProperty());
 
         invalidateView();
@@ -1025,7 +1046,9 @@ public class HomeStage extends AppBaseStage {
         super.onHidden(event);
         stopWatchProjectDir();
         Optional.ofNullable(viewModel).map(Reference::get).ifPresent(HomeStateViewModel::destroy);
+        getBinding().textFlowBuildOutput.maxWidthProperty().unbind();
         closeProjectMenuItem = null;
+        SingletonFactory.removeWeakInstance(HomeStage.class);
         isShown = false;
     }
 
