@@ -2,14 +2,14 @@
     /**
         字段后缀
         对于字段url的后缀可为
-        url-{设备类型}
+        url_{设备类型}
 
         设备类型：
            0: 手机
            1: 平板
            2: 桌面
 
-       例如： 如果同时存在 url与url-2，则在桌面端使用url-2，其它端使用url
+       例如： 如果同时存在 url与url_2，则在桌面端使用url_2，其它端使用url
     **/
     "parent": { 
         /**
@@ -63,7 +63,7 @@
         "searchUrl":"http://xxxx.xxx/index.php?m=vod-search&wd={{st}}", // {{st}} 会替换为用户输入的关键字
         "detailPageUrl":"https://www.baidu.com",
         "commonJs":"function a() { }", // js 代码引用
-        "commonJs-2":"path:../Sample.js", // 本地引用
+        "commonJs_2":"path:../Sample.js", // 本地引用
         "sampleJs":"url:https://xxx.xx/sample.js", // 网络引用
         "moviesDsl": {
           // 对象引用，DSL 支持
@@ -93,15 +93,15 @@
         { 
             "id": "home", // 不支持字段后缀
             "url": "{{commonUrl}}", // 引用字段 ref.commonUrl
-            "url-2":"", // 在桌面端会使用该字段
+            "url_2":"", // 在桌面端会使用该字段
             // 若js与dsl同时存在，则使用dsl
-            "js": "{{commonJs}}", // 引用Js，在桌面端会使用ref.commonJs-2
+            "js": "{{commonJs}}", // 引用Js，在桌面端会使用ref.commonJs_2
             "dsl": {}
         },
         {
             "id": "category",
             "url": "{{commonUrl}}", // 引用字段
-            "js": "{{commonJs}}", // 引用Js，在桌面端会使用ref.commonJs-2
+            "js": "{{commonJs}}", // 引用Js，在桌面端会使用ref.commonJs_2
             "dsl": "{{moviesDsl}}" // 引用对象 ref.moviesDsl
         },
         {

@@ -34,6 +34,7 @@ public class LauncherStage extends AppBaseStage {
         if (launcherStage != null) {
             launcherStage.getStage().hide();
         }
+        SingletonFactory.removeWeakInstance(LauncherStage.class);
     }
 
 
@@ -67,6 +68,7 @@ public class LauncherStage extends AppBaseStage {
             {
                 setCycleDuration(new Duration(500));
             }
+
             @Override
             protected void interpolate(double frac) {
                 stage.setOpacity(frac);

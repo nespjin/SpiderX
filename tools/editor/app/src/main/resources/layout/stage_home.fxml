@@ -81,7 +81,7 @@
                               </ImageView>
                            </children>
                         </AnchorPane>
-                        <ScrollPane fx:id="spBuildOutput" maxHeight="226.0" minHeight="226.0" style="-fx-border-color: #DCDCDC; -fx-border-width: 0.5 0 0.5 0;" styleClass="scroll-pane-build-output">
+                        <ScrollPane fx:id="spBuildOutput" minHeight="226.0" style="-fx-border-color: #DCDCDC; -fx-border-width: 0.5 0 0.5 0;" styleClass="scroll-pane-build-output">
                            <content>
                               <TextFlow fx:id="textFlowBuildOutput" style="-fx-background-color: white; -fx-border-color: #DCDCDC; -fx-border-image-insets: 0; -fx-background-insets: 0; -fx-border-width: 0;" />
                            </content>

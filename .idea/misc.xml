@@ -3,6 +3,8 @@
   <component name="ExternalStorageConfigurationManager" enabled="true" />
   <component name="FrameworkDetectionExcludesConfiguration">
     <file type="web" url="file://$PROJECT_DIR$/android" />
+    <file type="web" url="file://$PROJECT_DIR$/javafx/movie-runtime-javafx" />
+    <file type="web" url="file://$PROJECT_DIR$/javafx/runtime-javafx" />
     <file type="web" url="file://$PROJECT_DIR$/jvm" />
     <file type="web" url="file://$PROJECT_DIR$/tools/editor" />
   </component>
