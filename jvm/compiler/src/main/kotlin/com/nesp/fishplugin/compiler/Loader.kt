@@ -3,7 +3,9 @@ package com.nesp.fishplugin.compiler
 import com.nesp.fishplugin.core.Environment
 import com.nesp.fishplugin.core.Result
 import com.nesp.fishplugin.core.data.Page
+import com.nesp.fishplugin.core.data.Page2
 import com.nesp.fishplugin.core.data.Plugin
+import com.nesp.fishplugin.core.data.Plugin2
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.apache.commons.io.FileUtils
@@ -31,7 +33,7 @@ object Loader {
      * Load the plugin
      */
     @JvmStatic
-    fun load(plugin: Plugin): LoadResult {
+    fun load(plugin: Plugin2): LoadResult {
         if (!Environment.shared.isSupport(plugin)) {
             return LoadResult(Result.CODE_FAILED, "Plugin is not support current device type")
         }
@@ -42,23 +44,23 @@ object Loader {
      * Load plugin from disk
      */
     @JvmStatic
-    fun loadPluginFromDisk(path: String, deviceType: Int): LoadResult {
+    fun loadPluginFromDisk(path: String): LoadResult {
         val pluginFile = File(path)
         if (!pluginFile.exists() || !pluginFile.isFile)
             return LoadResult(Result.CODE_FAILED, "Load plugin failed from path:$path")
         val pluginString = String(pluginFile.readBytes(), StandardCharsets.UTF_8)
-        val loadPluginFromJsonString = loadPluginFromJsonString(pluginString, deviceType)
-        if (loadPluginFromJsonString.data != null) {
-            return load(loadPluginFromJsonString.data!!)
+        val json = loadPluginFromJsonString(pluginString)
+        if (json.data != null) {
+            return load(json.data!!)
         }
-        return loadPluginFromJsonString
+        return json
     }
 
     /**
      * Load plugin from url
      */
     @JvmStatic
-    fun loadPluginFromUrl(url: String, deviceType: Int): LoadResult {
+    fun loadPluginFromUrl(url: String): LoadResult {
         val request = Request.Builder().get().url(url).build()
         val response = httpClient.newCall(request).execute()
         val code = response.code
@@ -68,22 +70,21 @@ object Loader {
                 "Load plugin failed from url:$url"
             )
         if (code != 400) return LoadResult(Result.CODE_FAILED, "Load plugin failed from url:$url")
-        val loadPluginFromJsonString = loadPluginFromJsonString(responseBody.string(), deviceType)
-        if (loadPluginFromJsonString.data != null) {
-            return load(loadPluginFromJsonString.data!!)
+        val json = loadPluginFromJsonString(responseBody.string())
+        if (json.data != null) {
+            return load(json.data!!)
         }
-        return loadPluginFromJsonString
+        return json
     }
 
     /**
      * Create instance of plugin and pick the correct field value according to device type.
      */
-    private fun loadPluginFromJsonString(jsonString: String, deviceType: Int): LoadResult {
+    private fun loadPluginFromJsonString(jsonString: String): LoadResult {
         if (jsonString.isEmpty()) return LoadResult(Result.CODE_FAILED, "The json is empty")
         try {
             val jsonPluginRoot = JSONObject(jsonString)
-
-            val plugin = Plugin()
+            val plugin = Plugin2(JSONObject(jsonString))
 
             // Parent
             if (jsonPluginRoot.has("${Plugin.FILED_NAME_PARENT}-$deviceType")
@@ -696,12 +697,12 @@ object Loader {
     class LoadPageResult(
         code: Int = CODE_FAILED,
         message: String = "",
-        data: Page? = null,
+        data: Page2? = null,
     ) : Result<Page>(code, "load page: $message", data)
 
     class LoadResult(
         code: Int = CODE_FAILED,
         message: String = "",
-        data: Plugin? = null,
+        data: Plugin2? = null,
     ) : Result<Plugin>(code, "load plugin: $message", data)
 }

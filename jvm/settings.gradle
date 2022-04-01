@@ -20,4 +20,5 @@ project(':runtime').projectDir = new File('./runtime')
 project(':movie-runtime').projectDir = new File('./movie-runtime')
 include 'tools'
 include 'packager'
+include 'installer'
 

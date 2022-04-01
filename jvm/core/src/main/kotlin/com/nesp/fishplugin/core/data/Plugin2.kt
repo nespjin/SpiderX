@@ -1,108 +1,274 @@
 package com.nesp.fishplugin.core.data
 
+import com.nesp.fishplugin.core.Environment
 import com.nesp.fishplugin.core.PluginUtil
-import org.json.JSONArray
 import org.json.JSONObject
 
 /**
  * Fish Plugin
  */
-class Plugin2 {
+class Plugin2 constructor(private val store: JSONObject = JSONObject()) {
 
-    private val data = JSONObject()
-
+    @JvmOverloads
     fun setParent(value: Any?, deviceType: Int? = null) {
-        data.put(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_PARENT, deviceType), value)
+        store.put(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_PARENT, deviceType), value)
     }
 
+    @JvmOverloads
     fun getParent(deviceType: Int? = null): Any? {
-        return data.opt(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_PARENT, deviceType))
+        return store.opt(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_PARENT, deviceType))
     }
 
-    fun setName(value: String, deviceType: Int? = null) {
-        data.put(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_NAME, deviceType), value)
+    var name: String
+        set(value) {
+            store.put(FIELD_NAME_NAME, value)
+        }
+        get() {
+            return store.optString(FIELD_NAME_NAME)
+        }
+
+    var id: String
+        set(value) {
+            store.put(FIELD_NAME_ID, value)
+        }
+        get() {
+            return store.optString(FIELD_NAME_ID)
+        }
+
+    var author: String
+        set(value) {
+            store.put(FIELD_NAME_AUTHOR, value)
+        }
+        get() {
+            return store.optString(FIELD_NAME_AUTHOR)
+        }
+
+    var version: String
+        set(value) {
+            store.put(FIELD_NAME_VERSION, value)
+        }
+        get() {
+            return store.optString(FIELD_NAME_VERSION)
+        }
+
+    var runtime: String
+        set(value) {
+            store.put(FIELD_NAME_RUNTIME, value)
+        }
+        get() {
+            return store.optString(FIELD_NAME_RUNTIME)
+        }
+
+    var time: String
+        set(value) {
+            store.put(FIELD_NAME_TIME, value)
+        }
+        get() {
+            return store.optString(FIELD_NAME_TIME)
+        }
+
+    var tags: List<String>?
+        set(value) {
+            store.put(FIELD_NAME_TAGS, value)
+        }
+        get() {
+            val originList =
+                store.optJSONArray(FIELD_NAME_TAGS)?.toList() ?: return null
+            if (originList.isEmpty()) return emptyList()
+            val ret = mutableListOf<String>()
+            for (item in originList) {
+                if (item !is String) {
+                    throw IllegalStateException("The type ${item::class.java.simpleName} is not supported")
+                }
+                ret.add(item)
+            }
+            return ret
+        }
+
+    var deviceFlags: Int
+        set(value) {
+            store.put(FIELD_NAME_DEVICE_FLAGS, value)
+        }
+        get() {
+            return store.optInt(FIELD_NAME_DEVICE_FLAGS, -1)
+        }
+
+    var type: Int
+        set(value) {
+            store.put(FIELD_NAME_TYPE, value)
+        }
+        get() {
+            return store.optInt(FIELD_NAME_TYPE, -1)
+        }
+
+    var introduction: String
+        set(value) {
+            store.put(FIELD_NAME_INTRODUCTION, value)
+        }
+        get() {
+            return store.optString(FIELD_NAME_INTRODUCTION)
+        }
+
+    var ref: Map<String, Any>?
+        set(value) {
+            store.put(FIELD_NAME_REF, value)
+        }
+        get() {
+            return store.optJSONObject(FIELD_NAME_REF)?.toMap()
+        }
+
+    var pages: List<Page2>
+        set(value) {
+            store.put(FIELD_NAME_PAGES, value)
+        }
+        get() {
+            val originList = store.optJSONArray(FIELD_NAME_PAGES)?.toList()
+            if (originList.isNullOrEmpty()) return emptyList()
+            val ret = mutableListOf<Page2>()
+            for (item in originList) {
+                if (item !is Page2) {
+                    throw IllegalStateException("The type ${item::class.java.simpleName} is not supported")
+                }
+                ret.add(item)
+            }
+            return ret
+        }
+
+    var extensions: Any?
+        set(value) {
+            store.put(FIELD_NAME_EXTENSIONS, value)
+        }
+        get() {
+            return store.opt(FIELD_NAME_EXTENSIONS)
+        }
+
+    /**
+     * Whether to support mobile phone
+     */
+    fun isSupportMobilePhone(): Boolean {
+        return (deviceFlags and Plugin.DEVICE_FLAG_PHONE) == Plugin.DEVICE_FLAG_PHONE
     }
 
-    fun getName(deviceType: Int? = null): String? {
-        return data.optString(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_NAME, deviceType))
+    /**
+     * Whether to support table
+     */
+    fun isSupportTable(): Boolean {
+        return (deviceFlags and Plugin.DEVICE_FLAG_TABLE) == Plugin.DEVICE_FLAG_TABLE
     }
 
-    fun setId(value: String, deviceType: Int? = null) {
-        data.put(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_ID, deviceType), value)
+    /**
+     * Whether to support desktop
+     */
+    fun isSupportDesktop(): Boolean {
+        return (deviceFlags and Plugin.DEVICE_FLAG_DESKTOP) == Plugin.DEVICE_FLAG_DESKTOP
     }
 
-    fun getId(deviceType: Int? = null): String? {
-        return data.optString(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_ID, deviceType))
+    /**
+     * Find variable which named [variableName] from [ref]
+     */
+    fun findRefVariable(variableName: String): Any? {
+        if (ref.isNullOrEmpty()) return null
+        if (variableName.trim().isEmpty()) return null
+        if (!ref!!.containsKey(variableName)) return null
+        val deviceType = Environment.shared.getDeviceType()
+        if (ref!!.containsKey("$variableName-$deviceType")) {
+            return ref!!["$variableName-$deviceType"]
+        }
+        return ref!![variableName]
     }
 
-    fun setAuthor(value: String, deviceType: Int? = null) {
-        data.put(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_AUTHOR, deviceType), value)
+    fun getFieldValue(fieldName: String): Any? {
+        return when (fieldName) {
+            FIELD_NAME_NAME -> this.name
+            FIELD_NAME_ID -> this.id
+            FIELD_NAME_AUTHOR -> this.author
+            FIELD_NAME_VERSION -> this.version
+            FIELD_NAME_RUNTIME -> this.runtime
+            FIELD_NAME_TIME -> this.time
+            FIELD_NAME_TAGS -> this.tags
+            FIELD_NAME_DEVICE_FLAGS -> this.deviceFlags
+            FIELD_NAME_TYPE -> this.type
+            FIELD_NAME_INTRODUCTION -> this.introduction
+            FIELD_NAME_REF -> this.ref
+            FIELD_NAME_PAGES -> this.pages
+            FIELD_NAME_EXTENSIONS -> this.extensions
+            else -> ""
+        }
     }
 
-    fun getAuthor(deviceType: Int? = null): String? {
-        return data.optString(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_AUTHOR, deviceType))
+    fun setFieldValue(fieldName: String, fieldValue: Any?) {
+        when (fieldName) {
+            FIELD_NAME_NAME -> {
+                if (fieldValue is String) this.name = fieldValue
+            }
+            FIELD_NAME_ID -> {
+                if (fieldValue is String) this.id = fieldValue
+            }
+            FIELD_NAME_AUTHOR -> {
+                if (fieldValue is String) this.author = fieldValue
+            }
+            FIELD_NAME_VERSION -> {
+                if (fieldValue is String) this.version = fieldValue
+            }
+            FIELD_NAME_RUNTIME -> {
+                if (fieldValue is String) this.runtime = fieldValue
+            }
+            FIELD_NAME_TIME -> {
+                if (fieldValue is String) this.time = fieldValue
+            }
+            FIELD_NAME_TAGS -> {
+                if (fieldValue is Collection<*>) {
+                    val arrayList = arrayListOf<String>()
+                    @Suppress("UNCHECKED_CAST")
+                    arrayList.addAll(fieldValue as Collection<String>)
+                    this.tags = arrayList
+                }
+            }
+            FIELD_NAME_DEVICE_FLAGS -> {
+                if (fieldValue is Int) this.deviceFlags = fieldValue
+            }
+            FIELD_NAME_TYPE -> {
+                if (fieldValue is Int) this.type = fieldValue
+            }
+            FIELD_NAME_INTRODUCTION -> {
+                if (fieldValue is String) this.introduction = fieldValue
+            }
+            FIELD_NAME_REF -> {
+                if (fieldValue == null || fieldValue is Map<*, *>) {
+                    try {
+                        this.ref = fieldValue as Map<String, Any>?
+                    } catch (ignored: Exception) {
+                    }
+                }
+            }
+            FIELD_NAME_PAGES -> {
+                if (fieldValue is Collection<*>) {
+                    try {
+                        val arrayList = arrayListOf<Page2>()
+                        arrayList.addAll(fieldValue as Collection<Page2>)
+                        this.pages = arrayList
+                    } catch (ignored: Exception) {
+                    }
+                }
+            }
+            FIELD_NAME_EXTENSIONS -> this.extensions = fieldValue
+            else -> {}
+        }
     }
 
-    fun setVersion(value: String, deviceType: Int? = null) {
-        data.put(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_VERSION, deviceType), value)
+    fun findPageById(id: String): Page2? {
+        return pages.firstOrNull { it.id == id }
     }
 
-    fun getVersion(deviceType: Int? = null): String? {
-        return data.optString(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_VERSION, deviceType))
-    }
-
-    fun setRuntime(value: String, deviceType: Int? = null) {
-        data.put(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_RUNTIME, deviceType), value)
-    }
-
-    fun getRuntime(deviceType: Int? = null): String? {
-        return data.optString(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_RUNTIME, deviceType))
-    }
-
-    fun setTime(value: String, deviceType: Int? = null) {
-        data.put(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_TIME, deviceType), value)
-    }
-
-    fun getTime(deviceType: Int? = null): String? {
-        return data.optString(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_TIME, deviceType))
-    }
-
-    fun setTags(value: JSONArray, deviceType: Int? = null) {
-        data.put(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_TAGS, deviceType), value)
-    }
-
-    fun getTags(deviceType: Int? = null): JSONArray? {
-        return data.optJSONArray(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_TAGS, deviceType))
-    }
-
-    fun setDeviceFlags(value: Int, deviceType: Int? = null) {
-        data.put(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_DEVICE_FLAGS, deviceType), value)
-    }
-
-    fun getDeviceFlags(deviceType: Int? = null): Int {
-        return data.optInt(
-            PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_DEVICE_FLAGS, deviceType), -1)
-    }
-
-    fun setType(value: Int, deviceType: Int? = null) {
-        data.put(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_TYPE, deviceType), value)
-    }
-
-    fun getType(deviceType: Int? = null): Int {
-        return data.optInt(
-            PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_TYPE, deviceType), -1)
-    }
-
-    fun setIntroduction(value: String, deviceType: Int? = null) {
-        data.put(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_INTRODUCTION, deviceType), value)
-    }
-
-    fun getIntroduction(deviceType: Int? = null): String? {
-        return data.optString(
-            PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_INTRODUCTION, deviceType))
+    fun findPage(predicate: (Page2) -> Boolean): Page2? {
+        return pages.firstOrNull(predicate)
     }
 
     companion object {
+
+        const val DEVICE_FLAG_PHONE = 1 shl 0
+        const val DEVICE_FLAG_TABLE = 1 shl 1
+        const val DEVICE_FLAG_DESKTOP = 1 shl 2
 
         ///////////////////////////////////////////////////////////////////////////
         // FIELD NAME
@@ -195,7 +361,37 @@ class Plugin2 {
         /**
          * Extend Object
          */
-        const val FIELD_NAME_EXTENSIONS = "extensions"
+        const val FIELD_NAME_EXTENSIONS = "extensions" /* Map<String,Any?> or entity */
 
+        ///////////////////////////////////////////////////////////////////////////
+        // Http
+        ///////////////////////////////////////////////////////////////////////////
+        const val HTTP_REQ_TYPE_PREFIX_GET = "get:"
+        const val HTTP_REQ_TYPE_PREFIX_POST = "post:"
+
+        @JvmStatic
+        fun isGetReq(url: String): Boolean {
+            return url.startsWith(HTTP_REQ_TYPE_PREFIX_GET)
+        }
+
+        @JvmStatic
+        fun isPostReq(url: String): Boolean {
+            return url.startsWith(HTTP_REQ_TYPE_PREFIX_POST)
+        }
+
+        @JvmStatic
+        fun removeReqPrefix(url: String): String {
+            if (isGetReq(url)) {
+                return url.substring(HTTP_REQ_TYPE_PREFIX_GET.length)
+            } else if (isPostReq(url)) {
+                return url.substring(HTTP_REQ_TYPE_PREFIX_POST.length)
+            }
+            return url
+        }
+
+        ///////////////////////////////////////////////////////////////////////////
+        // Plugin Type
+        ///////////////////////////////////////////////////////////////////////////
+        const val TYPE_MOVIE = 0
     }
 }

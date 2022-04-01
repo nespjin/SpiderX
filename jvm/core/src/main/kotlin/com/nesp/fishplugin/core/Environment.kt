@@ -1,6 +1,6 @@
 package com.nesp.fishplugin.core
 
-import com.nesp.fishplugin.core.data.Plugin
+import com.nesp.fishplugin.core.data.Plugin2
 
 class Environment private constructor() {
 
@@ -31,7 +31,7 @@ class Environment private constructor() {
         return getDeviceType() == DEVICE_TYPE_DESKTOP
     }
 
-    fun isSupport(plugin: Plugin): Boolean {
+    fun isSupport(plugin: Plugin2): Boolean {
         if (isMobilePhone() && plugin.isSupportMobilePhone()) {
             return true
         } else if (isTable() && plugin.isSupportTable()) {
