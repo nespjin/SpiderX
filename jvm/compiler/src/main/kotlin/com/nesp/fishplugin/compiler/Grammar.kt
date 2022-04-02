@@ -1,6 +1,7 @@
 package com.nesp.fishplugin.compiler
 
-import com.nesp.fishplugin.core.data.Plugin
+import com.nesp.fishplugin.core.data.Plugin2
+
 
 object Grammar {
 
@@ -8,21 +9,26 @@ object Grammar {
      * Checks plugin grammar
      */
     @JvmStatic
-    fun checkGrammar(plugin: Plugin, isParent: Boolean = false): GrammarCheckResult {
+    fun checkGrammar(plugin: Plugin2, isParent: Boolean = false): GrammarCheckResult {
         if (plugin.parent != null) {
-            if (plugin.parent !is String && plugin.parent !is Plugin) {
+            if (plugin.parent !is String && plugin.parent !is Plugin2) {
                 return GrammarCheckResult(
                     GrammarCheckResult.LEVEL_ERROR,
                     "The type of parent plugin is not supported"
                 )
             }
 
-            if (plugin.parent is Plugin) {
-                val checkParentGrammar = checkGrammar(plugin.parent as Plugin, true)
+            if (plugin.parent is Plugin2) {
+                val checkParentGrammar = checkGrammar(plugin.parent as Plugin2, true)
                 if (checkParentGrammar.level != GrammarCheckResult.LEVEL_NONE) {
                     return checkParentGrammar
                 }
             }
+        }
+
+        val checkFields = plugin.checkFields()
+        if (checkFields.isNotEmpty()) {
+            return GrammarCheckResult(GrammarCheckResult.LEVEL_ERROR, checkFields)
         }
 
         if (plugin.name.trim().isEmpty() && !isParent) {
@@ -65,12 +71,20 @@ object Grammar {
             }
         }
 
+        if (plugin.pages.isEmpty()) {
+            return GrammarCheckResult(GrammarCheckResult.LEVEL_ERROR, "pages is empty")
+        }
+
+        for (page in plugin.pages) {
+            page.checkFields()
+        }
+
         return GrammarCheckResult(GrammarCheckResult.LEVEL_NONE, "Grammar check passed")
     }
 
     data class GrammarCheckResult(
         var level: Int, // 0 pass, 1 warning, 2 error
-        var message: String = ""
+        var message: String = "",
     ) {
         companion object {
             const val LEVEL_NONE = 0

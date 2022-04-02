@@ -1,7 +1,12 @@
 package com.nesp.fishplugin.installer;
 
+import com.nesp.fishplugin.compiler.Grammar;
 import com.nesp.fishplugin.core.Environment;
+import com.nesp.fishplugin.core.data.Page2;
 import com.nesp.fishplugin.core.data.Plugin2;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Team: NESP Technology
@@ -10,25 +15,59 @@ import com.nesp.fishplugin.core.data.Plugin2;
  * Time: Created 2022/4/1 11:37 PM
  * Description:
  **/
-public class Installer {
+public abstract class Installer {
 
-    public static void install(Plugin2 plugin) {
+    public void install(Plugin2 plugin) throws InstallException {
+        if (plugin == null) {
+            throw new InstallException("");
+        }
+
         int deviceType = Environment.getShared().getDeviceType();
 
         // Parent
-        Object parent = plugin.getParent(deviceType);
-
-        // Check parent is loaded or not
-        if (parent != null && !(parent instanceof Plugin2)) {
-            throw new IllegalArgumentException("The parent is not loaded");
+        if (plugin.getParent() != null) {
+            throw new InstallException("The parent is not be handled");
         }
 
-        if (parent != null) {
-            plugin.setParent(parent);
+        Grammar.GrammarCheckResult checkResult = Grammar.checkGrammar(plugin, false);
+        if (checkResult.getLevel() == Grammar.GrammarCheckResult.LEVEL_ERROR) {
+            throw new InstallException(checkResult.getMessage());
         }
 
-        // load Parent
+        // Page
+        List<Page2> pages = plugin.getPages();
+        for (Page2 page : pages) {
+            // Page.refUrl
+            String refUrl = page.getRefUrl(deviceType);
+            if (refUrl != null && refUrl.length() > 0) {
+                page.setRefUrl(refUrl);
+            }
+            // Page.url
+            String url = page.getUrl(deviceType);
+            if (url != null && url.length() > 0) {
+                page.setUrl(url);
+            }
+            // Page.js
+            String js = page.getJs(deviceType);
+            if (js != null && js.length() > 0) {
+                page.setJs(js);
+            }
+            // Page.dsl
+            Object dsl = page.getDsl(deviceType);
+            if (dsl != null) {
+                if (dsl instanceof Map<?, ?> && !((Map<?, ?>) dsl).isEmpty()) {
+                    page.setDsl(dsl);
+                } else {
+                    page.setDsl(dsl);
+                }
+            }
+        }
+
+        doInstall(plugin);
+
     }
+
+    protected abstract void doInstall(Plugin2 plugin) throws InstallException;
 
 
 }

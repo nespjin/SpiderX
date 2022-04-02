@@ -1,6 +1,7 @@
 package com.nesp.fishplugin.core.data
 
 import com.nesp.fishplugin.core.Environment
+import com.nesp.fishplugin.core.FieldName
 import com.nesp.fishplugin.core.PluginUtil
 import org.json.JSONObject
 
@@ -9,15 +10,19 @@ import org.json.JSONObject
  */
 class Plugin2 constructor(private val store: JSONObject = JSONObject()) {
 
-    @JvmOverloads
-    fun setParent(value: Any?, deviceType: Int? = null) {
-        store.put(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_PARENT, deviceType), value)
+    init {
+        for (page in pages) {
+            page.owner = this
+        }
     }
 
-    @JvmOverloads
-    fun getParent(deviceType: Int? = null): Any? {
-        return store.opt(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_PARENT, deviceType))
-    }
+    var parent: Any?
+        set(value) {
+            store.put(FIELD_NAME_PARENT, value)
+        }
+        get() {
+            return store.opt(FIELD_NAME_PARENT)
+        }
 
     var name: String
         set(value) {
@@ -166,15 +171,12 @@ class Plugin2 constructor(private val store: JSONObject = JSONObject()) {
     /**
      * Find variable which named [variableName] from [ref]
      */
-    fun findRefVariable(variableName: String): Any? {
+    fun findRefVariable(variableName: String, deviceType: Int? = null): Any? {
         if (ref.isNullOrEmpty()) return null
         if (variableName.trim().isEmpty()) return null
-        if (!ref!!.containsKey(variableName)) return null
-        val deviceType = Environment.shared.getDeviceType()
-        if (ref!!.containsKey("$variableName-$deviceType")) {
-            return ref!!["$variableName-$deviceType"]
-        }
-        return ref!![variableName]
+        val key = PluginUtil.getFieldNameWithDeviceType(variableName, deviceType)
+        if (!ref!!.containsKey(key)) return null
+        return ref!![key]
     }
 
     fun getFieldValue(fieldName: String): Any? {
@@ -264,6 +266,36 @@ class Plugin2 constructor(private val store: JSONObject = JSONObject()) {
         return pages.firstOrNull(predicate)
     }
 
+
+    /**
+     * Returns error message
+     */
+    fun checkFields(): String {
+        val fieldNames = getFieldNames()
+        val entries = store.toMap().entries
+        for (entry in entries) {
+            if (entry.key !in fieldNames) {
+                return "The field is not supported"
+            }
+        }
+        return ""
+    }
+
+    fun isSupport(deviceType: Int?): Boolean {
+        when (deviceType) {
+            Environment.DEVICE_TYPE_MOBILE_PHONE -> {
+                return isSupportMobilePhone()
+            }
+            Environment.DEVICE_TYPE_TABLE -> {
+                return isSupportTable()
+            }
+            Environment.DEVICE_TYPE_DESKTOP -> {
+                return isSupportDesktop()
+            }
+            else -> return false
+        }
+    }
+
     companion object {
 
         const val DEVICE_FLAG_PHONE = 1 shl 0
@@ -282,21 +314,25 @@ class Plugin2 constructor(private val store: JSONObject = JSONObject()) {
          * 2. Local path, C:/xx/xx/xx/SamplePlugin.json
          * 3. Http path, https://xxx/xxx/SamplePlugin.json
          */
+        @FieldName
         const val FIELD_NAME_PARENT = "parent"
 
         /**
          * plugin name
          */
+        @FieldName
         const val FIELD_NAME_NAME = "name"
 
         /**
          * The plugin id
          */
+        @FieldName
         const val FIELD_NAME_ID = "id"
 
         /**
          * The author
          */
+        @FieldName
         const val FIELD_NAME_AUTHOR = "author"
 
         /**
@@ -304,23 +340,27 @@ class Plugin2 constructor(private val store: JSONObject = JSONObject()) {
          * for example:
          * 1.0.0+1
          */
+        @FieldName
         const val FIELD_NAME_VERSION = "version"
 
         /**
          * Supported runtime, double closed interval
          * Format: minimum version supported - highest version supported
          */
+        @FieldName
         const val FIELD_NAME_RUNTIME = "runtime"
 
         /**
          * creation time, update time
          * For example: 2021-11-30 22:00:11,2022-01-01 08:00:11
          */
+        @FieldName
         const val FIELD_NAME_TIME = "time"
 
         /**
          * The tags of plugin
          */
+        @FieldName
         const val FIELD_NAME_TAGS = "tags"
 
         /**
@@ -336,31 +376,42 @@ class Plugin2 constructor(private val store: JSONObject = JSONObject()) {
          *  For example: the value 00000001 supports mobile phones only,
          *  the value 00000011 supports mobile phones and tablets
          */
+        @FieldName
         const val FIELD_NAME_DEVICE_FLAGS = "deviceFlags"
 
         /**
          * Type, see the fields of starts with 'TYPE_'
          */
+        @FieldName
         const val FIELD_NAME_TYPE = "type"
 
         /**
          * Plugin introduction
          */
+        @FieldName
         const val FIELD_NAME_INTRODUCTION = "introduction"
 
         /**
          * Custom references can be customized fields, objects, js code
          */
+        @FieldName
         const val FIELD_NAME_REF = "ref"
 
         /**
          * page collection
          */
+        @FieldName
         const val FIELD_NAME_PAGES = "pages"
+
+        @JvmStatic
+        fun getFieldNames(): List<String> {
+            return PluginUtil.getFieldNames(Plugin2::class.java)
+        }
 
         /**
          * Extend Object
          */
+        @FieldName
         const val FIELD_NAME_EXTENSIONS = "extensions" /* Map<String,Any?> or entity */
 
         ///////////////////////////////////////////////////////////////////////////

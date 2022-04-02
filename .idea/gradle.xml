@@ -28,7 +28,7 @@
         <option name="testRunner" value="GRADLE" />
         <option name="distributionType" value="DEFAULT_WRAPPED" />
         <option name="externalProjectPath" value="$PROJECT_DIR$/jvm" />
-        <option name="gradleJvm" value="corretto-11" />
+        <option name="gradleJvm" value="17.0.2" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$/jvm" />

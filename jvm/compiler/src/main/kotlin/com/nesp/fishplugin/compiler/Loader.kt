@@ -2,18 +2,15 @@ package com.nesp.fishplugin.compiler
 
 import com.nesp.fishplugin.core.Environment
 import com.nesp.fishplugin.core.Result
-import com.nesp.fishplugin.core.data.Page
 import com.nesp.fishplugin.core.data.Page2
-import com.nesp.fishplugin.core.data.Plugin
+import com.nesp.fishplugin.core.data.Page2.Companion.plus
 import com.nesp.fishplugin.core.data.Plugin2
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.apache.commons.io.FileUtils
-import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
-import java.io.*
-import java.lang.Exception
+import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.Path
@@ -64,11 +61,8 @@ object Loader {
         val request = Request.Builder().get().url(url).build()
         val response = httpClient.newCall(request).execute()
         val code = response.code
-        val responseBody =
-            response.body ?: return LoadResult(
-                Result.CODE_FAILED,
-                "Load plugin failed from url:$url"
-            )
+        val responseBody = response.body
+            ?: return LoadResult(Result.CODE_FAILED, "Load plugin failed from url:$url")
         if (code != 400) return LoadResult(Result.CODE_FAILED, "Load plugin failed from url:$url")
         val json = loadPluginFromJsonString(responseBody.string())
         if (json.data != null) {
@@ -83,59 +77,22 @@ object Loader {
     private fun loadPluginFromJsonString(jsonString: String): LoadResult {
         if (jsonString.isEmpty()) return LoadResult(Result.CODE_FAILED, "The json is empty")
         try {
-            val jsonPluginRoot = JSONObject(jsonString)
             val plugin = Plugin2(JSONObject(jsonString))
-
-            // Parent
-            if (jsonPluginRoot.has("${Plugin.FILED_NAME_PARENT}-$deviceType")
-                && !jsonPluginRoot.isNull("${Plugin.FILED_NAME_PARENT}-$deviceType")
-            ) {
-                plugin.parent = jsonPluginRoot["${Plugin.FILED_NAME_PARENT}-$deviceType"]
-            } else if (jsonPluginRoot.has(Plugin.FILED_NAME_PARENT)
-                && !jsonPluginRoot.isNull(Plugin.FILED_NAME_PARENT)
-            ) {
-                plugin.parent = jsonPluginRoot[Plugin.FILED_NAME_PARENT]
+            val loadParent = loadParent(plugin.parent)
+            if (loadParent.code == Result.CODE_SUCCESS) {
+                plugin.parent = loadParent.data
+            } else {
+                return loadParent
             }
 
-            // load parent
-            if (plugin.parent != null) {
-                // Handle parent plugin
-                val parent = plugin.parent!!
-                if (parent is String) {
-                    // load parent plugin from ref path.
-                    if (parent.startsWith("http://", true)
-                        || parent.startsWith("https://", true)
-                    ) {
-                        val loadPluginFromUrl = loadPluginFromUrl(parent, deviceType)
-                        if (loadPluginFromUrl.code != Result.CODE_SUCCESS) {
-                            return loadPluginFromUrl
-                        }
-                        plugin.parent = loadPluginFromUrl.data
-                    } else {
-                        val loadPluginFromDisk = loadPluginFromDisk(parent, deviceType)
-                        if (loadPluginFromDisk.code != Result.CODE_SUCCESS) {
-                            return loadPluginFromDisk
-                        }
-                        plugin.parent = loadPluginFromDisk.data
-                    }
-                } else {
-                    val loadParentPluginFromJsonString = loadPluginFromJsonString(parent.toString(), deviceType)
-                    if (loadParentPluginFromJsonString.code != Result.CODE_SUCCESS) {
-                        return loadParentPluginFromJsonString
-                    }
-                    plugin.parent = loadParentPluginFromJsonString.data
-                }
+            // Apply parent's fields
+            val applyParentFieldsErrorMsg = applyParentFields(plugin)
+            if (applyParentFieldsErrorMsg.isNotEmpty()) {
+                return LoadResult(Result.CODE_FAILED, applyParentFieldsErrorMsg)
             }
 
-            if (plugin.parent != null) {
-                // Apply parent's fields
-                val applyParentFieldsErrorMsg = applyParentFields(plugin)
-                if (applyParentFieldsErrorMsg.isNotEmpty()) {
-                    return LoadResult(Result.CODE_FAILED, applyParentFieldsErrorMsg)
-                }
-                // Remove parent if apply parent's fields success
-                plugin.parent = null
-            }
+            // Remove parent if apply parent's fields success
+            plugin.parent = null
 
             return LoadResult(Result.CODE_SUCCESS, data = plugin)
         } catch (e: JSONException) {
@@ -143,16 +100,62 @@ object Loader {
         }
     }
 
+    private fun loadParent(parent: Any?): LoadResult {
+        // Handle parent plugin
+        if (parent is String) {
+            // load parent plugin from ref path.
+            if (parent.startsWith("http://", true)
+                || parent.startsWith("https://", true)
+            ) {
+                val loadPluginFromUrl = loadPluginFromUrl(parent)
+                if (loadPluginFromUrl.code != Result.CODE_SUCCESS) {
+                    return loadPluginFromUrl
+                }
+                return loadPluginFromUrl
+            } else {
+                val loadPluginFromDisk = loadPluginFromDisk(parent)
+                if (loadPluginFromDisk.code != Result.CODE_SUCCESS) {
+                    return loadPluginFromDisk
+                }
+                return loadPluginFromDisk
+            }
+        } else {
+            val loadParentPluginFromJsonString = loadPluginFromJsonString(parent.toString())
+            if (loadParentPluginFromJsonString.code != Result.CODE_SUCCESS) {
+                return loadParentPluginFromJsonString
+            }
+            return loadParentPluginFromJsonString
+        }
+    }
+
     /**
      * Returns error msg
      */
-    private fun applyParentFields(plugin: Plugin): String {
+    private fun applyParentFields(plugin: Plugin2): String {
+        val deviceTypes = Environment.allDeviceTypes()
+        for (deviceType in deviceTypes) {
+            val ret = applyParentFieldsForDeviceType(plugin)
+            if (ret.isNotEmpty()) return ret
+        }
+
+        val ret = applyParentFieldsForDeviceType(plugin)
+        if (ret.isNotEmpty()) return ret
+
+        return ""
+    }
+
+    private fun applyParentFieldsForDeviceType(plugin: Plugin2): String {
+        val pluginParent = plugin.parent
+        if (pluginParent != null && pluginParent !is Plugin2) {
+            return "The parent is not loaded"
+        }
+
         var parent: Any?
 
         // name
         if (plugin.name.isEmpty()) {
-            parent = plugin.parent
-            while (parent != null && parent is Plugin) {
+            parent = pluginParent
+            while (parent != null && parent is Plugin2) {
                 if (parent.name.isNotEmpty()) {
                     plugin.name = parent.name
                     break
@@ -163,8 +166,8 @@ object Loader {
 
         // version
         if (plugin.version.isEmpty()) {
-            parent = plugin.parent
-            while (parent != null && parent is Plugin) {
+            parent = pluginParent
+            while (parent != null && parent is Plugin2) {
                 if (parent.version.isNotEmpty()) {
                     plugin.version = parent.version
                     break
@@ -175,8 +178,8 @@ object Loader {
 
         // runtime
         if (plugin.runtime.isEmpty()) {
-            parent = plugin.parent
-            while (parent != null && parent is Plugin) {
+            parent = pluginParent
+            while (parent != null && parent is Plugin2) {
                 if (parent.runtime.isNotEmpty()) {
                     plugin.runtime = parent.runtime
                     break
@@ -187,8 +190,8 @@ object Loader {
 
         // time
         if (plugin.time.isEmpty()) {
-            parent = plugin.parent
-            while (parent != null && parent is Plugin) {
+            parent = pluginParent
+            while (parent != null && parent is Plugin2) {
                 if (parent.time.isNotEmpty()) {
                     plugin.time = parent.time
                     break
@@ -198,10 +201,10 @@ object Loader {
         }
 
         // tags
-        if (plugin.tags.isEmpty()) {
-            parent = plugin.parent
-            while (parent != null && parent is Plugin) {
-                if (parent.tags.isNotEmpty()) {
+        if (plugin.tags.isNullOrEmpty()) {
+            parent = pluginParent
+            while (parent != null && parent is Plugin2) {
+                if (parent.tags?.isNotEmpty() == true) {
                     plugin.tags = parent.tags
                     break
                 }
@@ -211,8 +214,8 @@ object Loader {
 
         // deviceFlags
         if (plugin.deviceFlags == -1) {
-            parent = plugin.parent
-            while (parent != null && parent is Plugin) {
+            parent = pluginParent
+            while (parent != null && parent is Plugin2) {
                 if (parent.deviceFlags != -1) {
                     plugin.deviceFlags = parent.deviceFlags
                     break
@@ -221,10 +224,10 @@ object Loader {
             }
         }
 
-        // deviceFlags
+        // type
         if (plugin.type == -1) {
-            parent = plugin.parent
-            while (parent != null && parent is Plugin) {
+            parent = pluginParent
+            while (parent != null && parent is Plugin2) {
                 if (parent.type != -1) {
                     plugin.type = parent.type
                     break
@@ -234,10 +237,10 @@ object Loader {
         }
 
         // introduction
-        if (plugin.introduction.isNullOrEmpty()) {
-            parent = plugin.parent
-            while (parent != null && parent is Plugin) {
-                if (!parent.introduction.isNullOrEmpty()) {
+        if (plugin.introduction.isEmpty()) {
+            parent = pluginParent
+            while (parent != null && parent is Plugin2) {
+                if (parent.introduction.isNotEmpty()) {
                     plugin.introduction = parent.introduction
                     break
                 }
@@ -246,7 +249,7 @@ object Loader {
         }
 
         // ref
-        parent = plugin.parent
+        parent = pluginParent
         val refsMap = hashMapOf<String/* name */, Any>()
         if (!plugin.ref.isNullOrEmpty()) {
             for ((name, value) in plugin.ref!!) {
@@ -254,7 +257,7 @@ object Loader {
                 refsMap[name] = value
             }
         }
-        while (parent != null && parent is Plugin) {
+        while (parent != null && parent is Plugin2) {
             if (!plugin.ref.isNullOrEmpty()) {
                 for ((nameOfParent, valueOfValue) in parent.ref!!) {
                     if (!refsMap.containsKey(nameOfParent)) {
@@ -275,19 +278,21 @@ object Loader {
         plugin.ref = refsMap
 
         // pages
-        parent = plugin.parent
-        val pagesMap = hashMapOf<String/* id */, Page>()
+        parent = pluginParent
+        val pagesMap = hashMapOf<String/* id */, Page2>()
         if (plugin.pages.isNotEmpty()) {
             for (page in plugin.pages) {
                 if (pagesMap.containsKey(page.id)) return "Duplicate page id(${page.id})"
                 pagesMap[page.id] = page
             }
         }
-        while (parent != null && parent is Plugin) {
+        while (parent != null && parent is Plugin2) {
             if (plugin.pages.isNotEmpty()) {
                 for (pageOfParent in parent.pages) {
                     if (!pagesMap.containsKey(pageOfParent.id)) {
                         pagesMap[pageOfParent.id] = pageOfParent
+                    } else {
+                        pagesMap[pageOfParent.id] += pageOfParent
                     }
                 }
             } else {
@@ -300,19 +305,20 @@ object Loader {
                 }
             }
             parent = parent.parent
+
+            plugin.pages = arrayListOf<Page2>().apply { addAll(pagesMap.values) }
+            pagesMap.clear()
         }
-        plugin.pages = arrayListOf<Page>().apply { addAll(pagesMap.values) }
-        pagesMap.clear()
 
         // extensions
         if (plugin.extensions == null
             || (plugin.extensions is Map<*, *> && (plugin.extensions as Map<*, *>).isEmpty())
         ) {
-            parent = plugin.parent
-            while (parent != null && parent is Plugin) {
+            parent = pluginParent
+            while (parent != null && parent is Plugin2) {
                 if (parent.extensions != null) {
-                    if (plugin.extensions is Map<*, *>) {
-                        if ((plugin.extensions as Map<*, *>).isNotEmpty()) {
+                    if (parent.extensions is Map<*, *>) {
+                        if ((parent.extensions as Map<*, *>).isNotEmpty()) {
                             plugin.extensions = parent.extensions
                             break
                         }
@@ -324,7 +330,6 @@ object Loader {
                 parent = parent.parent
             }
         }
-
         return ""
     }
 
@@ -332,86 +337,7 @@ object Loader {
         if (jsonPageRoot == null) {
             return LoadPageResult(Result.CODE_FAILED, "Json object is null.")
         }
-
-        val deviceType = Environment.shared.getDeviceType()
-        val page = Page()
-
-        // Id
-        if (jsonPageRoot.has(Page.FIELD_NAME_ID)
-            && !jsonPageRoot.isNull(Page.FIELD_NAME_ID)
-        ) {
-            (jsonPageRoot.get(Page.FIELD_NAME_ID)?.toString()
-                ?: "").also { if (it.isNotEmpty()) page.id = it }
-        }
-
-        // Url
-        if (jsonPageRoot.has("${Page.FIELD_NAME_URL}-$deviceType")
-            && !jsonPageRoot.isNull("${Page.FIELD_NAME_URL}-$deviceType")
-        ) {
-            (jsonPageRoot.get("${Page.FIELD_NAME_URL}-$deviceType")?.toString()
-                ?: "").also { if (it.isNotEmpty()) page.url = it }
-        } else if (jsonPageRoot.has(Page.FIELD_NAME_URL)
-            && !jsonPageRoot.isNull(Page.FIELD_NAME_URL)
-        ) {
-            (jsonPageRoot.get(Page.FIELD_NAME_URL)?.toString()
-                ?: "").also { if (it.isNotEmpty()) page.url = it }
-        }
-
-        // Js
-        if (jsonPageRoot.has("${Page.FIELD_NAME_JS}-$deviceType")
-            && !jsonPageRoot.isNull("${Page.FIELD_NAME_JS}-$deviceType")
-        ) {
-            (jsonPageRoot.get("${Page.FIELD_NAME_JS}-$deviceType")?.toString()
-                ?: "").also { if (it.isNotEmpty()) page.js = it }
-        } else if (jsonPageRoot.has(Page.FIELD_NAME_JS)
-            && !jsonPageRoot.isNull(Page.FIELD_NAME_JS)
-        ) {
-            (jsonPageRoot.get(Page.FIELD_NAME_JS)?.toString()
-                ?: "").also { if (it.isNotEmpty()) page.js = it }
-        }
-
-        // DSL
-        if (jsonPageRoot.has("${Page.FIELD_NAME_DSL}-$deviceType")
-            && !jsonPageRoot.isNull("${Page.FIELD_NAME_DSL}-$deviceType")
-        ) {
-            // String or map
-            val map =
-                jsonPageRoot.optJSONObject("${Page.FIELD_NAME_DSL}-$deviceType")?.toMap()
-            if (map != null) {
-                if (map.isNotEmpty()) page.dsl = map
-            } else {
-                jsonPageRoot.optString("${Page.FIELD_NAME_DSL}-$deviceType", "")?.also {
-                    page.dsl = it
-                }
-            }
-        } else if (jsonPageRoot.has(Page.FIELD_NAME_DSL)
-            && !jsonPageRoot.isNull(Page.FIELD_NAME_DSL)
-        ) {
-            // String or map
-            val map = jsonPageRoot.optJSONObject(Page.FIELD_NAME_DSL)?.toMap()
-            if (map != null) {
-                if (map.isNotEmpty()) page.dsl = map
-            } else {
-                jsonPageRoot.optString(Page.FIELD_NAME_DSL, "")?.also {
-                    if (it.isNotEmpty()) page.dsl = it
-                }
-            }
-        }
-
-        // RefUrl
-        if (jsonPageRoot.has("${Page.FIELD_NAME_REF_URL}-$deviceType")
-            && !jsonPageRoot.isNull("${Page.FIELD_NAME_REF_URL}-$deviceType")
-        ) {
-            (jsonPageRoot.get("${Page.FIELD_NAME_REF_URL}-$deviceType")?.toString()
-                ?: "").also { if (it.isNotEmpty()) page.refUrl = it }
-        } else if (jsonPageRoot.has(Page.FIELD_NAME_REF_URL)
-            && !jsonPageRoot.isNull(Page.FIELD_NAME_REF_URL)
-        ) {
-            (jsonPageRoot.optString(Page.FIELD_NAME_REF_URL, "")?.toString()
-                ?: "").also { if (it.isNotEmpty()) page.refUrl = it }
-        }
-
-        return LoadPageResult(Result.CODE_SUCCESS, data = page)
+        return LoadPageResult(Result.CODE_SUCCESS, data = Page2(jsonPageRoot))
     }
 
     /**
@@ -469,11 +395,11 @@ object Loader {
         code: Int = CODE_FAILED,
         message: String = "",
         data: Page2? = null,
-    ) : Result<Page>(code, "load page: $message", data)
+    ) : Result<Page2>(code, "load page: $message", data)
 
     class LoadResult(
         code: Int = CODE_FAILED,
         message: String = "",
         data: Plugin2? = null,
-    ) : Result<Plugin>(code, "load plugin: $message", data)
+    ) : Result<Plugin2>(code, "load plugin: $message", data)
 }
