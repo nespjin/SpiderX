@@ -15,6 +15,7 @@ include ':nesp-sdk-javafx'
 include ':core'
 include ':compiler'
 include ':packager'
+include ':installer'
 include ':tools'
 include ':movie-runtime-javafx'
 include ':runtime'
@@ -32,6 +33,7 @@ project(':nesp-sdk-javafx').projectDir = new File("${currentPath}\\nesp-sdk-java
 project(':core').projectDir = new File("..\\..\\jvm\\core")
 project(':compiler').projectDir = new File("..\\..\\jvm\\compiler")
 project(':packager').projectDir = new File("..\\..\\jvm\\packager")
+project(':installer').projectDir = new File("..\\..\\jvm\\installer")
 project(':tools').projectDir = new File("..\\..\\jvm\\tools")
 project(':movie-runtime-javafx').projectDir = new File("..\\..\\javafx\\movie-runtime-javafx")
 project(':runtime').projectDir = new File("..\\..\\jvm\\runtime")

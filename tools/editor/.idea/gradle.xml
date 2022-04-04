@@ -15,6 +15,7 @@
             <option value="$PROJECT_DIR$/../../javafx/runtime-javafx" />
             <option value="$PROJECT_DIR$/../../jvm/compiler" />
             <option value="$PROJECT_DIR$/../../jvm/core" />
+            <option value="$PROJECT_DIR$/../../jvm/installer" />
             <option value="$PROJECT_DIR$/../../jvm/movie-runtime" />
             <option value="$PROJECT_DIR$/../../jvm/packager" />
             <option value="$PROJECT_DIR$/../../jvm/runtime" />

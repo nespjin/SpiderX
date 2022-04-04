@@ -14,12 +14,16 @@ object PluginUtil {
         val ret = arrayListOf<String>()
         val declaredFields = clazz.declaredFields
         for (declaredField in declaredFields) {
-            val annotations = declaredField.annotations
-            if (!annotations.isNullOrEmpty()) {
-                for (annotation in annotations) {
-                    if (annotation is FieldName) {
-                        ret.add(declaredField.name)
-                        break
+            if (declaredField.name.startsWith("FIELD_NAME_")) {
+                ret.add(declaredField.get(null) as String)
+            } else {
+                val annotations = declaredField.annotations
+                if (!annotations.isNullOrEmpty()) {
+                    for (annotation in annotations) {
+                        if (annotation is FieldName) {
+                            ret.add(declaredField.get(null) as String)
+                            break
+                        }
                     }
                 }
             }

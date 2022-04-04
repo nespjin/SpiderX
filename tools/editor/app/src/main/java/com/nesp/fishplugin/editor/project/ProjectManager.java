@@ -5,12 +5,14 @@ import com.nesp.fishplugin.compiler.Loader;
 import com.nesp.fishplugin.core.Environment;
 import com.nesp.fishplugin.core.Result;
 import com.nesp.fishplugin.core.data.Plugin;
+import com.nesp.fishplugin.core.data.Plugin2;
 import com.nesp.fishplugin.editor.app.Storage;
 import com.nesp.fishplugin.editor.plugin.MoviePluginBuilder;
 import com.nesp.fishplugin.editor.utils.ZipUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,7 +52,7 @@ public final class ProjectManager {
     public static Project createProject(String name, int pluginType) {
         if (!Project.isNameAvailable(name) || pluginType == -1) return null;
         Project project = new Project();
-        Plugin targetPlugin = new Plugin();
+        Plugin2 targetPlugin = new Plugin2();
         targetPlugin.setName(name);
         targetPlugin.setType(pluginType);
         project.setTargetPlugin(targetPlugin);
@@ -69,9 +71,9 @@ public final class ProjectManager {
             File projectManifestFile = project.getProjectManifestFile();
             try {
                 String s = FileUtils.readFileToString(projectManifestFile);
-                Plugin targetPlugin = project.getTargetPlugin();
+                Plugin2 targetPlugin = project.getTargetPlugin();
                 Gson gson = new Gson();
-                Plugin plugin = gson.fromJson(s, Plugin.class);
+                Plugin2 plugin = new Plugin2(new JSONObject(s));
                 plugin.setName(targetPlugin.getName());
                 plugin.setId(targetPlugin.getId());
                 plugin.setType(targetPlugin.getType());
@@ -138,7 +140,7 @@ public final class ProjectManager {
         if (projectManifestFile == null)
             return Result.fail("The file " + Project.PLUGIN_MANIFEST_FILE_NAME + " not found");
 
-        Loader.LoadResult loadResult = Loader.loadPluginFromDisk(projectManifestFile.getPath(), deviceType);
+        Loader.LoadResult loadResult = Loader.loadPluginFromDisk(projectManifestFile.getPath());
         if (loadResult.getCode() != Result.CODE_SUCCESS) {
             String message = loadResult.getMessage();
             if (message.isEmpty())
@@ -146,7 +148,7 @@ public final class ProjectManager {
             return Result.fail(message);
         }
 
-        Plugin targetPlugin = loadResult.getData();
+        Plugin2 targetPlugin = loadResult.getData();
         if (targetPlugin == null) {
             return Result.fail("switchDeviceType targetPlugin is null");
         }

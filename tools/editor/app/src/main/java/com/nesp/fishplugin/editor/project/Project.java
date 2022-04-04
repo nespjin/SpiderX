@@ -1,6 +1,6 @@
 package com.nesp.fishplugin.editor.project;
 
-import com.nesp.fishplugin.core.data.Plugin;
+import com.nesp.fishplugin.core.data.Plugin2;
 import com.nesp.fishplugin.editor.app.Storage;
 import com.nesp.sdk.java.text.TextUtil;
 
@@ -19,7 +19,7 @@ public class Project {
 
     private String name = "";
     private File rootDirectory = null;
-    private Plugin targetPlugin = null;
+    private Plugin2 targetPlugin = null;
 
     public String getName() {
         return name;
@@ -68,11 +68,11 @@ public class Project {
         this.rootDirectory = rootDirectory;
     };
 
-    public Plugin getTargetPlugin() {
+    public Plugin2 getTargetPlugin() {
         return targetPlugin;
     }
 
-    public void setTargetPlugin(Plugin targetPlugin) {
+    public void setTargetPlugin(Plugin2 targetPlugin) {
         this.targetPlugin = targetPlugin;
     }
 

@@ -22,7 +22,7 @@ public abstract class Installer {
             throw new InstallException("");
         }
 
-        int deviceType = Environment.getShared().getDeviceType();
+        int deviceType = getEnvironmentDeviceType();
 
         // Parent
         if (plugin.getParent() != null) {
@@ -62,6 +62,7 @@ public abstract class Installer {
                 }
             }
         }
+        plugin.applyPages();
 
         doInstall(plugin);
 
@@ -70,4 +71,7 @@ public abstract class Installer {
     protected abstract void doInstall(Plugin2 plugin) throws InstallException;
 
 
+    public int getEnvironmentDeviceType() {
+        return Environment.getShared().getDeviceType();
+    }
 }

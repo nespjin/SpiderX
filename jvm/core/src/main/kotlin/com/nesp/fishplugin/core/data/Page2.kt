@@ -11,7 +11,7 @@ import org.json.JSONObject
  * Time: Created 2022/4/1 10:17 PM
  * Description:
  **/
-class Page2 constructor(val store: JSONObject = JSONObject()) {
+class Page2 constructor(var store: JSONObject = JSONObject()) {
 
     var id: String
         set(value) {

@@ -1,15 +1,17 @@
 package com.nesp.fishplugin.editor.plugin;
 
-import com.nesp.fishplugin.core.data.Page;
 import com.nesp.fishplugin.core.data.Page2;
-import com.nesp.fishplugin.core.data.Plugin;
+import com.nesp.fishplugin.core.data.Plugin2;
 import com.nesp.fishplugin.editor.project.Project;
 import com.nesp.fishplugin.runtime.Process;
 import com.nesp.fishplugin.runtime.javafx.js.JavaFxJsRuntimeTaskListener;
 import com.nesp.fishplugin.runtime.movie.javafx.MovieJavaFxJsRuntime;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 
 public class TestPageTask extends PluginBuildTask {
 
@@ -34,7 +36,7 @@ public class TestPageTask extends PluginBuildTask {
 
     @Override
     public Result run(Project workingProject, OnPrintListener onPrintListener, Object... parameters) throws Exception {
-        Plugin targetPlugin = workingProject.getTargetPlugin();
+        Plugin2 targetPlugin = workingProject.getTargetPlugin();
         if (targetPlugin == null) {
             return Result.fail("The target plugin of project not exists");
         }
@@ -140,7 +142,7 @@ public class TestPageTask extends PluginBuildTask {
     @Override
     public PluginBuildTask[] dependencies() {
         return new PluginBuildTask[]{
-                MoviePluginBuilder.getInstance().getCompilePluginTask(),
+                MoviePluginBuilder.getInstance().getInstallTask(),
         };
     }
 

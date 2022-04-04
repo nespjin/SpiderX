@@ -3,6 +3,7 @@ package com.nesp.fishplugin.editor.home;
 import com.nesp.fishplugin.core.Environment;
 import com.nesp.fishplugin.core.Result;
 import com.nesp.fishplugin.core.data.Plugin;
+import com.nesp.fishplugin.core.data.Plugin2;
 import com.nesp.fishplugin.editor.AppInfo;
 import com.nesp.fishplugin.editor.R;
 import com.nesp.fishplugin.editor.StageHomeViewBinding;
@@ -103,7 +104,7 @@ public class HomeStage extends AppBaseStage {
                         startWatchProjectDir();
 
                         Optional<Project> optionalProject = Optional.of(project);
-                        optionalProject.map(Project::getTargetPlugin).map(Plugin::getType).ifPresent(pluginType -> {
+                        optionalProject.map(Project::getTargetPlugin).map(Plugin2::getType).ifPresent(pluginType -> {
                             if (pluginType == Plugin.TYPE_MOVIE) {
                                 pluginBuilder = MoviePluginBuilder.getInstance();
                             } else {
@@ -452,11 +453,7 @@ public class HomeStage extends AppBaseStage {
         binding.cbBuildType.getSelectionModel().selectedItemProperty().addListener(new ChangeListener() {
             @Override
             public void changed(ObservableValue observable, Object oldValue, Object newValue) {
-                if (newValue.equals(MoviePluginBuilder.getInstance().getBuildPluginTask().name())) {
-                    binding.cbDeviceType.setVisible(false);
-                } else {
-                    binding.cbDeviceType.setVisible(true);
-                }
+                binding.cbDeviceType.setVisible(!newValue.equals(MoviePluginBuilder.getInstance().getBuildPluginTask().name()));
             }
         });
 

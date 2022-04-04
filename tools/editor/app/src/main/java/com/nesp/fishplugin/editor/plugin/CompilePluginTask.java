@@ -1,6 +1,5 @@
 package com.nesp.fishplugin.editor.plugin;
 
-import com.google.gson.Gson;
 import com.nesp.fishplugin.compiler.Compiler;
 import com.nesp.fishplugin.editor.project.Project;
 import org.apache.commons.io.FileUtils;
@@ -21,14 +20,13 @@ public class CompilePluginTask extends PluginBuildTask {
 
     @Override
     public Result run(Project workingProject, OnPrintListener onPrintListener, Object... parameters) throws Exception {
-        Gson gson = new Gson();
         File projectManifestFile = workingProject.getProjectManifestFile();
         if (!projectManifestFile.exists()) {
             return Result.fail("Manifest file of project not exits");
         }
         Compiler.CompileResult compileResult;
         try {
-            compileResult = Compiler.compileFromDisk(projectManifestFile.getPath(), (int) getParameter("deviceType"));
+            compileResult = Compiler.compileFromDisk(projectManifestFile.getPath());
         } catch (Exception e) {
             logger.error("run", e);
             return Result.fail("Compile the file " + projectManifestFile.getName() +
@@ -46,7 +44,7 @@ public class CompilePluginTask extends PluginBuildTask {
         if (!midFile.exists() || midFile.delete()) {
             try {
                 midFile.createNewFile();
-                FileUtils.writeStringToFile(midFile, gson.toJson(compileResult.getData()));
+                FileUtils.writeStringToFile(midFile, compileResult.getData().getStore().toString());
             } catch (IOException e) {
                 return Result.fail();
             }

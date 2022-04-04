@@ -1,6 +1,7 @@
 package com.nesp.fishplugin.editor.project;
 
 import com.nesp.fishplugin.core.data.Plugin;
+import com.nesp.fishplugin.core.data.Plugin2;
 import com.nesp.fishplugin.editor.DialogNewProjectWizardViewBinding;
 import com.nesp.fishplugin.editor.R;
 import com.nesp.fishplugin.editor.app.AppAlert;
@@ -130,7 +131,7 @@ public class NewProjectWizardDialog extends AppBaseDialog<Project> {
                 if (Project.isNameAvailable(name)) {
                     Project project = ProjectManager.createProject(name, pluginType);
                     if (project == null) return null;
-                    Plugin targetPlugin = project.getTargetPlugin();
+                    Plugin2 targetPlugin = project.getTargetPlugin();
                     targetPlugin.setId(binding.tfPluginId.getText());
                     targetPlugin.setType(pluginType);
                     int flags = 0;

@@ -78,11 +78,13 @@ object Loader {
         if (jsonString.isEmpty()) return LoadResult(Result.CODE_FAILED, "The json is empty")
         try {
             val plugin = Plugin2(JSONObject(jsonString))
-            val loadParent = loadParent(plugin.parent)
-            if (loadParent.code == Result.CODE_SUCCESS) {
-                plugin.parent = loadParent.data
-            } else {
-                return loadParent
+            if (plugin.parent != null) {
+                val loadParent = loadParent(plugin.parent!!)
+                if (loadParent.code == Result.CODE_SUCCESS) {
+                    plugin.parent = loadParent.data
+                } else {
+                    return loadParent
+                }
             }
 
             // Apply parent's fields
@@ -100,7 +102,7 @@ object Loader {
         }
     }
 
-    private fun loadParent(parent: Any?): LoadResult {
+    private fun loadParent(parent: Any): LoadResult {
         // Handle parent plugin
         if (parent is String) {
             // load parent plugin from ref path.

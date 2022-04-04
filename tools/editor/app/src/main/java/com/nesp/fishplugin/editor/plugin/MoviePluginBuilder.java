@@ -29,6 +29,7 @@ public class MoviePluginBuilder extends PluginBuilder {
 
     private final PluginBuildTask buildPluginTask = new BuildPluginTask();
     private final PluginBuildTask compilePluginTask = new CompilePluginTask();
+    private final PluginBuildTask installTask = new InstallTask();
     private final PluginBuildTask packagePluginTask = new PackagePluginTask();
     private final PluginBuildTask testHomePageJsTask = new TestPageTask("home", 1);
     private final PluginBuildTask testCategoryPageJsTask = new TestPageTask("category", 1);
@@ -50,6 +51,11 @@ public class MoviePluginBuilder extends PluginBuilder {
     public PluginBuildTask getCompilePluginTask() {
         compilePluginTask.putParameter("deviceType", getDeviceType());
         return compilePluginTask;
+    }
+
+    public PluginBuildTask getInstallTask() {
+        installTask.putParameter("deviceType", getDeviceType());
+        return installTask;
     }
 
     private int deviceType = Environment.getShared().getDeviceType();
@@ -162,6 +168,7 @@ public class MoviePluginBuilder extends PluginBuilder {
                             }
 
                         } catch (Throwable e) {
+                            e.printStackTrace();
                             isSuccessLocal = false;
                         }
 

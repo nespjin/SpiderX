@@ -9,7 +9,9 @@ import org.json.JSONObject
 /**
  * Fish Plugin
  */
-class Plugin2 constructor(private val store: JSONObject = JSONObject()) {
+class Plugin2 constructor(val store: JSONObject = JSONObject()) {
+
+    private val _pagesCache by lazy { arrayListOf<Page2>() }
 
     init {
         for (page in pages) {
@@ -123,6 +125,10 @@ class Plugin2 constructor(private val store: JSONObject = JSONObject()) {
             return store.optJSONObject(FIELD_NAME_REF)?.toMap()
         }
 
+    fun applyPages() {
+        pages = _pagesCache
+    }
+
     var pages: List<Page2>
         set(value) {
             val ret = JSONArray()
@@ -146,7 +152,20 @@ class Plugin2 constructor(private val store: JSONObject = JSONObject()) {
                     ret.add(item)
                 }
             }
-            return ret
+
+            if (_pagesCache.isEmpty()) {
+                _pagesCache.addAll(ret)
+            } else {
+                for (i in 0 until _pagesCache.size) {
+                    val page2 = _pagesCache[i]
+                    val originPage2 = ret.find { it.id == page2.id }
+                    if (originPage2 != null) {
+                        page2.store = originPage2.store
+                    }
+                }
+            }
+
+            return _pagesCache
         }
 
     var extensions: Any?
@@ -285,7 +304,7 @@ class Plugin2 constructor(private val store: JSONObject = JSONObject()) {
         val entries = store.toMap().entries
         for (entry in entries) {
             if (entry.key !in fieldNames) {
-                return "The field is not supported"
+                return "The field ${entry.key} is not supported"
             }
         }
         return ""

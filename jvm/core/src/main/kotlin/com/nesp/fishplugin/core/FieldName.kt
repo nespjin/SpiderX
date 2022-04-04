@@ -1,5 +1,5 @@
 package com.nesp.fishplugin.core
 
 @Target(AnnotationTarget.FIELD)
-@Retention(AnnotationRetention.SOURCE)
+@Retention(AnnotationRetention.BINARY)
 annotation class FieldName

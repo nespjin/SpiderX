@@ -125,6 +125,7 @@ object Compiler {
                     }
                 }
             }
+            plugin.applyPages()
         }
 
         // Remove parent if compile success
@@ -297,6 +298,7 @@ object Compiler {
                 result = lookupAndApplyVariable(plugin, page, Page2.FIELD_NAME_DSL)
                 if (result.isNotEmpty()) return result
             }
+            plugin.applyPages()
         } else {
             return "Variable in $fieldName is not supported"
         }
@@ -319,10 +321,10 @@ object Compiler {
 
             if (fieldValue == null || (fieldValue is String && fieldValue.isEmpty())) {
 //            return "Not support for field $fieldName"
-                return ""
+                continue
             }
 
-            if (fieldValue !is String) return ""
+            if (fieldValue !is String) continue
             val variablesOfField = Grammar.lookupVariables(fieldValue)
             if (variablesOfField.isNotEmpty()) {
                 if (Variable.exitsVariable(fieldName, variablesOfField)) {

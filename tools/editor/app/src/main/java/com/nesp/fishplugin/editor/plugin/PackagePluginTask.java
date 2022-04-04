@@ -1,6 +1,7 @@
 package com.nesp.fishplugin.editor.plugin;
 
 import com.nesp.fishplugin.core.data.Plugin;
+import com.nesp.fishplugin.core.data.Plugin2;
 import com.nesp.fishplugin.editor.project.Project;
 import com.nesp.fishplugin.packager.PluginFile;
 import com.nesp.fishplugin.packager.binary.BinaryPluginFile;
@@ -20,7 +21,7 @@ public class PackagePluginTask extends PluginBuildTask {
         File binaryFile = workingProject.getBuildBinaryFile("plugin");
         PluginFile file = new BinaryPluginFile(binaryFile.getAbsolutePath());
         try {
-            file.write(new Plugin[]{workingProject.getTargetPlugin()});
+            file.write(new Plugin2[]{workingProject.getTargetPlugin()});
         } catch (IOException e) {
             e.printStackTrace();
             return Result.fail("Package plugin failed");
@@ -35,6 +36,7 @@ public class PackagePluginTask extends PluginBuildTask {
     public PluginBuildTask[] dependencies() {
         return new PluginBuildTask[]{
                 MoviePluginBuilder.getInstance().getCompilePluginTask(),
+                MoviePluginBuilder.getInstance().getInstallTask(),
                 MoviePluginBuilder.getInstance().getTestHomePageJsTask(),
                 MoviePluginBuilder.getInstance().getTestCategoryPageJsTask(),
                 MoviePluginBuilder.getInstance().getTestSearchPageJsTask(),
