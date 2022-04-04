@@ -1,7 +1,6 @@
 package com.nesp.fishplugin.packager.binary;
 
 import com.google.gson.Gson;
-import com.nesp.fishplugin.core.data.Plugin;
 import com.nesp.fishplugin.core.data.Plugin2;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
@@ -74,7 +73,7 @@ class BinaryPluginFileTest {
         Plugin2 plugin = new Plugin2(new JSONObject(pluginJson));
         try {
             startTimeMillis = System.currentTimeMillis();
-            binaryPluginFile.write(new Plugin2[]{plugin});
+            binaryPluginFile.write(new Plugin2[]{plugin,plugin,plugin,plugin,plugin,plugin,plugin,plugin});
             long x = System.currentTimeMillis() - startTimeMillis;
             System.out.println(x); // 211/197/199/222/216 233/210/192/203/236
         } catch (IOException e) {
