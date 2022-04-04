@@ -1,7 +1,6 @@
 package com.nesp.fishplugin.packager.binary;
 
 import com.google.common.primitives.Bytes;
-import com.google.gson.JsonObject;
 import com.nesp.fishplugin.core.Environment;
 import com.nesp.fishplugin.core.PluginUtil;
 import com.nesp.fishplugin.core.data.Page2;
@@ -223,12 +222,11 @@ public class BinaryPluginFile implements PluginFile {
                         }
                         writeIntegerField(new Value<>(deviceType == dslArray.length - 1 ? DEVICE_TYPE_ALL : (byte) deviceType, dslMap == null ? 0 : dslMap.size()));
 
-                        if (dslMap != null && dslMap.size() > 0) {
-                            Collection<?> keySet = dslMap.keySet();
-                            for (Object key : keySet) {
-                                writeStringField(new Value<>((deviceType == dslArray.length - 1 ? DEVICE_TYPE_ALL : (byte) deviceType), String.valueOf(key)));
-                                writeStringField(new Value<>((deviceType == dslArray.length - 1 ? DEVICE_TYPE_ALL : (byte) deviceType), String.valueOf(dslMap.get(key))));
-                            }
+                        if (dslMap == null || dslMap.size() <= 0) continue;
+                        Collection<?> keySet = dslMap.keySet();
+                        for (Object key : keySet) {
+                            writeStringField(new Value<>((deviceType == dslArray.length - 1 ? DEVICE_TYPE_ALL : (byte) deviceType), String.valueOf(key)));
+                            writeStringField(new Value<>((deviceType == dslArray.length - 1 ? DEVICE_TYPE_ALL : (byte) deviceType), String.valueOf(dslMap.get(key))));
                         }
                     }
                 }
@@ -529,16 +527,15 @@ public class BinaryPluginFile implements PluginFile {
                 for (int k = 0; k < deviceTypeCount; k++) {
                     // Dsl count
                     int dslMapSize = readIntegerField().value();
-                    if (dslMapSize > 0) {
-                        Map<String, String> dslMap = new HashMap<>();
-                        for (int l = 0; l < dslMapSize; l++) {
-                            curStringValue = readStringField();
-                            Value<String> curStringValue2 = readStringField();
-                            curDeviceType = curStringValue.deviceType();
-                            dslMap.put(PluginUtil.getFieldNameWithDeviceType(curStringValue.value(), curDeviceType == DEVICE_TYPE_ALL ? null : curDeviceType), curStringValue2.value());
-                        }
-                        page.setDsl(dslMap);
+                    if (dslMapSize <= 0) continue;
+                    Map<String, String> dslMap = new HashMap<>();
+                    for (int l = 0; l < dslMapSize; l++) {
+                        curStringValue = readStringField();
+                        Value<String> curStringValue2 = readStringField();
+                        curDeviceType = curStringValue.deviceType();
+                        dslMap.put(PluginUtil.getFieldNameWithDeviceType(curStringValue.value(), curDeviceType == DEVICE_TYPE_ALL ? null : curDeviceType), curStringValue2.value());
                     }
+                    page.setDsl(dslMap);
                 }
                 pages.add(page);
             }
