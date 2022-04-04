@@ -78,6 +78,7 @@ class Environment private constructor() {
         const val DEVICE_TYPE_TABLE = 1
         const val DEVICE_TYPE_DESKTOP = 2
 
+        @JvmStatic
         fun allDeviceTypes(): Array<Int> {
             return arrayOf(DEVICE_TYPE_MOBILE_PHONE, DEVICE_TYPE_TABLE, DEVICE_TYPE_DESKTOP)
         }

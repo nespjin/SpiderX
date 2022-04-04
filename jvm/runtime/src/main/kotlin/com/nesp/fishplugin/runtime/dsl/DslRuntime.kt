@@ -2,7 +2,7 @@ package com.nesp.fishplugin.runtime.dsl
 
 import com.nesp.fishplugin.core.Environment
 import com.nesp.fishplugin.core.data.DSL
-import com.nesp.fishplugin.core.data.Page
+import com.nesp.fishplugin.core.data.Page2
 import com.nesp.fishplugin.core.data.Plugin
 import com.nesp.fishplugin.core.utils.LruCache
 import com.nesp.fishplugin.runtime.AbsRuntime
@@ -368,8 +368,8 @@ abstract class DslRuntime : AbsRuntime() {
 
     companion object {
 
-        fun isPageAvailable(page: Page): Boolean {
-            return page.owner != null && page.url.isNotEmpty() && page.dsl != null && page.dsl is Map<*, *>
+        fun isPageAvailable(page: Page2): Boolean {
+            return page.owner != null && !page.getUrl().isNullOrEmpty() && page.getDsl() != null && page.getDsl() is Map<*, *>
         }
 
     }

@@ -1,6 +1,6 @@
 package com.nesp.fishplugin.packager;
 
-import com.nesp.fishplugin.core.data.Plugin;
+import com.nesp.fishplugin.core.data.Plugin2;
 import com.nesp.fishplugin.packager.binary.ReadNotMatchTypeException;
 
 import java.io.IOException;
@@ -22,8 +22,8 @@ public interface PluginFile {
 
     int readFileFlags() throws IOException;
 
-    void write(Plugin[] plugins) throws IOException;
+    void write(Plugin2[] plugins) throws IOException;
 
-    Plugin[] read() throws IOException, ReadNotMatchTypeException;
+    Plugin2[] read() throws IOException, ReadNotMatchTypeException;
 
 }

@@ -12,6 +12,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.8.9'
     implementation 'commons-codec:commons-codec:1.15'
     implementation 'com.google.guava:guava:31.0.1-jre'
+    implementation 'org.json:json:20211205'
     implementation project(path: ':core')
     implementation project(path: ':tools')
 }

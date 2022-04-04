@@ -1,6 +1,6 @@
 package com.nesp.fishplugin.runtime
 
-import com.nesp.fishplugin.core.data.Page
+import com.nesp.fishplugin.core.data.Page2
 
 /**
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu Email:1756404649@qq.com</a>
@@ -12,7 +12,7 @@ abstract class AbsRuntime : IRuntime {
     protected val tasks = mutableListOf<IRuntimeTask>()
     private val processes = mutableListOf<Process>()
 
-    override fun exec(page: Page, vararg parameters: Any?): Process {
+    override fun exec(page: Page2, vararg parameters: Any?): Process {
         return Process(this)
     }
 

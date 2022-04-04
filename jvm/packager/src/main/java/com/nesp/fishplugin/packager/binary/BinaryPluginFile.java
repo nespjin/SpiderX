@@ -1,17 +1,20 @@
 package com.nesp.fishplugin.packager.binary;
 
 import com.google.common.primitives.Bytes;
-import com.nesp.fishplugin.core.data.Page;
-import com.nesp.fishplugin.core.data.Plugin;
+import com.google.gson.JsonObject;
+import com.nesp.fishplugin.core.Environment;
+import com.nesp.fishplugin.core.PluginUtil;
+import com.nesp.fishplugin.core.data.Page2;
+import com.nesp.fishplugin.core.data.Plugin2;
 import com.nesp.fishplugin.packager.PluginFile;
 import com.nesp.fishplugin.tools.code.JsMinifier;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
+import org.json.JSONObject;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.function.Predicate;
 
 public class BinaryPluginFile implements PluginFile {
 
@@ -67,8 +70,22 @@ public class BinaryPluginFile implements PluginFile {
         this.pluginCount = pluginCount;
     }
 
-    public record Constant(int tag, byte[] bytes) {
+    public static final class Constant {
+        private final int tag;
+        private final byte[] bytes;
 
+        public Constant(int tag, byte[] bytes) {
+            this.tag = tag;
+            this.bytes = bytes;
+        }
+
+        public int tag() {
+            return tag;
+        }
+
+        public byte[] bytes() {
+            return bytes;
+        }
     }
 
     /**
@@ -77,9 +94,51 @@ public class BinaryPluginFile implements PluginFile {
     public List<Constant> constantPool = new ArrayList<>();
 
     /**
-     * 字段常量映射，下标为字段Index，值为常量索引
+     * 字段引用
      */
-    public List<Integer> fieldRefIndex = new ArrayList<>();
+    public List<FieldRef> fieldRefs = new ArrayList<>();
+
+    private static final byte DEVICE_TYPE_ALL = (byte) 0xFF;
+
+    public static final class FieldRef {
+        private final byte deviceType;
+
+        /**
+         * 字段常量映射，下标为字段Index，值为常量索引
+         */
+        private final int index;
+
+        public FieldRef(byte deviceType, int index) {
+            this.deviceType = deviceType;
+            this.index = index;
+        }
+
+        public byte deviceType() {
+            return deviceType;
+        }
+
+        public int index() {
+            return index;
+        }
+    }
+
+    public static class Value<T> {
+        private final byte deviceType;
+        private final T value;
+
+        public Value(byte deviceType, T value) {
+            this.deviceType = deviceType;
+            this.value = value;
+        }
+
+        public byte deviceType() {
+            return deviceType;
+        }
+
+        public T value() {
+            return value;
+        }
+    }
 
     private final File file;
 
@@ -94,7 +153,7 @@ public class BinaryPluginFile implements PluginFile {
     }
 
     @Override
-    public void write(Plugin[] plugins) throws IOException {
+    public void write(Plugin2[] plugins) throws IOException {
         if (plugins == null || plugins.length == 0) {
             throw new NullPointerException("plugins must not be null or empty");
         }
@@ -114,41 +173,62 @@ public class BinaryPluginFile implements PluginFile {
         int dataIndexCountPerPlugin = -1;
 
         for (int i = 0; i < plugins.length; i++) {
-            Plugin plugin = plugins[i];
+            Plugin2 plugin = plugins[i];
             // Write plugin
-            writeStringField(plugin.getName());
-            writeStringField(plugin.getId());
-            writeStringField(plugin.getAuthor());
-            writeStringField(plugin.getVersion());
-            writeStringField(plugin.getRuntime());
-            writeStringField(plugin.getTime());
+            writeStringField(new Value<>(DEVICE_TYPE_ALL, plugin.getName()));
+            writeStringField(new Value<>(DEVICE_TYPE_ALL, plugin.getId()));
+            writeStringField(new Value<>(DEVICE_TYPE_ALL, plugin.getAuthor()));
+            writeStringField(new Value<>(DEVICE_TYPE_ALL, plugin.getVersion()));
+            writeStringField(new Value<>(DEVICE_TYPE_ALL, plugin.getRuntime()));
+            writeStringField(new Value<>(DEVICE_TYPE_ALL, plugin.getTime()));
             StringJoiner tagsString = new StringJoiner(",");
             for (String tag : plugin.getTags()) tagsString.add(tag);
-            writeStringField(tagsString.toString());
-            writeIntegerField(plugin.getDeviceFlags());
-            writeIntegerField(plugin.getType());
-            writeStringField(Optional.ofNullable(plugin.getIntroduction()).orElse(""));
+            writeStringField(new Value<>(DEVICE_TYPE_ALL, tagsString.toString()));
+            writeIntegerField(new Value<>(DEVICE_TYPE_ALL, plugin.getDeviceFlags()));
+            writeIntegerField(new Value<>(DEVICE_TYPE_ALL, plugin.getType()));
+            writeStringField(new Value<>(DEVICE_TYPE_ALL, plugin.getIntroduction()));
 
-            List<Page> pages = plugin.getPages();
-            writeIntegerField(pages.size());
+            List<Page2> pages = plugin.getPages();
+            writeIntegerField(new Value<>(DEVICE_TYPE_ALL, pages.size()));
             if (pages.size() > 0) {
-                for (Page page : pages) {
-                    writeStringField(page.getId());
-                    writeStringField(page.getUrl());
-                    writeStringField(new JsMinifier().minify(page.getJs())); // will be empty
+                for (Page2 page : pages) {
+                    writeStringField(new Value<>(DEVICE_TYPE_ALL, page.getId()));
 
-                    Map<?, ?> dslMap = null;
-                    Object dsl = page.getDsl(); // Dsl is a map at present
-                    if (dsl instanceof Map<?, ?>) {
-                        dslMap = (Map<?, ?>) dsl;
+                    String[] refUrls = page.getAllRefUrls();
+                    for (int deviceType = 0; deviceType < refUrls.length - 1; deviceType++) {
+                        writeStringField(new Value<>((byte) deviceType, refUrls[deviceType]));
                     }
-                    writeIntegerField(dslMap == null ? 0 : dslMap.size());
+                    writeStringField(new Value<>(DEVICE_TYPE_ALL, refUrls[refUrls.length - 1]));
 
-                    if (dslMap != null && dslMap.size() > 0) {
-                        Collection<?> keySet = dslMap.keySet();
-                        for (Object key : keySet) {
-                            writeStringField(String.valueOf(key));
-                            writeStringField(String.valueOf(dslMap.get(key)));
+                    String[] urls = page.getAllUrls();
+                    for (int deviceType = 0; deviceType < urls.length - 1; deviceType++) {
+                        writeStringField(new Value<>((byte) deviceType, urls[deviceType]));
+                    }
+                    writeStringField(new Value<>(DEVICE_TYPE_ALL, urls[urls.length - 1]));
+
+                    String[] js = page.getAllJs();
+                    for (int deviceType = 0; deviceType < js.length - 1; deviceType++) {
+                        writeStringField(new Value<>((byte) deviceType, new JsMinifier().minify(js[deviceType]))); // will be empty
+                    }
+                    writeStringField(new Value<>(DEVICE_TYPE_ALL, new JsMinifier().minify(js[js.length - 1]))); // will be empty
+
+                    Object[] dslArray = page.getAllDsl();
+                    for (int deviceType = 0; deviceType < dslArray.length; deviceType++) {
+                        Map<?, ?> dslMap = null;
+                        Object dsl = dslArray[deviceType]; // Dsl is a map at present
+                        if (dsl instanceof Map<?, ?>) {
+                            dslMap = (Map<?, ?>) dsl;
+                        } else if (dsl instanceof JSONObject) {
+                            dslMap = ((JSONObject) dsl).toMap();
+                        }
+                        writeIntegerField(new Value<>(deviceType == dslArray.length - 1 ? DEVICE_TYPE_ALL : (byte) deviceType, dslMap == null ? 0 : dslMap.size()));
+
+                        if (dslMap != null && dslMap.size() > 0) {
+                            Collection<?> keySet = dslMap.keySet();
+                            for (Object key : keySet) {
+                                writeStringField(new Value<>((deviceType == dslArray.length - 1 ? DEVICE_TYPE_ALL : (byte) deviceType), String.valueOf(key)));
+                                writeStringField(new Value<>((deviceType == dslArray.length - 1 ? DEVICE_TYPE_ALL : (byte) deviceType), String.valueOf(dslMap.get(key))));
+                            }
                         }
                     }
                 }
@@ -156,7 +236,7 @@ public class BinaryPluginFile implements PluginFile {
 
             if (i == 0) {
                 // compute data index count per plugin
-                dataIndexCountPerPlugin = fieldRefIndex.size();
+                dataIndexCountPerPlugin = fieldRefs.size();
             }
         }
 
@@ -195,8 +275,9 @@ public class BinaryPluginFile implements PluginFile {
         content.addAll(Bytes.asList(int2Bytes(dataIndexCountPerPlugin, 2)));
 
         // Add Field
-        for (Integer refIndex : fieldRefIndex) {
-            content.addAll(Bytes.asList(int2Bytes(refIndex, 2)));
+        for (FieldRef ref : fieldRefs) {
+            content.add(ref.deviceType());
+            content.addAll(Bytes.asList(int2Bytes(ref.index(), 2)));
         }
 
         writeContentToFile();
@@ -212,99 +293,98 @@ public class BinaryPluginFile implements PluginFile {
         }
     }
 
-    protected void writeStringField(String value) {
-        Optional<Constant> valueTryFind = constantPool.stream().filter(new Predicate<Constant>() {
-            @Override
-            public boolean test(Constant constant) {
-                return constant.tag() == CONSTANT_Utf8_info
-                        && new String(constant.bytes(), StandardCharsets.UTF_8).equals(value);
-            }
-        }).findFirst();
+    protected void writeStringField(Value<String> value) {
+        Constant valueTryFind = null;
 
-        if (valueTryFind.isPresent()) {
-            fieldRefIndex.add(constantPool.indexOf(valueTryFind.get()));
+        for (Constant constant : constantPool) {
+            if (constant.tag() == CONSTANT_Utf8_info && new String(constant.bytes(), StandardCharsets.UTF_8).equals(value.value())) {
+                valueTryFind = constant;
+                break;
+            }
+        }
+
+        if (valueTryFind != null) {
+            int index = constantPool.indexOf(valueTryFind);
+            fieldRefs.add(new FieldRef(value.deviceType(), index));
             return;
         }
 
-        Constant constant = new Constant(CONSTANT_Utf8_info, value.getBytes(StandardCharsets.UTF_8));
+        Constant constant = new Constant(CONSTANT_Utf8_info, value.value().getBytes(StandardCharsets.UTF_8));
         constantPool.add(constant);
-        fieldRefIndex.add(constantPool.size() - 1);
+        fieldRefs.add(new FieldRef(value.deviceType(), constantPool.size() - 1));
     }
 
-    protected void writeIntegerField(int value) {
-        Optional<Constant> valueTryFind = constantPool.stream().filter(new Predicate<Constant>() {
-            @Override
-            public boolean test(Constant constant) {
-                return constant.tag() == CONSTANT_Integer_info
-                        && bytes2Int(constant.bytes()) == value;
-            }
-        }).findFirst();
+    protected void writeIntegerField(Value<Integer> value) {
+        Constant valueTryFind = null;
 
-        if (valueTryFind.isPresent()) {
-            fieldRefIndex.add(constantPool.indexOf(valueTryFind.get()));
+        for (Constant constant : constantPool) {
+            if (constant.tag() == CONSTANT_Integer_info && bytes2Int(constant.bytes()) == value.value()) {
+                valueTryFind = constant;
+                break;
+            }
+        }
+
+        if (valueTryFind != null) {
+            fieldRefs.add(new FieldRef(value.deviceType(), constantPool.indexOf(valueTryFind)));
             return;
         }
 
-        Constant constant = new Constant(CONSTANT_Integer_info, int2Bytes(value));
+        Constant constant = new Constant(CONSTANT_Integer_info, int2Bytes(value.value()));
         constantPool.add(constant);
-        fieldRefIndex.add(constantPool.size() - 1);
+        fieldRefs.add(new FieldRef(value.deviceType(), constantPool.size() - 1));
     }
 
-    protected void writeFloatField(float value) {
-        Optional<Constant> valueTryFind = constantPool.stream().filter(new Predicate<Constant>() {
-            @Override
-            public boolean test(Constant constant) {
-                return constant.tag() == CONSTANT_Float_info
-                        && Float.intBitsToFloat(bytes2Int(constant.bytes())) == value;
+    protected void writeFloatField(Value<Float> value) {
+        Constant valueTryFind = null;
+        for (Constant constant : constantPool) {
+            if (constant.tag() == CONSTANT_Float_info && Float.intBitsToFloat(bytes2Int(constant.bytes())) == value.value()) {
+                valueTryFind = constant;
+                break;
             }
-        }).findFirst();
-
-        if (valueTryFind.isPresent()) {
-            fieldRefIndex.add(constantPool.indexOf(valueTryFind.get()));
+        }
+        if (valueTryFind != null) {
+            fieldRefs.add(new FieldRef(value.deviceType(), constantPool.indexOf(valueTryFind)));
             return;
         }
 
-        Constant constant = new Constant(CONSTANT_Float_info, int2Bytes(Float.floatToIntBits(value)));
+        Constant constant = new Constant(CONSTANT_Float_info, int2Bytes(Float.floatToIntBits(value.value())));
         constantPool.add(constant);
-        fieldRefIndex.add(constantPool.size() - 1);
+        fieldRefs.add(new FieldRef(value.deviceType(), constantPool.size() - 1));
     }
 
-    protected void writeLongField(long value) {
-        Optional<Constant> valueTryFind = constantPool.stream().filter(new Predicate<Constant>() {
-            @Override
-            public boolean test(Constant constant) {
-                return constant.tag() == CONSTANT_Long_info
-                        && bytes2Long(constant.bytes()) == value;
+    protected void writeLongField(Value<Long> value) {
+        Constant valueTryFind = null;
+        for (Constant constant : constantPool) {
+            if (constant.tag() == CONSTANT_Long_info && bytes2Long(constant.bytes()) == value.value()) {
+                valueTryFind = constant;
+                break;
             }
-        }).findFirst();
-
-        if (valueTryFind.isPresent()) {
-            fieldRefIndex.add(constantPool.indexOf(valueTryFind.get()));
+        }
+        if (valueTryFind != null) {
+            fieldRefs.add(new FieldRef(value.deviceType(), constantPool.indexOf(valueTryFind)));
             return;
         }
 
-        Constant constant = new Constant(CONSTANT_Long_info, long2Bytes(value));
+        Constant constant = new Constant(CONSTANT_Long_info, long2Bytes(value.value()));
         constantPool.add(constant);
-        fieldRefIndex.add(constantPool.size() - 1);
+        fieldRefs.add(new FieldRef(value.deviceType(), constantPool.size() - 1));
     }
 
-    protected void writeDoubleField(double value) {
-        Optional<Constant> valueTryFind = constantPool.stream().filter(new Predicate<Constant>() {
-            @Override
-            public boolean test(Constant constant) {
-                return constant.tag() == CONSTANT_Double_info
-                        && Double.longBitsToDouble(bytes2Long(constant.bytes())) == value;
+    protected void writeDoubleField(Value<Double> value) {
+        Constant valueTryFind = null;
+        for (Constant constant : constantPool) {
+            if (constant.tag() == CONSTANT_Double_info && Double.longBitsToDouble(bytes2Long(constant.bytes())) == value.value()) {
+                valueTryFind = constant;
+                break;
             }
-        }).findFirst();
-
-        if (valueTryFind.isPresent()) {
-            fieldRefIndex.add(constantPool.indexOf(valueTryFind.get()));
+        }
+        if (valueTryFind != null) {
+            fieldRefs.add(new FieldRef(value.deviceType(), constantPool.indexOf(valueTryFind)));
             return;
         }
-
-        Constant constant = new Constant(CONSTANT_Double_info, long2Bytes(Double.doubleToLongBits(value)));
+        Constant constant = new Constant(CONSTANT_Double_info, long2Bytes(Double.doubleToLongBits(value.value())));
         constantPool.add(constant);
-        fieldRefIndex.add(constantPool.size() - 1);
+        fieldRefs.add(new FieldRef(value.deviceType(), constantPool.size() - 1));
     }
 
     @Override
@@ -326,7 +406,7 @@ public class BinaryPluginFile implements PluginFile {
     protected int readPos = -1;
 
     @Override
-    public Plugin[] read() throws IOException, ReadNotMatchTypeException {
+    public Plugin2[] read() throws IOException, ReadNotMatchTypeException {
         if (content.isEmpty()) {
             readContentFromFile();
         }
@@ -374,26 +454,29 @@ public class BinaryPluginFile implements PluginFile {
         int dataIndexCount = bytes2Int(Bytes.toArray(content.subList(readAreaPos, readAreaPos + 2)));
         readAreaPos += 2;
 
-        fieldRefIndex.clear();
+        fieldRefs.clear();
 
         for (int i = 0; i < dataIndexCount * pluginCount; i++) {
-            fieldRefIndex.add(bytes2Int(Bytes.toArray(content.subList(readAreaPos, readAreaPos + 2))));
+            byte deviceType = content.subList(readAreaPos, readAreaPos + 1).get(0);
+            readAreaPos += 1;
+            int index = bytes2Int(Bytes.toArray(content.subList(readAreaPos, readAreaPos + 2)));
             readAreaPos += 2;
+            fieldRefs.add(new FieldRef(deviceType, index));
         }
 
-        Plugin[] plugins = new Plugin[pluginCount];
+        Plugin2[] plugins = new Plugin2[pluginCount];
 
         for (int i = 0; i < pluginCount; i++) {
             readPos = -1; // reset read pos.
-            Plugin plugin = new Plugin();
-            plugin.setName(readStringField());
-            plugin.setId(readStringField());
-            plugin.setAuthor(readStringField());
-            plugin.setVersion(readStringField());
-            plugin.setRuntime(readStringField());
-            plugin.setTime(readStringField());
+            Plugin2 plugin = new Plugin2();
+            plugin.setName(readStringField().value());
+            plugin.setId(readStringField().value());
+            plugin.setAuthor(readStringField().value());
+            plugin.setVersion(readStringField().value());
+            plugin.setRuntime(readStringField().value());
+            plugin.setTime(readStringField().value());
 
-            String tagsString = readStringField();
+            String tagsString = readStringField().value();
             if (!tagsString.isEmpty()) {
                 if (!tagsString.contains(",")) {
                     plugin.setTags(new ArrayList<>() {
@@ -406,28 +489,56 @@ public class BinaryPluginFile implements PluginFile {
                 }
             }
 
-            plugin.setDeviceFlags(readIntegerField());
-            plugin.setType(readIntegerField());
-            plugin.setIntroduction(readStringField());
+            plugin.setDeviceFlags(readIntegerField().value());
+            plugin.setType(readIntegerField().value());
+            plugin.setIntroduction(readStringField().value());
 
             // page
             // page count
-            int pageCount = readIntegerField();
-            List<Page> pages = new ArrayList<>();
+            int pageCount = readIntegerField().value();
+            List<Page2> pages = new ArrayList<>();
+            int deviceTypeCount = Environment.allDeviceTypes().length + 1;
+            Value<String> curStringValue;
+            int curDeviceType;
             for (int j = 0; j < pageCount; j++) {
-                Page page = new Page();
-                page.setId(readStringField());
-                page.setUrl(readStringField());
-                page.setJs(readStringField());
+                Page2 page = new Page2();
 
-                // Dsl count
-                int dslMapSize = readIntegerField();
-                if (dslMapSize > 0) {
-                    Map<String, String> dslMap = new HashMap<>();
-                    for (int k = 0; k < dslMapSize; k++) {
-                        dslMap.put(readStringField(), readStringField());
+                page.setId(readStringField().value());
+
+                for (int k = 0; k < deviceTypeCount; k++) {
+                    curStringValue = readStringField();
+                    if (curStringValue.value().isEmpty()) continue;
+                    curDeviceType = curStringValue.deviceType();
+                    page.setRefUrl(curStringValue.value(), curDeviceType == DEVICE_TYPE_ALL ? null : curDeviceType);
+                }
+
+                for (int k = 0; k < deviceTypeCount; k++) {
+                    curStringValue = readStringField();
+                    if (curStringValue.value().isEmpty()) continue;
+                    curDeviceType = curStringValue.deviceType();
+                    page.setUrl(curStringValue.value(), curDeviceType == DEVICE_TYPE_ALL ? null : curDeviceType);
+                }
+
+                for (int k = 0; k < deviceTypeCount; k++) {
+                    curStringValue = readStringField();
+                    if (curStringValue.value().isEmpty()) continue;
+                    curDeviceType = curStringValue.deviceType();
+                    page.setJs(curStringValue.value(), curDeviceType == DEVICE_TYPE_ALL ? null : curDeviceType);
+                }
+
+                for (int k = 0; k < deviceTypeCount; k++) {
+                    // Dsl count
+                    int dslMapSize = readIntegerField().value();
+                    if (dslMapSize > 0) {
+                        Map<String, String> dslMap = new HashMap<>();
+                        for (int l = 0; l < dslMapSize; l++) {
+                            curStringValue = readStringField();
+                            Value<String> curStringValue2 = readStringField();
+                            curDeviceType = curStringValue.deviceType();
+                            dslMap.put(PluginUtil.getFieldNameWithDeviceType(curStringValue.value(), curDeviceType == DEVICE_TYPE_ALL ? null : curDeviceType), curStringValue2.value());
+                        }
+                        page.setDsl(dslMap);
                     }
-                    page.setDsl(dslMap);
                 }
                 pages.add(page);
             }
@@ -451,49 +562,49 @@ public class BinaryPluginFile implements PluginFile {
         }
     }
 
-    protected String readStringField() throws IndexOutOfBoundsException, ReadNotMatchTypeException {
-        Integer fieldRefIndex = this.fieldRefIndex.get(++readPos);
-        Constant constant = constantPool.get(fieldRefIndex);
+    protected Value<String> readStringField() throws IndexOutOfBoundsException, ReadNotMatchTypeException {
+        FieldRef fieldRef = this.fieldRefs.get(++readPos);
+        Constant constant = constantPool.get(fieldRef.index());
         if (constant.tag() != CONSTANT_Utf8_info) {
             throw new ReadNotMatchTypeException(getTypeNameByTag(constant.tag()) + " cant match to string");
         }
-        return new String(constant.bytes());
+        return new Value<>(fieldRef.deviceType(), new String(constant.bytes()));
     }
 
-    protected int readIntegerField() throws IndexOutOfBoundsException, ReadNotMatchTypeException {
-        Integer fieldRefIndex = this.fieldRefIndex.get(++readPos);
-        Constant constant = constantPool.get(fieldRefIndex);
+    protected Value<Integer> readIntegerField() throws IndexOutOfBoundsException, ReadNotMatchTypeException {
+        FieldRef fieldRef = this.fieldRefs.get(++readPos);
+        Constant constant = constantPool.get(fieldRef.index());
         if (constant.tag() != CONSTANT_Integer_info) {
             throw new ReadNotMatchTypeException(getTypeNameByTag(constant.tag()) + " cant match to int");
         }
-        return bytes2Int(constant.bytes());
+        return new Value<>(fieldRef.deviceType(), bytes2Int(constant.bytes()));
     }
 
-    protected float readFloatField() throws IndexOutOfBoundsException, ReadNotMatchTypeException {
-        Integer fieldRefIndex = this.fieldRefIndex.get(++readPos);
-        Constant constant = constantPool.get(fieldRefIndex);
+    protected Value<Float> readFloatField() throws IndexOutOfBoundsException, ReadNotMatchTypeException {
+        FieldRef fieldRef = this.fieldRefs.get(++readPos);
+        Constant constant = constantPool.get(fieldRef.index());
         if (constant.tag() != CONSTANT_Float_info) {
             throw new ReadNotMatchTypeException(getTypeNameByTag(constant.tag()) + " cant match to float");
         }
-        return Float.intBitsToFloat(bytes2Int(constant.bytes()));
+        return new Value<>(fieldRef.deviceType(), Float.intBitsToFloat(bytes2Int(constant.bytes())));
     }
 
-    protected long readLongField() throws IndexOutOfBoundsException, ReadNotMatchTypeException {
-        Integer fieldRefIndex = this.fieldRefIndex.get(++readPos);
-        Constant constant = constantPool.get(fieldRefIndex);
+    protected Value<Long> readLongField() throws IndexOutOfBoundsException, ReadNotMatchTypeException {
+        FieldRef fieldRef = this.fieldRefs.get(++readPos);
+        Constant constant = constantPool.get(fieldRef.index());
         if (constant.tag() != CONSTANT_Long_info) {
             throw new ReadNotMatchTypeException(getTypeNameByTag(constant.tag()) + " cant match to long");
         }
-        return bytes2Long(constant.bytes());
+        return new Value<>(fieldRef.deviceType(), bytes2Long(constant.bytes()));
     }
 
-    protected double readDoubleField() throws IndexOutOfBoundsException, ReadNotMatchTypeException {
-        Integer fieldRefIndex = this.fieldRefIndex.get(++readPos);
-        Constant constant = constantPool.get(fieldRefIndex);
+    protected Value<Double> readDoubleField() throws IndexOutOfBoundsException, ReadNotMatchTypeException {
+        FieldRef fieldRef = this.fieldRefs.get(++readPos);
+        Constant constant = constantPool.get(fieldRef.index());
         if (constant.tag() != CONSTANT_Double_info) {
             throw new ReadNotMatchTypeException(getTypeNameByTag(constant.tag()) + " cant match to double");
         }
-        return Double.longBitsToDouble(bytes2Long(constant.bytes()));
+        return new Value<Double>(fieldRef.deviceType(), Double.longBitsToDouble(bytes2Long(constant.bytes())));
     }
 
     protected String getTypeNameByTag(int tag) {

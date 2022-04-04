@@ -1,11 +1,11 @@
 package com.nesp.fishplugin.runtime
 
-import com.nesp.fishplugin.core.data.Page
+import com.nesp.fishplugin.core.data.Page2
 import java.util.concurrent.TimeUnit
 
 interface IRuntime {
 
-    fun exec(page: Page, vararg parameters: Any?): Process
+    fun exec(page: Page2, vararg parameters: Any?): Process
 
     fun getCurrentProcess(): Process?
 

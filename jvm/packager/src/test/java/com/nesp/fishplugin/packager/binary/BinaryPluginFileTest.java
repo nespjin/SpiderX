@@ -2,6 +2,8 @@ package com.nesp.fishplugin.packager.binary;
 
 import com.google.gson.Gson;
 import com.nesp.fishplugin.core.data.Plugin;
+import com.nesp.fishplugin.core.data.Plugin2;
+import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -45,6 +47,7 @@ class BinaryPluginFileTest {
                     {
                         "id": "main",
                         "url": "post:http://xxx.xx/a?id\\u003d1",
+                        "url_0": "post0:http://xxx.xx/a?id\\u003d1",
                         "js": "function loadPage() {\\r\\n    let a \\u003d 1;\\r\\n}"
                     },
                     {
@@ -68,10 +71,10 @@ class BinaryPluginFileTest {
 
     @Test
     void write() {
-        Plugin plugin = gson.fromJson(pluginJson, Plugin.class);
+        Plugin2 plugin = new Plugin2(new JSONObject(pluginJson));
         try {
             startTimeMillis = System.currentTimeMillis();
-            binaryPluginFile.write(new Plugin[]{plugin});
+            binaryPluginFile.write(new Plugin2[]{plugin});
             long x = System.currentTimeMillis() - startTimeMillis;
             System.out.println(x); // 211/197/199/222/216 233/210/192/203/236
         } catch (IOException e) {
@@ -81,7 +84,7 @@ class BinaryPluginFileTest {
 
     @Test
     void read() {
-        Plugin[] plugins = new Plugin[0];
+        Plugin2[] plugins = null;
         try {
             startTimeMillis = System.currentTimeMillis();
             plugins = binaryPluginFile.read();

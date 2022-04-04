@@ -11,7 +11,7 @@ import org.json.JSONObject
  * Time: Created 2022/4/1 10:17 PM
  * Description:
  **/
-class Page2 constructor(private val store: JSONObject = JSONObject()) {
+class Page2 constructor(val store: JSONObject = JSONObject()) {
 
     var id: String
         set(value) {
@@ -27,13 +27,17 @@ class Page2 constructor(private val store: JSONObject = JSONObject()) {
     }
 
     fun getRefUrl(deviceType: Int? = null): String? {
-        return store.optString(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_REF_URL,
-            deviceType))
+        return store.optString(
+            PluginUtil.getFieldNameWithDeviceType(
+                FIELD_NAME_REF_URL,
+                deviceType
+            )
+        )
     }
 
     fun getAllRefUrls(): Array<String?> {
         val deviceTypes = Environment.allDeviceTypes()
-        val ret = arrayOfNulls<String>(deviceTypes.maxOf { it } + 1)
+        val ret = arrayOfNulls<String>(deviceTypes.maxOf { it } + 2)
         for (deviceType in deviceTypes) {
             ret[deviceType] = getRefUrl(deviceType)
         }
@@ -54,13 +58,14 @@ class Page2 constructor(private val store: JSONObject = JSONObject()) {
         store.put(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_URL, deviceType), value)
     }
 
-    fun getUrl(deviceType: Int? = null): String? {
+    @JvmOverloads
+    fun getUrl(deviceType: Int? = null): String {
         return store.optString(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_URL, deviceType))
     }
 
     fun getAllUrls(): Array<String?> {
         val deviceTypes = Environment.allDeviceTypes()
-        val ret = arrayOfNulls<String>(deviceTypes.maxOf { it } + 1)
+        val ret = arrayOfNulls<String>(deviceTypes.maxOf { it } + 2)
         for (deviceType in deviceTypes) {
             ret[deviceType] = getUrl(deviceType)
         }
@@ -81,13 +86,14 @@ class Page2 constructor(private val store: JSONObject = JSONObject()) {
         store.put(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_JS, deviceType), value)
     }
 
+    @JvmOverloads
     fun getJs(deviceType: Int? = null): String? {
         return store.optString(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_JS, deviceType))
     }
 
     fun getAllJs(): Array<String?> {
         val deviceTypes = Environment.allDeviceTypes()
-        val ret = arrayOfNulls<String>(deviceTypes.maxOf { it } + 1)
+        val ret = arrayOfNulls<String>(deviceTypes.maxOf { it } + 2)
         for (deviceType in deviceTypes) {
             ret[deviceType] = getJs(deviceType)
         }
@@ -108,13 +114,14 @@ class Page2 constructor(private val store: JSONObject = JSONObject()) {
         store.put(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_DSL, deviceType), value)
     }
 
+    @JvmOverloads
     fun getDsl(deviceType: Int? = null): Any? {
         return store.opt(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_DSL, deviceType))
     }
 
     fun getAllDsl(): Array<Any?> {
         val deviceTypes = Environment.allDeviceTypes()
-        val ret = arrayOfNulls<Any>(deviceTypes.maxOf { it } + 1)
+        val ret = arrayOfNulls<Any>(deviceTypes.maxOf { it } + 2)
         for (deviceType in deviceTypes) {
             ret[deviceType] = getDsl(deviceType)
         }
@@ -166,8 +173,10 @@ class Page2 constructor(private val store: JSONObject = JSONObject()) {
                 if (fieldValue is String) this.setJs(fieldValue, deviceType)
             }
             FIELD_NAME_DSL -> {
-                if (fieldValue is Map<*, *>?) this.setDsl(fieldValue as Map<String, Any>?,
-                    deviceType)
+                if (fieldValue is Map<*, *>?) this.setDsl(
+                    fieldValue as Map<String, Any>?,
+                    deviceType
+                )
             }
         }
     }

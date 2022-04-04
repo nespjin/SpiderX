@@ -1,6 +1,6 @@
 package com.nesp.fishplugin.runtime.movie.dsl
 
-import com.nesp.fishplugin.core.data.Page
+import com.nesp.fishplugin.core.data.Page2
 import com.nesp.fishplugin.runtime.IRunnableRuntimeTask
 import com.nesp.fishplugin.runtime.Process
 import com.nesp.fishplugin.runtime.dsl.DslRuntime
@@ -11,7 +11,7 @@ import org.jsoup.nodes.Document
 
 class MovieDslRuntime : DslRuntime() {
 
-    override fun exec(page: Page, vararg parameters: Any?): Process {
+    override fun exec(page: Page2, vararg parameters: Any?): Process {
         val process = super.exec(page, parameters)
         runTask(object : IRunnableRuntimeTask {
             override fun run() {
@@ -37,7 +37,7 @@ class MovieDslRuntime : DslRuntime() {
         return process
     }
 
-    private fun execDetailPage(page: Page, process: Process) {
+    private fun execDetailPage(page: Page2, process: Process) {
         if (!isPageAvailable(page)) {
             process.exitWithError()
             interruptCurrentTask()
@@ -47,10 +47,10 @@ class MovieDslRuntime : DslRuntime() {
         val movie = Movie()
 
         // Create html document or get from cache
-        val document = htmlDocumentCache[page.url]
+        val document = htmlDocumentCache[page.getUrl()]
 
         @Suppress("UNCHECKED_CAST")
-        val dsl = DetailPageDsl(page.dsl!! as MutableMap<String, String>)
+        val dsl = DetailPageDsl(page.getDsl()!! as MutableMap<String, String>)
 
         val episodeGroupListElements =
             select(document, dsl.getProperty(DetailPageDsl.PROPERTY_NAME_EPISODE_GROUP_LIST))
@@ -140,7 +140,7 @@ class MovieDslRuntime : DslRuntime() {
         process.exitNormally()
     }
 
-    private fun execSearchPage(page: Page, process: Process) {
+    private fun execSearchPage(page: Page2, process: Process) {
         if (!isPageAvailable(page)) {
             process.exitWithError()
             interruptCurrentTask()
@@ -150,10 +150,10 @@ class MovieDslRuntime : DslRuntime() {
         val searchPage = SearchPage()
 
         // Create html document or get from cache
-        val document = htmlDocumentCache[page.url]
+        val document = htmlDocumentCache[page.getUrl()]
 
         @Suppress("UNCHECKED_CAST")
-        val dsl = SearchPageDsl(page.dsl!! as MutableMap<String, String>)
+        val dsl = SearchPageDsl(page.getDsl()!! as MutableMap<String, String>)
 
         val moviesElements =
             select(document, dsl.getProperty(SearchPageDsl.PROPERTY_NAME_MOVIE_LIST))
@@ -217,7 +217,7 @@ class MovieDslRuntime : DslRuntime() {
         process.exitNormally()
     }
 
-    private fun execMovieCategoryPage(page: Page, process: Process) {
+    private fun execMovieCategoryPage(page: Page2, process: Process) {
         if (!isPageAvailable(page)) {
             process.exitWithError()
             interruptCurrentTask()
@@ -227,10 +227,10 @@ class MovieDslRuntime : DslRuntime() {
         val movieCategoryPage = MovieCategoryPage()
 
         // Create html document or get from cache
-        val document = htmlDocumentCache[page.url]
+        val document = htmlDocumentCache[page.getUrl()]
 
         @Suppress("UNCHECKED_CAST")
-        val dsl = MovieCategoryPageDsl(page.dsl!! as MutableMap<String, String>)
+        val dsl = MovieCategoryPageDsl(page.getDsl()!! as MutableMap<String, String>)
 
         val categoryGroupListElements =
             select(
@@ -318,7 +318,7 @@ class MovieDslRuntime : DslRuntime() {
         process.exitNormally()
     }
 
-    private fun execHomePage(page: Page, process: Process) {
+    private fun execHomePage(page: Page2, process: Process) {
         if (!isPageAvailable(page)) {
             process.exitWithError()
             interruptCurrentTask()
@@ -328,10 +328,10 @@ class MovieDslRuntime : DslRuntime() {
         val homePage = HomePage()
 
         // Create html document or get from cache
-        val document = htmlDocumentCache[page.url]
+        val document = htmlDocumentCache[page.getUrl()]
 
         @Suppress("UNCHECKED_CAST")
-        val dsl = HomePageDsl(page.dsl!! as MutableMap<String, String>)
+        val dsl = HomePageDsl(page.getDsl()!! as MutableMap<String, String>)
 
         homePage.slideMovies = getNewMovieList(process, MOVIES_INDEX_SLIDE, page, dsl, document)
         homePage.newPlay = getNewMovieList(process, MOVIES_INDEX_NEW_PLAY, page, dsl, document)
@@ -352,7 +352,7 @@ class MovieDslRuntime : DslRuntime() {
     private fun getNewMovieList(
         process: Process,
         moviesIndex: Int,
-        page: Page,
+        page: Page2,
         dsl: HomePageDsl,
         document: Document
     ): MutableList<Movie> {

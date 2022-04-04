@@ -1,9 +1,9 @@
 package com.nesp.fishplugin.core
 
-import com.nesp.fishplugin.core.data.Plugin2
 
 object PluginUtil {
 
+    @JvmStatic
     fun getFieldNameWithDeviceType(fieldName: String, deviceType: Int?): String {
         if (deviceType == null) return fieldName
         return "${fieldName}_$deviceType"

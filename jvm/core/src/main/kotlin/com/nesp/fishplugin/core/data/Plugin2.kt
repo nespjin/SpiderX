@@ -3,6 +3,7 @@ package com.nesp.fishplugin.core.data
 import com.nesp.fishplugin.core.Environment
 import com.nesp.fishplugin.core.FieldName
 import com.nesp.fishplugin.core.PluginUtil
+import org.json.JSONArray
 import org.json.JSONObject
 
 /**
@@ -72,13 +73,13 @@ class Plugin2 constructor(private val store: JSONObject = JSONObject()) {
             return store.optString(FIELD_NAME_TIME)
         }
 
-    var tags: List<String>?
+    var tags: List<String>
         set(value) {
             store.put(FIELD_NAME_TAGS, value)
         }
         get() {
             val originList =
-                store.optJSONArray(FIELD_NAME_TAGS)?.toList() ?: return null
+                store.optJSONArray(FIELD_NAME_TAGS)?.toList() ?: return emptyList()
             if (originList.isEmpty()) return emptyList()
             val ret = mutableListOf<String>()
             for (item in originList) {
@@ -124,7 +125,11 @@ class Plugin2 constructor(private val store: JSONObject = JSONObject()) {
 
     var pages: List<Page2>
         set(value) {
-            store.put(FIELD_NAME_PAGES, value)
+            val ret = JSONArray()
+            for (page2 in value) {
+                ret.put(page2.store)
+            }
+            store.put(FIELD_NAME_PAGES, ret)
         }
         get() {
             val originList = store.optJSONArray(FIELD_NAME_PAGES)?.toList()
@@ -132,9 +137,14 @@ class Plugin2 constructor(private val store: JSONObject = JSONObject()) {
             val ret = mutableListOf<Page2>()
             for (item in originList) {
                 if (item !is Page2) {
-                    throw IllegalStateException("The type ${item::class.java.simpleName} is not supported")
+                    if (item is Map<*, *>) {
+                        ret.add(Page2(JSONObject(item)))
+                    } else {
+                        throw IllegalStateException("The type ${item::class.java.simpleName} is not supported")
+                    }
+                } else {
+                    ret.add(item)
                 }
-                ret.add(item)
             }
             return ret
         }
@@ -282,17 +292,17 @@ class Plugin2 constructor(private val store: JSONObject = JSONObject()) {
     }
 
     fun isSupport(deviceType: Int?): Boolean {
-        when (deviceType) {
+        return when (deviceType) {
             Environment.DEVICE_TYPE_MOBILE_PHONE -> {
-                return isSupportMobilePhone()
+                isSupportMobilePhone()
             }
             Environment.DEVICE_TYPE_TABLE -> {
-                return isSupportTable()
+                isSupportTable()
             }
             Environment.DEVICE_TYPE_DESKTOP -> {
-                return isSupportDesktop()
+                isSupportDesktop()
             }
-            else -> return false
+            else -> false
         }
     }
 

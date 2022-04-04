@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.Log
 import android.webkit.WebView
 import com.google.gson.Gson
-import com.nesp.fishplugin.core.data.Page
+import com.nesp.fishplugin.core.data.Page2
 import com.nesp.fishplugin.core.data.Plugin
 import com.nesp.fishplugin.runtime.Process
 import com.nesp.fishplugin.runtime.android.js.AndroidJsRuntime
@@ -30,7 +30,7 @@ class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
     private val context = context.applicationContext
     private val gson = Gson()
 
-    override fun exec(page: Page, vararg parameters: Any?): Process {
+    override fun exec(page: Page2, vararg parameters: Any?): Process {
         val process = super.exec(page, parameters)
         process.onDestroyListener = object : Process.OnDestroyListener {
             override fun onDestroy() {

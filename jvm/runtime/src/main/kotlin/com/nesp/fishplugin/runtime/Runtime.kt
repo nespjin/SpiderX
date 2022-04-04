@@ -1,20 +1,20 @@
 package com.nesp.fishplugin.runtime
 
-import com.nesp.fishplugin.core.data.Page
+import com.nesp.fishplugin.core.data.Page2
 
 class Runtime {
 
     var runtimeFactory: IRuntimeFactory? = null
 
-    fun execJs(page: Page): Process {
+    fun execJs(page: Page2): Process {
         return exec(page, EXEC_TYPE_JS)
     }
 
-    fun execDsl(page: Page): Process {
+    fun execDsl(page: Page2): Process {
         return exec(page, EXEC_TYPE_DSL)
     }
 
-    fun exec(page: Page, execType: Int): Process {
+    fun exec(page: Page2, execType: Int): Process {
         if (runtimeFactory == null) {
             throw IllegalArgumentException("The runtimeFactory not set yet!")
         }

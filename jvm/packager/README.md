@@ -9,64 +9,71 @@
 #### File Structure
 
 |                   Area                   | Size(Byte) | Comments      |
-| :--------------------------------------: | :--------: | ------------- |
+|:----------------------------------------:|:----------:| ------------- |
 |               file version               |     2      |               |
 |                file flags                |     1      | 0x00 - binary |
 |               plugin count               |     2      |               |
 | the count of constants in constants pool |     2      |               |
 |              constants pool              |            |               |
-|       data_index_count_per_plugin        |     2      |               |
-|            field-1 data index            |     2      |               |
-|            field-2 data index            |     2      |               |
+|        data_ref_count_per_plugin         |     2      |               |
+|               field-1 ref                |     -      |               |
+|               field-2 ref                |     -      |               |
 |                   ...                    |            |               |
-|            field-N data index            |            |               |
+|               field-N ref                |     -      |               |
 
-#### File Structure (Detail) 
+#### Field Ref
+
+| Area        | Size(Byte) | Comments |
+|-------------|------------|----------|
+| device type | 1          |          |
+| data index  | 2          |          |
+
+#### File Structure (Detail)
 
 |                   Area                   | Field Value Type | Size(Byte) | Comments      |
-| :--------------------------------------: | :--------------: | :--------: | ------------- |
+|:----------------------------------------:| :--------------: |:----------:| ------------- |
 |               file version               |        -         |     2      |               |
 |                file flags                |        -         |     1      | 0x00 - binary |
 |               plugin count               |        -         |     2      |               |
 | the count of constants in constants pool |        -         |     2      |               |
 |              constants pool              |        -         |            |               |
 |       data_index_count_per_plugin        |        -         |     2      |               |
-|             name_data_index              |      String      |     2      |               |
-|              id_data_index               |      String      |     2      |               |
-|            author_data_index             |      String      |     2      |               |
-|            version_data_index            |      String      |     2      |               |
-|            runtime_data_index            |      String      |     2      |               |
-|             time_data_index              |      String      |     2      |               |
-|              tag_data_index              |      String      |     2      |               |
-|         introduction_data_index          |      String      |     2      |               |
-|          pages_count_data_index          |     Integer      |     2      |               |
+|                 name_ref                 |      String      |     -      |               |
+|                  id_ref                  |      String      |     -      |               |
+|                author_ref                |      String      |     -      |               |
+|               version_ref                |      String      |     -      |               |
+|               runtime_ref                |      String      |     -      |               |
+|                 time_ref                 |      String      |     -      |               |
+|                 tag_ref                  |      String      |     -      |               |
+|             introduction_ref             |      String      |     -      |               |
+|             pages_count_ref              |     Integer      |     -      |               |
 |          pages_info[page_count]          |        -         |     -      |               |
-|      name_data_index [next plugin]       |      String      |     2      |               |
+|          name_ref [next plugin]          |      String      |     -      |               |
 |                   ....                   |                  |            |               |
 
 #### Page Structure
 
 |              Area               | Field Value Type | Comments |
 |:-------------------------------:|:----------------:|:--------:|
-|          id_data_index          |      String      |          |
-|         url_data_index          |      String      |          |
-|          js_data_index          |      String      |          |
+|             id_ref              |      String      |          |
+|             url_ref             |      String      |          |
+|             js_ref              |      String      |          |
 |         dsl_field_count         |     Integer      |          |
 | dsl_field_info[dsl_field_count] |        -         |          |
 
 #### Dsl Structure
 
-|              Area               | Field Value Type | Comments |
-|:-------------------------------:|:----------------:|:--------:|
-|        field1_data_index        |      String      |          |
-|        field2_data_index        |      String      |          |
-|        field3_data_index        |      String      |          |
-|               ...               |       ...        |   ...    |
-
+|        Area        | Field Value Type | Comments |
+|:------------------:|:----------------:|:--------:|
+|      field1_ref      |      String      |          |
+| field2_ref |      String      |          |
+| field3_ref |      String      |          |
+|        ...         |       ...        |   ...    |
 
 > Note: <br/>
 > Index of field data equals to Index of constant in constants pool.
-> 
+>
+
 #### Field Structure
 
 |         Type          | Areas                                           |                                    Comments                                    |

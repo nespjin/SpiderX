@@ -2,7 +2,7 @@ package com.nesp.fishplugin.runtime.movie.javafx;
 
 import com.google.gson.Gson;
 import com.nesp.fishplugin.core.Environment;
-import com.nesp.fishplugin.core.data.Page;
+import com.nesp.fishplugin.core.data.Page2;
 import com.nesp.fishplugin.core.data.Plugin;
 import com.nesp.fishplugin.runtime.Process;
 import com.nesp.fishplugin.runtime.javafx.js.JavaFxJsRuntime;
@@ -37,7 +37,7 @@ public class MovieJavaFxJsRuntime extends JavaFxJsRuntime {
     }
 
     @Override
-    public Process exec(Page page, Object... parameters) {
+    public Process exec(Page2 page, Object... parameters) {
         Process process = super.exec(page, parameters);
         Process.OnDestroyListener onDestroyListener = new Process.OnDestroyListener() {
             @Override

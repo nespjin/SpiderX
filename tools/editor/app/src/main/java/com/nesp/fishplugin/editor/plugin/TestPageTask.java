@@ -1,6 +1,7 @@
 package com.nesp.fishplugin.editor.plugin;
 
 import com.nesp.fishplugin.core.data.Page;
+import com.nesp.fishplugin.core.data.Page2;
 import com.nesp.fishplugin.core.data.Plugin;
 import com.nesp.fishplugin.editor.project.Project;
 import com.nesp.fishplugin.runtime.Process;
@@ -38,10 +39,10 @@ public class TestPageTask extends PluginBuildTask {
             return Result.fail("The target plugin of project not exists");
         }
 
-        List<Page> pages = new ArrayList<>();
+        List<Page2> pages = new ArrayList<>();
 
-        List<Page> targetPluginPages = targetPlugin.getPages();
-        for (Page targetPluginPage : targetPluginPages) {
+        List<Page2> targetPluginPages = targetPlugin.getPages();
+        for (Page2 targetPluginPage : targetPluginPages) {
             if (targetPluginPage.getId().startsWith(pageId)) {
                 if (pageId.equals("search")) {
                     Object keywordParam = getParameter("keyword");
@@ -60,7 +61,7 @@ public class TestPageTask extends PluginBuildTask {
         Optional<OnPrintListener> optOnPrintListener = Optional.ofNullable(onPrintListener);
 
         if (type == 1) {
-            for (Page page : pages) {
+            for (Page2 page : pages) {
                 Object urlParam = getParameter("url");
                 if (page.getUrl().isEmpty() && urlParam instanceof String
                         && !((String) urlParam).isEmpty()) {
