@@ -5,7 +5,7 @@ import android.util.Log
 import android.webkit.WebView
 import com.google.gson.Gson
 import com.nesp.fishplugin.core.data.Page2
-import com.nesp.fishplugin.core.data.Plugin
+import com.nesp.fishplugin.core.data.Plugin2
 import com.nesp.fishplugin.runtime.Process
 import com.nesp.fishplugin.runtime.android.js.AndroidJsRuntime
 import com.nesp.fishplugin.runtime.android.js.AndroidJsRuntimeTask
@@ -99,17 +99,17 @@ class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
                     override fun onPrintHtml(html: String) {
                         runtimeTaskListener?.onPrintHtml(html)
                         if (html.isNotEmpty()) {
-                            htmlDocumentStringCache.put(Plugin.removeReqPrefix(page.url), html)
+                            htmlDocumentStringCache.put(Plugin2.removeReqPrefix(page.getUrl()), html)
                         }
                     }
                 }
             }
 
             override fun run(jsEngine: WebView) {
-                val url = page.url
-                this.js = page.js
+                val url = page.getUrl()
+                this.js = page.getJs()
 
-                var realUrl = Plugin.removeReqPrefix(url)
+                var realUrl = Plugin2.removeReqPrefix(url)
                 val realUrlObj = URL(realUrl)
                 try {
                     realUrl = realUrlObj.protocol + "://" + realUrlObj.host
@@ -135,7 +135,7 @@ class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
 
                 Log.i(TAG, "run: realUrl = $realUrl")
                 
-                if (Plugin.isPostReq(url)) {
+                if (Plugin2.isPostReq(url)) {
                     // Post
                     val query = if (realUrlObj.query != null) {
                         val data: MutableMap<String, String> = hashMapOf()

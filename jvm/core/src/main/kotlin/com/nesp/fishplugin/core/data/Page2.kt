@@ -26,7 +26,7 @@ class Page2 constructor(var store: JSONObject = JSONObject()) {
         store.put(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_REF_URL, deviceType), value)
     }
 
-    fun getRefUrl(deviceType: Int? = null): String? {
+    fun getRefUrl(deviceType: Int? = null): String {
         return store.optString(
             PluginUtil.getFieldNameWithDeviceType(
                 FIELD_NAME_REF_URL,
@@ -87,7 +87,7 @@ class Page2 constructor(var store: JSONObject = JSONObject()) {
     }
 
     @JvmOverloads
-    fun getJs(deviceType: Int? = null): String? {
+    fun getJs(deviceType: Int? = null): String {
         return store.optString(PluginUtil.getFieldNameWithDeviceType(FIELD_NAME_JS, deviceType))
     }
 
