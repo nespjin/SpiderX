@@ -134,6 +134,7 @@ public class TestPageTask extends PluginBuildTask {
                     return Result.fail(execResult.getMessage());
                 }
             }
+            targetPlugin.applyPages();
             return Result.success();
         }
         return Result.fail();

@@ -161,6 +161,7 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36";
         }
 
+        System.out.println("userAgent: " + userAgent);
         WebEngine engine = webView.getEngine();
         engine.setUserAgent(userAgent);
         engine.setJavaScriptEnabled(true);
@@ -330,6 +331,9 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
 
     @Override
     public Object execJs(String js) {
+        if (js == null || js.isEmpty()) {
+            return "";
+        }
         var jsTmp = new JsMinifier().minify(js).trim();
         jsTmp = "javascript:" + jsTmp;
         System.out.println("execJs js = " + jsTmp);
