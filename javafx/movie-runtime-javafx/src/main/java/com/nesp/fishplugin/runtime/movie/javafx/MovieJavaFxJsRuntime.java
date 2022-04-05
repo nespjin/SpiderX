@@ -84,6 +84,7 @@ public class MovieJavaFxJsRuntime extends JavaFxJsRuntime {
                             finalRuntimeTaskListener.onReceiveError(error);
                         }
                         process.getExecResult().setMessage(error);
+                        System.out.println(MovieJavaFxJsRuntime.class.getName() + " " + error);
                         process.exitWithError();
                     }
 
@@ -121,6 +122,7 @@ public class MovieJavaFxJsRuntime extends JavaFxJsRuntime {
                         }
 
                         process.getExecResult().setMessage("Timeout");
+                        System.out.println(MovieJavaFxJsRuntime.class.getName() + " " + "Timeout");
                         process.exitWithError();
                     }
 
@@ -176,6 +178,7 @@ public class MovieJavaFxJsRuntime extends JavaFxJsRuntime {
                         webView.getEngine().load(realUrl);
                     } catch (Exception e) {
                         logger.error("error when run ", e);
+                        System.out.println(MovieJavaFxJsRuntime.class.getName() + " " + e.getMessage());
                         process.exitWithError();
                     }
                 } else {
@@ -183,6 +186,7 @@ public class MovieJavaFxJsRuntime extends JavaFxJsRuntime {
                         webView.getEngine().load(realUrl);
                     } catch (Exception e) {
                         logger.error("error when run ", e);
+                        System.out.println(MovieJavaFxJsRuntime.class.getName() + " " + e.getMessage());
                         process.exitWithError();
                     }
                 }
