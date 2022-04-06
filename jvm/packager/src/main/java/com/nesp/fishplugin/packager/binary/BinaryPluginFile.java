@@ -478,7 +478,7 @@ public class BinaryPluginFile implements PluginFile {
             String tagsString = readStringField().value();
             if (!tagsString.isEmpty()) {
                 if (!tagsString.contains(",")) {
-                    plugin.setTags(new ArrayList<>() {
+                    plugin.setTags(new ArrayList<String>() {
                         {
                             add(tagsString);
                         }
