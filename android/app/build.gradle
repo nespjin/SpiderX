@@ -26,6 +26,45 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES.txt'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/LICENSE.md'
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/notice.txt'
+        exclude 'META-INF/license.txt'
+        exclude 'META-INF/dependencies.txt'
+        exclude 'META-INF/LGPL2.1'
+        exclude 'META-INF/beans.xml'
+        exclude 'META-INF/LICENSE-notice.md'
+        exclude 'index-all.html'
+        exclude 'META-INF/org/apache/logging/log4j/core/config/plugins/Log4j2Plugins.dat'
+
+        exclude 'index.html'
+        exclude 'stylesheet.css'
+        exclude 'allclasses-frame.html'
+        exclude 'constant-values.html'
+        exclude 'overview-tree.html'
+        exclude 'Log4j-charsets.properties'
+        exclude 'build.properties'
+        exclude 'deprecated-list.html'
+        exclude 'allclasses-noframe.html'
+        exclude 'overview-summary.html'
+        exclude 'package-list'
+        exclude 'Log4j-levels.xsd'
+        exclude 'Log4j-events.dtd'
+        exclude 'Log4j-events.xsd'
+        exclude 'help-doc.html'
+        exclude 'serialized-form.html'
+        exclude 'Log4j-config.xsd'
+        exclude 'script.js'
+        exclude 'overview-frame.html'
+
+        pickFirst '**/*.so'
+    }
     kotlinOptions {
         jvmTarget = '1.8'
     }
