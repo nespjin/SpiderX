@@ -7,6 +7,7 @@ import com.nesp.fishplugin.core.data.Page2;
 import com.nesp.fishplugin.core.data.Plugin2;
 import com.nesp.fishplugin.packager.PluginFile;
 import com.nesp.fishplugin.tools.code.JsMinifier;
+
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.json.JSONObject;
@@ -605,14 +606,20 @@ public class BinaryPluginFile implements PluginFile {
     }
 
     protected String getTypeNameByTag(int tag) {
-        return switch (tag) {
-            case CONSTANT_Utf8_info -> "UTF-8 String";
-            case CONSTANT_Integer_info -> "Integer";
-            case CONSTANT_Float_info -> "Float";
-            case CONSTANT_Long_info -> "Long";
-            case CONSTANT_Double_info -> "Double";
-            default -> "";
-        };
+        switch (tag) {
+            case CONSTANT_Utf8_info:
+                return "UTF-8 String";
+            case CONSTANT_Integer_info:
+                return "Integer";
+            case CONSTANT_Float_info:
+                return "Float";
+            case CONSTANT_Long_info:
+                return "Long";
+            case CONSTANT_Double_info:
+                return "Double";
+            default:
+                return "";
+        }
     }
 
     private static byte[] long2Bytes(long l) {
