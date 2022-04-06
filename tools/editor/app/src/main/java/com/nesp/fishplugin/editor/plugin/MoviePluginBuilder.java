@@ -49,12 +49,10 @@ public class MoviePluginBuilder extends PluginBuilder {
     }
 
     public PluginBuildTask getCompilePluginTask() {
-        compilePluginTask.putParameter("deviceType", getDeviceType());
         return compilePluginTask;
     }
 
     public PluginBuildTask getInstallTask() {
-        installTask.putParameter("deviceType", getDeviceType());
         return installTask;
     }
 
@@ -62,6 +60,12 @@ public class MoviePluginBuilder extends PluginBuilder {
 
     public void setDeviceType(int deviceType) {
         this.deviceType = deviceType;
+        compilePluginTask.putParameter("deviceType", getDeviceType());
+        installTask.putParameter("deviceType", getDeviceType());
+        testHomePageJsTask.putParameter("deviceType", getDeviceType());
+        testCategoryPageJsTask.putParameter("deviceType", getDeviceType());
+        testSearchPageJsTask.putParameter("deviceType", getDeviceType());
+        testDetailPageJsTask.putParameter("deviceType", getDeviceType());
     }
 
     public int getDeviceType() {
@@ -73,22 +77,18 @@ public class MoviePluginBuilder extends PluginBuilder {
     }
 
     public PluginBuildTask getTestHomePageJsTask() {
-        testHomePageJsTask.putParameter("deviceType", getDeviceType());
         return testHomePageJsTask;
     }
 
     public PluginBuildTask getTestCategoryPageJsTask() {
-        testCategoryPageJsTask.putParameter("deviceType", getDeviceType());
         return testCategoryPageJsTask;
     }
 
     public PluginBuildTask getTestSearchPageJsTask() {
-        testSearchPageJsTask.putParameter("deviceType", getDeviceType());
         return testSearchPageJsTask;
     }
 
     public PluginBuildTask getTestDetailPageJsTask() {
-        testDetailPageJsTask.putParameter("deviceType", getDeviceType());
         return testDetailPageJsTask;
     }
 

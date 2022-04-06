@@ -65,8 +65,7 @@ public class TestPageTask extends PluginBuildTask {
         if (type == 1) {
             for (Page2 page : pages) {
                 Object urlParam = getParameter("url");
-                if (page.getUrl().isEmpty() && urlParam instanceof String
-                        && !((String) urlParam).isEmpty()) {
+                if (page.getUrl().isEmpty() && urlParam instanceof String && !((String) urlParam).isEmpty()) {
                     page.setUrl((String) urlParam);
                 }
                 optOnPrintListener.ifPresent(onPrintListener1 -> onPrintListener1.print("Test " + page.getId() + " ..."));
