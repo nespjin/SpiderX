@@ -92,7 +92,7 @@ class BinaryPluginFileTest {
         } catch (IOException | ReadNotMatchTypeException e) {
             e.printStackTrace();
         }
-        System.out.println(gson.toJson(plugins));
+        System.out.println(plugins[0].getStore());
     }
 
 }

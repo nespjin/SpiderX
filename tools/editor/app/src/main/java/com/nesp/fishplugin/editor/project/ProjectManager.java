@@ -1,6 +1,8 @@
 package com.nesp.fishplugin.editor.project;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.nesp.fishplugin.compiler.Loader;
 import com.nesp.fishplugin.core.Environment;
 import com.nesp.fishplugin.core.Result;
@@ -84,7 +86,8 @@ public final class ProjectManager {
                 project.setTargetPlugin(plugin);
 
                 Gson gson1 = gson.newBuilder().setPrettyPrinting().create();
-                String s1 = gson1.toJson(plugin);
+                JsonObject jsonObject = JsonParser.parseString(plugin.getStore().toString()).getAsJsonObject();
+                String s1 = gson1.toJson(jsonObject);
                 FileUtils.writeStringToFile(projectManifestFile, s1);
             } catch (IOException e) {
                 LogManager.getLogger(ProjectManager.class).error("initializeProject failed", e);
