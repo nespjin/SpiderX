@@ -3,6 +3,7 @@ package com.nesp.fishplugin.core.data
 import com.nesp.fishplugin.core.Environment
 import com.nesp.fishplugin.core.FieldName
 import com.nesp.fishplugin.core.PluginUtil
+import com.nesp.fishplugin.core.utils.JSONUtil
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -77,11 +78,20 @@ class Plugin2 constructor(val store: JSONObject = JSONObject()) {
 
     var tags: List<String>
         set(value) {
-            store.put(FIELD_NAME_TAGS, value)
+            try {
+                store.put(FIELD_NAME_TAGS, value)
+            } catch (e: NoSuchMethodError) {
+                store.put(FIELD_NAME_TAGS, JSONArray(value))
+            }
         }
         get() {
-            val originList =
-                store.optJSONArray(FIELD_NAME_TAGS)?.toList() ?: return emptyList()
+            val tmp = store.optJSONArray(FIELD_NAME_TAGS) ?: return emptyList()
+            val originList = try {
+                tmp.toList()
+            } catch (e: NoSuchMethodError) {
+                JSONUtil.toList(tmp)
+            }
+
             if (originList.isEmpty()) return emptyList()
             val ret = mutableListOf<String>()
             for (item in originList) {
@@ -138,7 +148,13 @@ class Plugin2 constructor(val store: JSONObject = JSONObject()) {
             store.put(FIELD_NAME_PAGES, ret)
         }
         get() {
-            val originList = store.optJSONArray(FIELD_NAME_PAGES)?.toList()
+            val tmp = store.optJSONArray(FIELD_NAME_PAGES) ?: return emptyList()
+            val originList = try {
+                tmp.toList()
+            } catch (e: NoSuchMethodError) {
+                JSONUtil.toList(tmp)
+            }
+
             if (originList.isNullOrEmpty()) return emptyList()
             val ret = mutableListOf<Page2>()
             for (item in originList) {
