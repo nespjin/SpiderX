@@ -263,7 +263,7 @@ class MovieDslRuntime : DslRuntime() {
                     categoryListElement,
                     dsl.getProperty(MovieCategoryPageDsl.PROPERTY_NAME_CATEGORY_URL)
                 )
-                movieCategoryGroup.movieClasses.add(MovieCategory(title, url))
+                movieCategoryGroup.movieCategories.add(MovieCategory(title, url))
             }
             movieCategoryPage.movieCategoryGroups.add(movieCategoryGroup)
         }
