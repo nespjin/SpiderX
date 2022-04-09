@@ -12,8 +12,12 @@ class Process(val owner: IRuntime) {
     var onDestroyListener: OnDestroyListener? = null
 
     fun destroy() {
-        isDestroy = true
         exit(EXIT_VALUE_BY_USER)
+        destroy0()
+    }
+
+    private fun destroy0() {
+        isDestroy = true
         onDestroyListener?.onDestroy()
     }
 
@@ -39,6 +43,7 @@ class Process(val owner: IRuntime) {
                 break
             }
         }
+        destroy0()
         return execResult
     }
 
@@ -47,10 +52,15 @@ class Process(val owner: IRuntime) {
         var exitValue: Int,
         message: String = "",
         data: Any? = null
-    ) : Result<Any?>(exitValue, message, data)
+    ) : Result<Any?>(exitValue, message, data){
+
+        override fun toString(): String {
+            return "ExecResult(exitValue=$exitValue, message='$message', data=$data)"
+        }
+    }
 
     interface OnDestroyListener {
-        fun onDestroy();
+        fun onDestroy()
     }
 
     companion object {

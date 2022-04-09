@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.http.SslError
 import android.os.Build
+import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import android.view.View
@@ -15,15 +16,11 @@ import com.nesp.fishplugin.runtime.CancellationSignal
 import com.nesp.fishplugin.runtime.OperationCanceledException
 import com.nesp.fishplugin.runtime.js.JsRuntimeTask
 import com.nesp.fishplugin.tools.code.JsMinifier
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
-import java.lang.Exception
+import kotlinx.coroutines.*
 import java.util.*
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.coroutines.EmptyCoroutineContext
 
 /**
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu Email:1756404649@qq.com</a>
@@ -35,7 +32,8 @@ abstract class AndroidJsRuntimeTask(context: Context) : JsRuntimeTask<WebView>()
     private val context = context.applicationContext
 
     var listener: AndroidJsRuntimeTaskListener? = null
-    private val coroutineScope = CoroutineScope(EmptyCoroutineContext)
+
+    private val coroutineScope = CoroutineScope(Dispatchers.Default)
 
     var isLoading = false
         @Synchronized
@@ -60,6 +58,9 @@ abstract class AndroidJsRuntimeTask(context: Context) : JsRuntimeTask<WebView>()
     private var webView: WebView? = null
 
     override fun run() {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            throw RuntimeException("AndroidJsRuntimeTask can't run on main thread")
+        }
         val countDownLatch = CountDownLatch(1)
         coroutineScope.launch(Dispatchers.Main) {
             if (webView == null) {
@@ -138,74 +139,106 @@ abstract class AndroidJsRuntimeTask(context: Context) : JsRuntimeTask<WebView>()
     }
 
     override fun destroy() {
-        coroutineScope.cancel()
-        timeoutWatcherTimer?.cancel()
-        timeoutWatcherTimer = null
-        loadTimer?.cancel()
-        loadTimer = null
+        coroutineScope.launch(Dispatchers.Main) {
+            coroutineScope.cancel()
+            timeoutWatcherTimer?.cancel()
+            timeoutWatcherTimer = null
+            loadTimer?.cancel()
+            loadTimer = null
 
-        if (webView == null) return
-        if (webView!!.parent != null) {
-            (webView!!.parent as ViewGroup).removeView(webView!!)
+            if (webView == null) return@launch
+            if (webView!!.parent != null) {
+                (webView!!.parent as ViewGroup).removeView(webView!!)
+            }
+            webView!!.removeAllViews()
+            webView!!.removeAllViewsInLayout()
+            webView!!.settings.javaScriptEnabled = false
+            webView!!.clearHistory()
+            webView!!.clearFormData()
+            webView?.stopLoading()
+            webView!!.destroy()
+            webView = null
         }
-        webView!!.removeAllViews()
-        webView!!.removeAllViewsInLayout()
-        webView!!.settings.javaScriptEnabled = false
-        webView!!.clearHistory()
-        webView!!.clearFormData()
-        webView!!.stopLoading()
-        webView!!.destroy()
-        webView = null
     }
 
-    override fun execCurrentJs() {
-        prepareJsRuntime()
-        execJs(js)
+    private var isExecCurrentJs = false
 
-        try {
-            execJsRuntimeInitialize()
-            val result = execJsRuntimeLoadPage()
-            cancelTimer(timeoutWatcherTimer)
-            setReceivePageOrError(true)
-            if (result != null && result is String) {
-                if (result.isEmpty()) {
-                    listener?.onReceiveError("Load Page Failed")
-                } else {
-                    listener?.onReceivePage(result)
-                }
-            } else {
-                listener?.onReceiveError("Load Page Failed")
+    override fun execCurrentJs() {
+        coroutineScope.launch(Dispatchers.IO) {
+            synchronized(this@AndroidJsRuntimeTask) {
+                if (isExecCurrentJs) return@launch
+                isExecCurrentJs = true
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            cancelTimer(timeoutWatcherTimer)
-            setReceivePageOrError(true)
-            listener?.onReceiveError("Load Page Failed $e")
+            prepareJsRuntime()
+            execJs(js)
+
+            try {
+                execJsRuntimeInitialize()
+                val result = execJsRuntimeLoadPage()
+                withContext(Dispatchers.Main) {
+                    cancelTimer(timeoutWatcherTimer)
+                    setReceivePageOrError(true)
+                    if (DEBUG){
+                        Log.d(TAG, "execCurrentJs: result=$result")
+                    }
+                    if (result != null && result is String) {
+                        if (result.isEmpty()) {
+                            listener?.onReceiveError("Load Page Failed")
+                        } else {
+                            listener?.onReceivePage(result)
+                        }
+                    } else {
+                        listener?.onReceiveError("Load Page Failed")
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    cancelTimer(timeoutWatcherTimer)
+                    setReceivePageOrError(true)
+                    listener?.onReceiveError("Load Page Failed $e")
+                }
+            }
+            synchronized(this@AndroidJsRuntimeTask) {
+                isExecCurrentJs = false
+            }
         }
     }
 
     @Synchronized
     override fun execJs(js: String): Any? {
-        Log.i(TAG, "execJs: js = $js")
+
+        if (DEBUG) {
+            Log.d(TAG, "[${Thread.currentThread().name}]execJs with $webView on $this : js = $js ")
+        }
+
         var jsTmp = JsMinifier().minify(js).trim()
         jsTmp = "javascript:$jsTmp"
 
         var result: String? = ""
-        webView?.evaluateJavascript(jsTmp) { result = it }
-
-        // wait result
-        while (result?.isEmpty() == true) {
-            try {
-                Thread.sleep(50)
-            } catch (e: InterruptedException) {
-                Thread.currentThread().interrupt()
-                break
+        val countDownLatch = CountDownLatch(1)
+        coroutineScope.launch(Dispatchers.Main) {
+            webView?.evaluateJavascript(jsTmp) {
+                result = it
+                if (result == "null") result = ""
+                countDownLatch.countDown()
             }
         }
 
-        //        if (result?.isEmpty() == true) {
-        //            webView?.loadUrl(js2)
-        //        }
+        if (DEBUG) {
+            Log.d(TAG, "[${Thread.currentThread().name}]execJs start waite ret ")
+        }
+
+        // wait result
+        try {
+            countDownLatch.await(3, TimeUnit.SECONDS)
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+
+        if (DEBUG) {
+            Log.d(TAG, "[${Thread.currentThread().name}]execJs end waite ret")
+        }
 
         return result
     }
@@ -255,12 +288,14 @@ abstract class AndroidJsRuntimeTask(context: Context) : JsRuntimeTask<WebView>()
         webView.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView?, newProgress: Int) {
                 if (newProgress == 100) {
-                    synchronized(this@AndroidJsRuntimeTask) {
-                        if (!isLoadFinished) {
-                            isLoadFinished = true
-                            isLoading = false
-                            listener?.onPageLoadFinished()
-                            execCurrentJs()
+                    coroutineScope.launch(Dispatchers.IO) {
+                        synchronized(this@AndroidJsRuntimeTask) {
+                            if (!isLoadFinished) {
+                                isLoadFinished = true
+                                isLoading = false
+                                listener?.onPageLoadFinished()
+                                execCurrentJs()
+                            }
                         }
                     }
                 } else {
@@ -327,7 +362,7 @@ abstract class AndroidJsRuntimeTask(context: Context) : JsRuntimeTask<WebView>()
                                 isLoadFinished = true
                                 isLoading = false
                                 listener?.onPageLoadFinished()
-                                coroutineScope.launch(Dispatchers.Main) { execCurrentJs() }
+                                execCurrentJs()
                             }
 
                             cancelTimer(loadTimer)
@@ -341,7 +376,7 @@ abstract class AndroidJsRuntimeTask(context: Context) : JsRuntimeTask<WebView>()
                 timeoutWatcherTimer = Timer()
                 timeoutWatcherTimer?.schedule(object : TimerTask() {
                     override fun run() {
-                        if (isReceivePageOrError()){
+                        if (isReceivePageOrError()) {
                             cancelTimer(timeoutWatcherTimer)
                             timeoutWatcherTimer = null
                             return
@@ -377,6 +412,7 @@ abstract class AndroidJsRuntimeTask(context: Context) : JsRuntimeTask<WebView>()
 
     companion object {
         private const val TAG = "AndroidJsRuntimeTask"
+        private const val DEBUG = true
     }
 
 }

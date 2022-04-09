@@ -16,6 +16,7 @@ import com.nesp.fishplugin.runtime.movie.data.HomePage
 import com.nesp.fishplugin.runtime.movie.data.Movie
 import com.nesp.fishplugin.runtime.movie.data.MovieCategoryPage
 import com.nesp.fishplugin.runtime.movie.data.SearchPage
+import java.lang.Exception
 import java.net.URL
 import java.nio.charset.MalformedInputException
 import java.nio.charset.StandardCharsets
@@ -45,7 +46,6 @@ class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
         }
 
         runTask(object : AndroidJsRuntimeTask(context) {
-
             init {
                 // Bind listener
                 listener = object : AndroidJsRuntimeTaskListener() {
@@ -64,23 +64,31 @@ class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
                     }
 
                     override fun onReceivePage(pageJson: String) {
-                        runtimeTaskListener?.onReceivePage(pageJson)
-                        when {
-                            page.id == MoviePage.HOME.id -> {
-                                process.execResult.data =
-                                    gson.fromJson(pageJson, HomePage::class.java)
+                        try {
+                            val json =
+                                pageJson.substring(1, pageJson.length - 1).replace("\\", "")
+                            runtimeTaskListener?.onReceivePage(json)
+                            when {
+                                page.id == MoviePage.HOME.id -> {
+                                    process.execResult.data =
+                                        gson.fromJson(json, HomePage::class.java)
+                                }
+                                page.id.startsWith(MOVIE_PAGE_ID_CATEGORY) -> {
+                                    process.execResult.data =
+                                        gson.fromJson(json, MovieCategoryPage::class.java)
+                                }
+                                page.id == MoviePage.SEARCH.id -> {
+                                    process.execResult.data =
+                                        gson.fromJson(json, SearchPage::class.java)
+                                }
+                                page.id == MoviePage.DETAIL.id -> {
+                                    process.execResult.data =
+                                        gson.fromJson(json, Movie::class.java)
+                                }
                             }
-                            page.id.startsWith(MOVIE_PAGE_ID_CATEGORY) -> {
-                                process.execResult.data =
-                                    gson.fromJson(pageJson, MovieCategoryPage::class.java)
-                            }
-                            page.id == MoviePage.SEARCH.id -> {
-                                process.execResult.data =
-                                    gson.fromJson(pageJson, SearchPage::class.java)
-                            }
-                            page.id == MoviePage.DETAIL.id -> {
-                                process.execResult.data = gson.fromJson(pageJson, Movie::class.java)
-                            }
+                        } catch (e: Exception) {
+                            process.exitWithError()
+                            return
                         }
 
                         process.exitNormally()
@@ -99,7 +107,10 @@ class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
                     override fun onPrintHtml(html: String) {
                         runtimeTaskListener?.onPrintHtml(html)
                         if (html.isNotEmpty()) {
-                            htmlDocumentStringCache.put(Plugin2.removeReqPrefix(page.getUrl()), html)
+                            htmlDocumentStringCache.put(
+                                Plugin2.removeReqPrefix(page.getUrl()),
+                                html
+                            )
                         }
                     }
                 }
@@ -134,7 +145,7 @@ class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
                 }
 
                 Log.i(TAG, "run: realUrl = $realUrl")
-                
+
                 if (Plugin2.isPostReq(url)) {
                     // Post
                     val query = if (realUrlObj.query != null) {
