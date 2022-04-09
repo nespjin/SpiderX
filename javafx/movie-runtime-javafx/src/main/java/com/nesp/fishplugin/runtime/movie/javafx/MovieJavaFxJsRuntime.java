@@ -91,17 +91,22 @@ public class MovieJavaFxJsRuntime extends JavaFxJsRuntime {
                     @Override
                     public void onReceivePage(String pageJson) {
                         super.onReceivePage(pageJson);
-                        if (finalRuntimeTaskListener != null) {
-                            finalRuntimeTaskListener.onReceivePage(pageJson);
-                        }
-                        if (MoviePage.HOME.getId().equals(page.getId())) {
-                            process.getExecResult().setData(gson.fromJson(pageJson, HomePage.class));
-                        } else if (page.getId().startsWith(MoviePageKt.MOVIE_PAGE_ID_CATEGORY)) {
-                            process.getExecResult().setData(gson.fromJson(pageJson, MovieCategoryPage.class));
-                        } else if (MoviePage.SEARCH.getId().equals(page.getId())) {
-                            process.getExecResult().setData(gson.fromJson(pageJson, SearchPage.class));
-                        } else if (MoviePage.DETAIL.getId().equals(page.getId())) {
-                            process.getExecResult().setData(gson.fromJson(pageJson, Movie.class));
+                        try {
+                            if (finalRuntimeTaskListener != null) {
+                                finalRuntimeTaskListener.onReceivePage(pageJson);
+                            }
+                            if (MoviePage.HOME.getId().equals(page.getId())) {
+                                process.getExecResult().setData(gson.fromJson(pageJson, HomePage.class));
+                            } else if (page.getId().startsWith(MoviePageKt.MOVIE_PAGE_ID_CATEGORY)) {
+                                process.getExecResult().setData(gson.fromJson(pageJson, MovieCategoryPage.class));
+                            } else if (MoviePage.SEARCH.getId().equals(page.getId())) {
+                                process.getExecResult().setData(gson.fromJson(pageJson, SearchPage.class));
+                            } else if (MoviePage.DETAIL.getId().equals(page.getId())) {
+                                process.getExecResult().setData(gson.fromJson(pageJson, Movie.class));
+                            }
+                        } catch (Exception e) {
+                            process.exitWithError();
+                            return;
                         }
                         process.exitNormally();
                     }

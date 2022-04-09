@@ -21,6 +21,7 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import java.awt.*;
 import java.security.GeneralSecurityException;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -132,6 +133,9 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
 
     @Override
     public void run() {
+        if (Platform.isFxApplicationThread()) {
+            throw new RuntimeException("JavaFxJsRuntimeTask can't run on JavaFxApplicationThread");
+        }
         CountDownLatch countDownLatch = new CountDownLatch(1);
         Platform.runLater(new Runnable() {
             @Override
@@ -438,9 +442,7 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
     @Override
     public void destroy() {
         cancelTimer(timeoutWatcherTimer);
-
         cancelTimer(loadTimer);
-
         if (webView != null) {
             webView.getEngine().getLoadWorker().cancel();
             webView.getEngine().setJavaScriptEnabled(false);

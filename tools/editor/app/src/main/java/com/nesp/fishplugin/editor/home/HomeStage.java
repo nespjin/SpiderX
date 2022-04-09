@@ -592,10 +592,12 @@ public class HomeStage extends AppBaseStage {
             directoryChooser.setInitialDirectory(Storage.getProjectsDir());
             directoryChooser.setTitle("选择项目");
             File file = directoryChooser.showDialog(getStage());
+            if (file == null) return;
             WorkingDialog<Result<Project>> workingDialog =
                     new WorkingDialog<>(() -> ProjectManager.openProject(file));
             workingDialog.setTitle("正在打开项目...");
             workingDialog.setOnFinishListener((openProjectResult) -> {
+                if (openProjectResult == null) return;
                 if (openProjectResult.getCode() == Result.CODE_SUCCESS) {
                     getViewModel().workingProject(openProjectResult.getData());
                 } else {
