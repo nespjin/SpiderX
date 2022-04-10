@@ -41,8 +41,10 @@ include 'installer'
 
 include ':fdb'
 include ':fdb-server'
+include ':fdb-core'
 include ':fdbd'
 
 project(':fdb').projectDir = new File('./fdb/fdb')
 project(':fdb-server').projectDir = new File('./fdb/fdb-server')
+project(':fdb-core').projectDir = new File('./fdb/fdb-core')
 project(':fdbd').projectDir = new File('./fdb/fdbd')

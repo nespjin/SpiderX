@@ -34,6 +34,7 @@
             <option value="$PROJECT_DIR$/jvm/compiler" />
             <option value="$PROJECT_DIR$/jvm/core" />
             <option value="$PROJECT_DIR$/jvm/fdb/fdb" />
+            <option value="$PROJECT_DIR$/jvm/fdb/fdb-core" />
             <option value="$PROJECT_DIR$/jvm/fdb/fdb-server" />
             <option value="$PROJECT_DIR$/jvm/fdb/fdbd" />
             <option value="$PROJECT_DIR$/jvm/installer" />

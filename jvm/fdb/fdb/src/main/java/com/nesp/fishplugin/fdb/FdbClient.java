@@ -16,6 +16,9 @@
 
 package com.nesp.fishplugin.fdb;
 
+import java.io.*;
+import java.net.Socket;
+
 /**
  * Team: NESP Technology
  *
@@ -23,5 +26,51 @@ package com.nesp.fishplugin.fdb;
  * Time: Created 4/11/2022 1:02 AM
  * Description:
  **/
-public class FdbClient {
+public final class FdbClient {
+
+    private static final String TAG = "FdbClient";
+
+    private final Socket socket;
+
+    public FdbClient() throws IOException {
+        socket = new Socket("localhost", 6000);
+    }
+
+    private void send(String data) throws IOException {
+        OutputStream outputStream = socket.getOutputStream();
+        PrintWriter printWriter = new PrintWriter(outputStream);
+        printWriter.write(data);
+        printWriter.flush();
+
+        socket.shutdownOutput();
+
+        InputStream inputStream = socket.getInputStream();
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+        String line;
+        while ((line = bufferedReader.readLine()) != null) {
+            System.out.println(line);
+        }
+
+        socket.shutdownInput();
+
+        bufferedReader.close();
+        inputStream.close();
+        outputStream.close();
+        printWriter.close();
+        socket.close();
+    }
+
+    public static void checkAndStartFdbServer() {
+
+    }
+
+    public static void install(String path) {
+
+    }
+
+    public static void uninstall(String pluginId) {
+
+    }
+
+
 }

@@ -33,7 +33,6 @@ dependencies {
     implementation project(path: ':tools')
     implementation project(path: ':compiler')
     implementation project(path: ':packager')
-    implementation project(path: ':fdb-core')
 }
 
 test {

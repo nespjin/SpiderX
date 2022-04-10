@@ -30,8 +30,8 @@ public class Main {
      *
      * <p>
      *     <b>Usage:</b>
-     *     fdb install <plugin file path>
-     *     fdb uninstall <plugin id>
+     *     fdb pm install <plugin file path>
+     *     fdb pm uninstall <plugin id>
      *     fdb
      *
      * </p>
@@ -39,7 +39,34 @@ public class Main {
      * @param args the arguments for fdb command
      */
     public static void main(String[] args) {
+        if (args.length == 0) {
+            printHelp();
+            return;
+        }
 
+        if (args[0].equals("pm")) {
+            if (args.length == 2) {
+                if (args[1].equals("install")) {
+                    System.out.println("fdb pm install <plugin file path>");
+                } else if (args[1].equals("uninstall")) {
+                    System.out.println("fdb pm uninstall <plugin id>");
+                }
+            } else if (args.length == 3) {
+                if (args[1].equals("install")) {
+                    FdbClient.install(args[2]);
+                } else if (args[1].equals("uninstall")) {
+                    FdbClient.uninstall(args[2]);
+                }
+            }
+        } else {
+            printHelp();
+        }
+    }
+
+    private static void printHelp() {
+        System.out.println("fdb pm install <plugin file path>");
+        System.out.println("fdb pm uninstall <plugin id>");
+        System.out.println("fdb");
     }
 
 
