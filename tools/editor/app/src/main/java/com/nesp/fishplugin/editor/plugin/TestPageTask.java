@@ -47,6 +47,10 @@ public class TestPageTask extends PluginBuildTask {
         for (Page2 targetPluginPage : targetPluginPages) {
             if (targetPluginPage.getId().startsWith(pageId)) {
                 if (pageId.equals("search")) {
+                    if (!targetPluginPage.getUrl().contains("@st")) {
+                        return Result.fail("Not found keyword placeholder (@st) in plugin "+targetPlugin.getName()
+                                +" for search page.");
+                    }
                     Object keywordParam = getParameter("keyword");
                     if (keywordParam instanceof String && !((String) keywordParam).isEmpty()) {
                         targetPluginPage.setUrl(targetPluginPage.getUrl().replace("@st", (String) keywordParam));
