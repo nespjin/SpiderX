@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="com.nesp.fishplugin.jvm.movie-runtime" target="1.8" />
+      <module name="com.nesp.fishplugin.jvm.movie-runtime.main" target="1.8" />
+      <module name="com.nesp.fishplugin.jvm.movie-runtime.test" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
