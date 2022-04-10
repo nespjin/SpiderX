@@ -444,9 +444,20 @@ public class JavaFxJsRuntimeTask extends JsRuntimeTask<WebView> {
         cancelTimer(timeoutWatcherTimer);
         cancelTimer(loadTimer);
         if (webView != null) {
-            webView.getEngine().getLoadWorker().cancel();
-            webView.getEngine().setJavaScriptEnabled(false);
-            webView = null;
+            final Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    webView.getEngine().getLoadWorker().cancel();
+                    webView.getEngine().setJavaScriptEnabled(false);
+                    webView = null;
+                }
+            };
+
+            if (!Platform.isFxApplicationThread()) {
+                Platform.runLater(runnable);
+            } else {
+                runnable.run();
+            }
         }
     }
 }
