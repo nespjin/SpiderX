@@ -21,6 +21,8 @@ import org.checkerframework.checker.units.qual.C;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Team: NESP Technology
@@ -34,6 +36,7 @@ public class FdbServerThread extends Thread {
     private static final String TAG = "FdbServerThread";
 
     private final int port;
+    private final ExecutorService executor = Executors.newFixedThreadPool(100);
 
     public FdbServerThread(int port) {
         this.port = port;
@@ -60,7 +63,7 @@ public class FdbServerThread extends Thread {
         while (!isInterrupted()) {
             try {
                 socket = serverSocket.accept();
-                new ClientSocketThread(socket).start();
+                executor.submit(new ClientSocketThread(socket));
                 System.out.println(TAG + " :FdbServerThread start success: clientSocketThread addr = " + socket.getInetAddress().getHostAddress() + " start success!");
             } catch (IOException e) {
                 System.out.println(TAG + " :FdbServerThread receive data fail!");
