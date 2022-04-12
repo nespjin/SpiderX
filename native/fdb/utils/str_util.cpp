@@ -3,16 +3,14 @@
 //
 #include "str_util.h"
 
-std::vector<std::string> stringSplit(const std::string &str, char delim, std::vector<std::string> &result) {
+void stringSplit(const std::string &str, char delim, std::vector<std::string> &result) {
     std::stringstream ss(str);
     std::string item;
-    std::vector<std::string> elems;
     while (std::getline(ss, item, delim)) {
         if (!item.empty()) {
-            elems.push_back(item);
+            result.push_back(item);
         }
     }
-    return elems;
 }
 
 

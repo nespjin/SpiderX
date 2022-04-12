@@ -5,9 +5,21 @@
 #include <iostream>
 #include "core/core.h"
 #include "tcp_client.h"
+#include <unistd.h>
+#include "./cmake-build-debug/config.h"
 
-static void *onReceive(char *data, int len) {
-    printf(data);
+#if IS_WIN
+
+#include <winsock2.h>
+
+#endif
+
+static void *onReceive(void *serverOrClient, char *data, int len) {
+    if (data == nullptr) {
+        printf("error occurs with %d\n", len);
+    } else {
+        printf(data);
+    }
     return nullptr;
 }
 
@@ -28,20 +40,31 @@ int main(int argc, char **argv) {
         return 0;
     }
 
+    TcpClient tcpClient{
+            (unsigned long long) (~0)
+    };
+
+    InitConfig initConfig = {
+            (char *) "127.0.0.1",
+            FDB_SERVER_PORT,
+            3000,
+            3000 * 10
+    };
+
     int ret;
-    ret = tcp_client_init(7000);
+    ret = tcp_client_init(tcpClient, initConfig);
     if (ret) {
         // the fdb server may not be started
         // try start the fdb server
         printf("start fdb server\n");
 
         // init tcp client again when the fdb server is started
-        ret = tcp_client_init(7000);
+        ret = tcp_client_init(tcpClient, initConfig);
     }
 
     if (ret != 0) {
         std::cout << "tcp client init failed" << std::endl;
-        return -1;
+        return 1;
     }
 
     auto *sendData = new std::string();
@@ -50,19 +73,19 @@ int main(int argc, char **argv) {
         *sendData += argv[i];
     }
 
-    ret = tcp_client_send((*sendData).c_str(), true, onReceive);
+    ret = tcp_client_send(tcpClient, (*sendData).c_str(), true, onReceive);
 
     delete sendData;
 
     if (ret != 0) {
         std::cout << "tcp client send failed" << std::endl;
-        return -1;
+        return 1;
     }
 
-    ret = tcp_client_close();
+    ret = tcp_client_close(tcpClient);
     if (ret != 0) {
         std::cout << "tcp client close failed" << std::endl;
-        return -1;
+        return 1;
     }
     return 0;
 }

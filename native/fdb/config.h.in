@@ -1,2 +1,11 @@
-#define HOST_OS @HOST_OS@
-#define FDB_TARGET @FDB_TARGET@
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#define HOST_OS "@HOST_OS@"
+#define FDB_TARGET "@FDB_TARGET@"
+
+#define IS_LINUX @IS_LINUX@
+#define IS_WIN @IS_WIN@
+#define IS_OSX @IS_OSX@
+
+#endif

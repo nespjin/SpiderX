@@ -5,14 +5,12 @@
 #ifndef FDB_CORE_H
 #define FDB_CORE_H
 
-#define HOST_OS_LINUX "linux"
-#define HOST_OS_OSX "osx"
-#define HOST_OS_WIN "win"
+static const int FDB_SERVER_PORT = 10000;
+static const int FDBD_SERVER_PORT = 10001;
 
-struct Command {
-    int argc;
-    char **argv;
-};
+static const char *COMMAND_CONNECT = "connect";
+static const char *COMMAND_DISCONNECT = "disconnect";
+static const char *COMMAND_APPS = "apps";
 
 void printHelp();
 

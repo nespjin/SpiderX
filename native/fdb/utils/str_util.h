@@ -9,7 +9,7 @@
 #include <string>
 #include <sstream>
 
-std::vector<std::string> stringSplit(const std::string &str, char delim, std::vector<std::string> &result);
+void stringSplit(const std::string &str, char delim, std::vector<std::string> &result);
 
 bool endWith(const std::string &str, const std::string &tail);
 
