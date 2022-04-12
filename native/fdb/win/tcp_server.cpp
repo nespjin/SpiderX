@@ -1,10 +1,11 @@
 //
 // Created by jin on 2022/4/12.
 //
-#include <stdio.h>
+#include <cstdio>
+#include <winsock2.h>
+#include <pthread.h>
 #include "../tcp_server.h"
 #include "../tcp_common.h"
-#include <winsock2.h>
 
 //#pragma comment (lib, "ws2_32.lib")  //load ws2_32.dll // using cmake
 
@@ -13,7 +14,7 @@ static const char *TAG = "tcp_server";
 static SOCKET listenSocket = INVALID_SOCKET;
 static SOCKET clientSocket = INVALID_SOCKET;
 
-static bool isStop = false;
+bool isStop = false;
 
 int tcp_server_init(int port) {
     isStop = false;
@@ -53,7 +54,40 @@ int tcp_server_init(int port) {
     return 0;
 }
 
-int tcp_server_run() {
+void *tcp_server_handleClientThreadRunnable(void *arg) {
+    printf("%s: handleClientThreadRunnable start tid = %d\n", TAG, pthread_self());
+    if (clientSocket == INVALID_SOCKET) {
+        printf("%s: accept failed with error: %d\n", TAG, WSAGetLastError());
+        tcp_server_stop();
+        return nullptr;
+    }
+
+    auto *args = (HandleClientThreadArgs *) arg;
+
+    printf("%s: accepted connection from %s\n", TAG, args->addr);
+
+    int recvBufLen = TCP_BUFFER_SIZE;
+    char recvBuf[TCP_BUFFER_SIZE];
+    int recvLen;
+    while (true) {
+        recvLen = recv(clientSocket, recvBuf, recvBufLen, 0);
+        if (recvLen == 0) {
+            printf("%s: connection closed\n", TAG);
+            break;
+        } else if (recvLen == SOCKET_ERROR) {
+            printf("%s: recv failed with error: %d\n", TAG, WSAGetLastError());
+            break;
+        } else {
+            char *outbuf = new char[recvLen + 1];
+            memcpy(outbuf, recvBuf, recvLen);
+            outbuf[recvLen] = 0;
+            args->onReceiveListener(outbuf, recvLen);
+            delete[] outbuf;
+        }
+    }
+}
+
+int tcp_server_run(OnReceiveListener onReceiveListener) {
     if (listenSocket == 0) {
         printf("%s: listen socket is null\n", TAG);
         return 1;
@@ -68,43 +102,30 @@ int tcp_server_run() {
     SOCKADDR_IN clientAddr;
     int addrLen = sizeof(clientAddr);
 
-    printf("%s: please waiting to connect...\n", TAG);
+    auto *handleClientThreadArgs = new HandleClientThreadArgs{
+            .addr = inet_ntoa(clientAddr.sin_addr),
+            .onReceiveListener = onReceiveListener
+    };
 
     while (!isStop) {
-        clientSocket = accept(listenSocket, (SOCKADDR *) &clientAddr, &addrLen);
-
-        if (clientSocket == INVALID_SOCKET) {
-            printf("%s: accept failed with error: %d\n", TAG, WSAGetLastError());
-            tcp_server_stop();
-            break;
-        }
-
-        printf("%s: accepted connection from %s\n", TAG, inet_ntoa(clientAddr.sin_addr));
-
-        int recvBufLen = TCP_BUFFER_SIZE;
-        char recvBuf[TCP_BUFFER_SIZE];
-        int recvLen;
-        while (true) {
-            recvLen = recv(clientSocket, recvBuf, recvBufLen, 0);
-            if (recvLen == 0) {
-                printf("%s: connection closed\n", TAG);
-                break;
-            } else if (recvLen == SOCKET_ERROR) {
-                printf("%s: recv failed with error: %d\n", TAG, WSAGetLastError());
-                break;
-            } else {
-                char *outbuf = new char[recvLen + 1];
-                memcpy(outbuf, recvBuf, recvLen);
-                outbuf[recvLen] = 0;
-                printf("%s: received %d bytes of data: %s\n", TAG, recvLen, outbuf);
-                send(clientSocket, outbuf, recvLen, 0);
-                delete[] outbuf;
-            }
-        }
-
         printf("%s: please waiting to connect...\n", TAG);
+        clientSocket = accept(listenSocket, (SOCKADDR *) &clientAddr, &addrLen);
+        pthread_t tid;
+        printf("%s: main thread id: %d\n", TAG, (int) pthread_self());
+        int ret1 = pthread_create(&tid, nullptr, tcp_server_handleClientThreadRunnable, handleClientThreadArgs);
+        if (ret1) {
+            printf("%s: pthread_create failed with error: %d\n", TAG, ret1);
+        }
     }
-    return 1;
+
+    delete handleClientThreadArgs;
+
+    return 0;
+}
+
+int tcp_server_send(const char *data, int len) {
+    send(clientSocket, data, len, 0);
+    return 0;
 }
 
 int tcp_server_stop() {

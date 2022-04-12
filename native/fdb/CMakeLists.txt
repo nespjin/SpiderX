@@ -27,7 +27,7 @@ message(STATUS "operating system: ${HOST_OS} (FDB_TARGET=${FDB_TARGET})")
 
 list(APPEND EXTRA_LIBS system)
 
-add_library(fdbcore SHARED core/core.cpp core/core.h)
+add_library(fdbcore SHARED core/core.cpp core/core.h utils/str_util.h utils/str_util.cpp)
 
 add_library(tcp SHARED tcp_server.h tcp_client.h tcp_common.h)
 target_link_libraries(tcp ${EXTRA_LIBS})

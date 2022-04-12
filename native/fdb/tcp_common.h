@@ -7,4 +7,6 @@
 
 #define TCP_BUFFER_SIZE 1024
 
+typedef void *(*OnReceiveListener)(char *, int);
+
 #endif //FDB_TCP_COMMON_H

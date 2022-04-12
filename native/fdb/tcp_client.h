@@ -9,7 +9,7 @@
 
 int tcp_client_init(int port);
 
-int tcp_client_send(const char *sendbuf);
+int tcp_client_send(const char *sendbuf, bool isOnce, OnReceiveListener onReceiveListener);
 
 int tcp_client_close();
 

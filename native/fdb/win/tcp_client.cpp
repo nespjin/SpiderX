@@ -28,12 +28,7 @@ int tcp_client_init(int port) {
     ret = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (ret != 0) {
         printf("%s: WSAStartup failed with error: %d\n", TAG, ret);
-        return 1;
-    }
-
-    if (ret != 0) {
-        printf("getaddrinfo failed with error: %d\n", ret);
-        WSACleanup();
+        tcp_client_close();
         return 1;
     }
 
@@ -60,16 +55,37 @@ int tcp_client_init(int port) {
         tcp_client_close();
         return 1;
     }
-
-    if (connectSocket == INVALID_SOCKET) {
-        printf("Unable to connect to server!\n");
-        tcp_client_close();
-        return 1;
-    }
     return 0;
 }
 
-int tcp_client_send(const char *sendbuf) {
+/**
+ *
+ * @param onReceiveListener
+ * @return len of data received
+ */
+int doSend(OnReceiveListener onReceiveListener) {
+    int ret;
+    char recvBuf[TCP_BUFFER_SIZE];
+    int recvBufLen = TCP_BUFFER_SIZE;
+    ret = recv(connectSocket, recvBuf, recvBufLen, 0);
+    if (ret > 0) {
+        printf("%s: bytes received: %d\n", TAG, ret);
+        if (onReceiveListener != nullptr) {
+            char *outbuf = new char[ret + 1];
+            memcpy(outbuf, recvBuf, ret);
+            outbuf[ret] = 0;
+            onReceiveListener(outbuf, ret);
+            delete[] outbuf;
+        }
+    } else if (ret == 0) {
+        printf("%s: connection closed\n", TAG);
+    } else {
+        printf("%s: recv failed with error: %d\n", TAG, WSAGetLastError());
+    }
+    return ret;
+}
+
+int tcp_client_send(const char *sendbuf, bool isOnce, OnReceiveListener onReceiveListener) {
     // Send an initial buffer
     int ret = send(connectSocket, sendbuf, (int) strlen(sendbuf), 0);
     if (ret == SOCKET_ERROR) {
@@ -80,19 +96,15 @@ int tcp_client_send(const char *sendbuf) {
 
     printf("%s: bytes Sent: %ld\n", TAG, ret);
 
-    // Receive until the peer closes the connection
-    do {
-        char recvbuf[TCP_BUFFER_SIZE];
-        int recvbuflen = TCP_BUFFER_SIZE;
-        ret = recv(connectSocket, recvbuf, recvbuflen, 0);
-        if (ret > 0)
-            printf("%s: bytes received: %d\n", TAG, ret);
-        else if (ret == 0)
-            printf("%s: connection closed\n", TAG);
-        else
-            printf("%s: recv failed with error: %d\n", TAG, WSAGetLastError());
-
-    } while (ret > 0);
+    if (isOnce) {
+        doSend(onReceiveListener);
+    } else {
+        // Receive until the peer closes the connection
+        int recvLen;
+        do {
+            recvLen = doSend(onReceiveListener);
+        } while (recvLen > 0);
+    }
 
     return 0;
 }
