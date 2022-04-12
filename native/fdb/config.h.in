@@ -1,0 +1,2 @@
+#define HOST_OS @HOST_OS@
+#define FDB_TARGET @FDB_TARGET@
