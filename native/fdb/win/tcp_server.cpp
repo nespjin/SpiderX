@@ -5,6 +5,7 @@
 #include <winsock2.h>
 #include <pthread.h>
 #include "../tcp_server.h"
+#include "../core/core.h"
 
 //#pragma comment (lib, "ws2_32.lib")  //load ws2_32.dll // using cmake
 
@@ -19,14 +20,14 @@ int tcp_server_init(TcpServer &server, InitConfig initConfig) {
     WSADATA wsaData;
     ret = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (ret != NO_ERROR) {
-        printf("%s: WSAStartup failed with error: %d\n", TAG, ret);
+        printError(TAG, "WSAStartup failed with error: " + std::to_string(ret));
         return 1;
     }
 
     server.listenSocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
     if (server.listenSocket == INVALID_SOCKET) {
-        printf("%s: Error at socket(): %ld\n", TAG, WSAGetLastError());
+        printError(TAG, "error at listenSocket: " + std::to_string(WSAGetLastError()));
         tcp_server_stop(server);
         return 1;
     }
@@ -45,11 +46,12 @@ int tcp_server_init(TcpServer &server, InitConfig initConfig) {
     service.sin_addr.s_addr = inet_addr(initConfig.addr);
     service.sin_port = htons(initConfig.port);
 
-    printf("%s: server init at addr=%s, port=%d\n", TAG, inet_ntoa(service.sin_addr), initConfig.port);
+    printInfo(TAG, "server init at addr=" + std::string(inet_ntoa(service.sin_addr))
+                   + ", port=" + std::to_string(initConfig.port));
 
     ret = bind(server.listenSocket, (SOCKADDR *) &service, sizeof(service));
     if (ret == SOCKET_ERROR) {
-        printf("%s: bind function failed with error %d\n", TAG, WSAGetLastError());
+        printError(TAG, "bind function failed with error " + std::to_string(WSAGetLastError()));
         tcp_server_stop(server);
         return 1;
     }
@@ -59,14 +61,14 @@ int tcp_server_init(TcpServer &server, InitConfig initConfig) {
 void *tcp_server_handleClientThreadRunnable(void *arg) {
     auto args = *((HandleClientThreadArgs *) arg);
 
-    printf("%s: handleClientThreadRunnable start tid = %d\n", TAG, pthread_self());
+    printInfo(TAG, "handleClientThreadRunnable start tid = " + std::to_string(pthread_self()));
     if (args.server.clientSocket == INVALID_SOCKET) {
-        printf("%s: accept failed with error: %d\n", TAG, WSAGetLastError());
+        printError(TAG, "accept failed with error: " + std::to_string(WSAGetLastError()));
         tcp_server_stop(args.server);
         return (void *) 1;
     }
 
-    printf("%s: accepted connection from %s\n", TAG, args.addr);
+    printInfo(TAG, "accepted connection from " + std::string(args.addr));
 
     int recvBufLen = TCP_BUFFER_SIZE;
     char recvBuf[TCP_BUFFER_SIZE];
@@ -74,10 +76,10 @@ void *tcp_server_handleClientThreadRunnable(void *arg) {
     while (true) {
         recvLen = recv(args.server.clientSocket, recvBuf, recvBufLen, 0);
         if (recvLen == 0) {
-            printf("%s: connection closed\n", TAG);
+            printError(TAG, "connection closed");
             break;
         } else if (recvLen == SOCKET_ERROR) {
-            printf("%s: recv failed with error: %d\n", TAG, WSAGetLastError());
+            printError(TAG, "recv failed with error: " + std::to_string(WSAGetLastError()));
             break;
         } else {
             char *outbuf = new char[recvLen + 1];
@@ -93,15 +95,15 @@ void *tcp_server_handleClientThreadRunnable(void *arg) {
 
 int tcp_server_run(TcpServer &server, OnReceiveListener onReceiveListener) {
     if (server.listenSocket == 0) {
-        printf("%s: listen socket is null\n", TAG);
+        printError(TAG, "listen socket is null");
         return 1;
     }
 
     if (listen(server.listenSocket, SOMAXCONN) == SOCKET_ERROR) {
-        printf("%s: listen listenSocket failed with error: %d\n", TAG, WSAGetLastError());
+        printError(TAG, "listen listenSocket failed with error: " + std::to_string(WSAGetLastError()));
     }
 
-    printf("%s: listening on socket...\n", TAG);
+    printInfo(TAG, "listening on socket...");
 
     SOCKADDR_IN clientAddr;
     int addrLen = sizeof(clientAddr);
@@ -113,13 +115,13 @@ int tcp_server_run(TcpServer &server, OnReceiveListener onReceiveListener) {
     };
 
     while (!isStop) {
-        printf("%s: please waiting to connect...\n", TAG);
+        printInfo(TAG, "waiting to connect...");
         server.clientSocket = accept(server.listenSocket, (SOCKADDR *) &clientAddr, &addrLen);
         pthread_t tid;
-        printf("%s: main thread id: %d\n", TAG, (int) pthread_self());
+        printInfo(TAG, "main thread id: " + std::to_string(pthread_self()));
         int ret1 = pthread_create(&tid, nullptr, tcp_server_handleClientThreadRunnable, handleClientThreadArgs);
         if (ret1) {
-            printf("%s: pthread_create failed with error: %d\n", TAG, ret1);
+            printError(TAG, "pthread_create failed with error: " + std::to_string(ret1));
         }
     }
 
@@ -138,14 +140,14 @@ int tcp_server_stop(TcpServer &server) {
     int ret = 0;
     if (server.listenSocket != INVALID_SOCKET) {
         if (closesocket(server.listenSocket) == SOCKET_ERROR) {
-            printf("%s: close listenSocket failed with error %d\n", TAG, WSAGetLastError());
+            printError(TAG, "close listenSocket failed with error: " + std::to_string(WSAGetLastError()));
             ret = 1;
         }
     }
 
     if (server.clientSocket != INVALID_SOCKET) {
         if (closesocket(server.clientSocket) == SOCKET_ERROR) {
-            printf("%s: close clientSocket failed with error %d\n", TAG, WSAGetLastError());
+            printError(TAG, "close clientSocket failed with error: " + std::to_string(WSAGetLastError()));
             ret = 1;
         }
     }

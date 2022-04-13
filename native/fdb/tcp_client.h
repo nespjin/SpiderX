@@ -9,9 +9,9 @@
 
 int tcp_client_init(TcpClient &client, InitConfig initConfig);
 
-int tcp_client_send(TcpClient &client, const char *sendbuf, bool isOnce, char *dataRec, int *recLen, int *error);
+int tcp_client_send(TcpClient &client, const char *sendbuf, char *dataRec, int *recLen, int *error);
 
-int tcp_client_send(TcpClient &client, const char *sendbuf, bool isOnce, OnReceiveListener onReceiveListener);
+int tcp_client_send(TcpClient &client, const char *sendbuf, OnReceiveListener onReceiveListener);
 
 int tcp_client_close(TcpClient &client);
 

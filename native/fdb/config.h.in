@@ -8,4 +8,6 @@
 #define IS_WIN @IS_WIN@
 #define IS_OSX @IS_OSX@
 
+#define IS_DEBUG @IS_DEBUG@
+
 #endif

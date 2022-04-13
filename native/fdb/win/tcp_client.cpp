@@ -3,8 +3,9 @@
 //
 
 #include "../tcp_client.h"
-#include <windows.h>
+#include "../core/core.h"
 #include <winsock2.h>
+#include <windows.h>
 #include <cstdio>
 
 
@@ -22,7 +23,7 @@ int tcp_client_init(TcpClient &client, InitConfig initConfig) {
     // Initialize Winsock
     ret = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (ret != 0) {
-        printf("%s: WSAStartup failed with error: %d\n", TAG, ret);
+        printError(TAG, "WSAStartup failed with error: " + std::to_string(ret));
         tcp_client_close(client);
         return 1;
     }
@@ -30,7 +31,7 @@ int tcp_client_init(TcpClient &client, InitConfig initConfig) {
     // Create a SOCKET for connecting to server
     client.connSocket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (client.connSocket == INVALID_SOCKET) {
-        printf("socket failed with error: %ld\n", WSAGetLastError());
+        printError(TAG, "socket failed with error: " + std::to_string(WSAGetLastError()));
         tcp_client_close(client);
         return 1;
     }
@@ -52,7 +53,7 @@ int tcp_client_init(TcpClient &client, InitConfig initConfig) {
     // Connect to server.
     ret = connect(client.connSocket, (SOCKADDR *) &service, sizeof(service));
     if (ret == SOCKET_ERROR) {
-        printf("%s: connect failed with error: %d\n", TAG, WSAGetLastError());
+        printError(TAG, "connect failed with error: " + std::to_string(WSAGetLastError()));
         tcp_client_close(client);
         return 1;
     }
@@ -70,60 +71,92 @@ int doSend(TcpClient &client, char *data, int *error) {
     int recvBufLen = TCP_BUFFER_SIZE;
     ret = recv(client.connSocket, recvBuf, recvBufLen, 0);
     if (ret > 0) {
-        printf("%s: bytes received: %d\n", TAG, ret);
+        printInfo(TAG, "%s: bytes received: " + std::to_string(ret));
         memcpy(data, recvBuf, ret);
     } else if (ret == 0) {
-        printf("%s: connection closed\n", TAG);
+        printError(TAG, "connection closed");
     } else {
         *error = WSAGetLastError();
-        printf("%s: recv failed with error: %d\n", TAG, error);
+        printError(TAG, "recv failed with error: " + std::to_string(*error));
     }
     return ret;
 }
 
-int tcp_client_send(TcpClient &client, const char *sendbuf, bool isOnce, OnReceiveListener onReceiveListener) {
-    char recvBuf[TCP_BUFFER_SIZE];
-    int recvLen;
-    int error = -1;
-    int ret = tcp_client_send(client, sendbuf, isOnce, recvBuf, &recvLen, &error);
-    if (ret) {
-        if (onReceiveListener != nullptr) {
-            onReceiveListener(&client, nullptr, error);
-        }
-        return 1;
-    } else {
-        if (onReceiveListener != nullptr) {
-            char *outbuf = new char[recvLen + 1];
-            memcpy(outbuf, recvBuf, recvLen);
-            outbuf[recvLen] = 0;
-            onReceiveListener(&client, outbuf, ret);
-            delete[] outbuf;
-        }
-    }
-    return 0;
-}
-
-int tcp_client_send(TcpClient &client, const char *sendbuf, bool isOnce, char *dataRec, int *recLen, int *error) {
+int tcp_client_send(TcpClient &client, const char *sendbuf, OnReceiveListener onReceiveListener) {
     // Send an initial buffer
     int ret = send(client.connSocket, sendbuf, (int) strlen(sendbuf), 0);
     if (ret == SOCKET_ERROR) {
-        printf("%s: send failed with error: %d\n", TAG, WSAGetLastError());
+        printError(TAG, "send failed with error: " + std::to_string(WSAGetLastError()));
         tcp_client_close(client);
         return 1;
     }
 
-    printf("%s: bytes Sent: %d\n", TAG, ret);
+    printInfo(TAG, "bytes Sent: " + std::to_string(ret));
 
-    if (isOnce) {
-        *recLen = doSend(client, dataRec, error);
-    } else {
-        // Receive until the peer closes the connection
-        int recvLen;
-        do {
-            recvLen = doSend(client, dataRec, error);
-            *recLen = recvLen;
-        } while (recvLen > 0);
+    // Receive until the peer closes the connection
+    int recvLen;
+    do {
+        char recvBuf[TCP_BUFFER_SIZE];
+        int recvBufLen = TCP_BUFFER_SIZE;
+        recvLen = recv(client.connSocket, recvBuf, recvBufLen, 0);
+        if (recvLen > 0) {
+            printInfo(TAG, "bytes received: " + std::to_string(recvLen));
+            if (onReceiveListener != nullptr) {
+                char *outbuf = new char[recvLen + 1];
+                memcpy(outbuf, recvBuf, recvLen);
+                outbuf[recvLen] = 0;
+                onReceiveListener(&client, outbuf, ret);
+                delete[] outbuf;
+            }
+        } else if (recvLen == 0) {
+            printInfo(TAG, "connection closed");
+        } else {
+            int error = WSAGetLastError();
+            if (onReceiveListener != nullptr) {
+                onReceiveListener(&client, nullptr, error);
+            }
+            printError(TAG, "recv failed with error:  " + std::to_string(error));
+        }
+    } while (recvLen > 0);
+
+    return 0;
+}
+
+int tcp_client_send(TcpClient &client, const char *sendbuf, char *dataRec, int *recLen, int *error) {
+    if (client.connSocket == INVALID_SOCKET) {
+        printError(TAG, "the connect socket is invalid");
+        return 1;
     }
+
+    int ret = send(client.connSocket, sendbuf, (int) strlen(sendbuf), 0);
+    if (ret == SOCKET_ERROR) {
+        printError(TAG, "send failed with error: " + std::to_string(WSAGetLastError()));
+        tcp_client_close(client);
+        return 1;
+    }
+
+    printInfo(TAG, "bytes Sent: " + std::to_string(ret));
+
+    // Receive until the peer closes the connection
+    int recvLen;
+//    do {
+    char recvBuf[TCP_BUFFER_SIZE];
+    int recvBufLen = TCP_BUFFER_SIZE;
+    recvLen = recv(client.connSocket, recvBuf, recvBufLen, 0);
+
+    *recLen = recvLen;
+
+    if (recvLen > 0) {
+        printInfo(TAG, "bytes received: " + std::to_string(recvLen));
+        memcpy(dataRec, recvBuf, recvLen);
+    } else if (recvLen == 0) {
+        printInfo("%s: connection closed\n", TAG);
+    } else {
+        *error = WSAGetLastError();
+        printError(TAG, "recv failed with error: " + std::to_string(*error));
+    }
+//    } while (recvLen > 0);
+
     return 0;
 }
 
@@ -133,12 +166,12 @@ int tcp_client_close(TcpClient &client) {
         // shutdown the connection since no more data will be sent
         ret = shutdown(client.connSocket, SD_SEND);
         if (ret == SOCKET_ERROR) {
-            printf("%s: shutdown failed with error: %d\n", TAG, WSAGetLastError());
+            printError(TAG, "shutdown failed with error: " + std::to_string(WSAGetLastError()));
             ret = 1;
         }
         // cleanup
         if (closesocket(client.connSocket) == SOCKET_ERROR) {
-            printf("%s: close connectSocket failed with error: %d\n", TAG, WSAGetLastError());
+            printError(TAG, "close connectSocket failed with error: " + std::to_string(WSAGetLastError()));
             ret = 1;
         }
         client.connSocket = INVALID_SOCKET;

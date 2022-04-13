@@ -27,6 +27,12 @@ ELSEIF (${CMAKE_HOST_SYSTEM_NAME} MATCHES "Darwin")
     list(APPEND EXTRA_INCLUDES "${PROJECT_SOURCE_DIR}/osx")
 ENDIF ()
 
+IF(${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    set(IS_DEBUG 1)
+ELSEIF(${CMAKE_BUILD_TYPE} MATCHES "Release")
+    set(IS_DEBUG 0)
+ENDIF ()
+
 configure_file(config.h.in config.h)
 
 message(STATUS "operating system: ${HOST_OS} (FDB_TARGET=${FDB_TARGET})")

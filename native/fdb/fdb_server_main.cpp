@@ -1,10 +1,8 @@
 //
 // Created by jin on 2022/4/12.
 //
-
-#include <cstdio>
+#include "./core/core.h"
 #include <cstring>
-#include <iostream>
 #include "tcp_server.h"
 #include "./utils/str_util.h"
 #include "core/core.h"
@@ -34,48 +32,44 @@ void fdb_server_clearConnectLostApps() {
     connectedAppList.shrink_to_fit();
 }
 
-int fdb_server_connectToApp(TcpServer &server, const char *ip, int port) {
-    TcpClient tcpClient{
-            (unsigned long long) (~0)
-    };
-
+int fdb_server_connectToApp(TcpServer &server, const char *ip, int port, TcpClient *client) {
     InitConfig initConfig = {
             (char *) ip,
             (unsigned int) port,
-            3000,
-            3000
+            0,
+            0
     };
 
     int ret;
 
-    ret = tcp_client_init(tcpClient, initConfig);
+    ret = tcp_client_init(*client, initConfig);
     if (ret) {
-        printf("fdb_server_connectToApp failed\n");
+        printErrorDebug(TAG, "fdb_server_connectToApp failed");
         return 1;
     }
 
-    char sendData[] = {0x01};
+    /* char sendData[] = {0x01};
 
-    char revData[TCP_BUFFER_SIZE];
-    int revLen;
-    int error;
+     char revData[TCP_BUFFER_SIZE];
+     int revLen;
+     int error;
 
-    ret = tcp_client_send(tcpClient, sendData, (int) 1, revData, &revLen, &error);
-    if (ret) {
-        printf("fdb_server_connectToApp failed\n");
-        return 1;
-    }
+     ret = tcp_client_send(client, sendData, (int) 1, revData, &revLen, &error);
+     if (ret) {
+         printf("fdb_server_connectToApp failed\n");
+         return 1;
+     }*/
 
     std::string addr(ip);
     addr.append(std::to_string(port));
 
     TargetApp targetApp = {
             .addr = (char *) addr.c_str(),
-            .client = tcpClient
+            .client = *client
     };
 
     connectedAppList.push_back(targetApp);
-    printf("fdb_server_connectToApp success!!!\n");
+    printInfoDebug(TAG, "fdb_server_connectToApp success");
 
     return 0;
 }
@@ -92,9 +86,11 @@ void *onReceiveFromClient(void *serverOrClient, char *data, int len) {
         commandArgs[i] = (char *) args[i].c_str();
     }
 
+#if DEBUG
     for (int i = 0; i < args.size(); ++i) {
-        printf("index = %d, %s\n", i, commandArgs[i]);
+        printInfoDebug(TAG, "index = " + std::to_string(i) + ", " + commandArgs[i]);
     }
+#endif
 
     std::string response("0");
 
@@ -103,8 +99,9 @@ void *onReceiveFromClient(void *serverOrClient, char *data, int len) {
     // connect 192.168.1:200
     // parse command line
     // TODO:replace with getopt_long();
+    bool isDisconnect = true;
     if (commandArgsLen < 1) {
-        printf("%s: command parse fail", TAG);
+        printError(TAG, "command parse fail");
         return reinterpret_cast<void *>(1);
     }
 
@@ -118,9 +115,29 @@ void *onReceiveFromClient(void *serverOrClient, char *data, int len) {
             std::vector<std::string> ipAndPort;
             stringSplit(std::string(addr), ':', ipAndPort);
             int port = strtol(ipAndPort[1].c_str(), nullptr, 10);
-            int ret1 = fdb_server_connectToApp(server, ipAndPort[0].c_str(), port);
+            TcpClient tcpClient{
+                    (unsigned long long) (~0)
+            };
+            int ret1 = fdb_server_connectToApp(server, ipAndPort[0].c_str(), port, &tcpClient);
             if (ret1) {
                 response = "connect to app " + addrString + " failed";
+            } else {
+                response = "connect to app " + addrString + " success";
+                tcp_server_send(server, (char *) response.c_str(), (int) response.length());
+
+                printInfoDebug(TAG, "the socket is " + std::to_string(tcpClient.connSocket));
+
+                char *data = (char *) "i am from fdb server\n";
+                char data2[TCP_BUFFER_SIZE];
+                int len2;
+                int err;
+                tcp_client_send(tcpClient, data, data2, &len2, &err);
+
+                if (len2 > 0) {
+                    response = "receive from fdbd " + std::string(data2) + " success\n";
+                } else {
+                    response = "receive from fdbd failed\n";
+                }
             }
         }
     } else if (strcmp(commandArgs[0], COMMAND_DISCONNECT) == 0) {
@@ -168,7 +185,7 @@ void *onReceiveFromClient(void *serverOrClient, char *data, int len) {
             int revLen;
             int error;
 
-            int ret = tcp_client_send(connectedAppList[0].client, data, true, revData, &revLen, &error);
+            int ret = tcp_client_send(connectedAppList[0].client, data, revData, &revLen, &error);
             if (ret) {
                 response = error ? std::to_string(error) : "Exec failed";
             } else {
@@ -185,6 +202,11 @@ void *onReceiveFromClient(void *serverOrClient, char *data, int len) {
 
     // send response
     tcp_server_send(server, response.c_str(), (int) response.size());
+
+    /* if (isDisconnect) {
+         tcp_server_stop(server);
+     }*/
+
     return nullptr;
 }
 
@@ -203,29 +225,29 @@ int main() {
     InitConfig initConfig = {
             (char *) "127.0.0.1",
             FDB_SERVER_PORT,
-            10 * 1000,
-            10 * 1000
+            0,
+            0
     };
 
     ret = tcp_server_init(server, initConfig);
     if (ret != 0) {
-        printf("%s: tcp_server_init failed\n", TAG);
+        printError(TAG, "tcp_server_init failed");
         return 1;
     }
 
-    printf("%s: fdb server start...\n", TAG);
+    printInfo(TAG, "fdb server start...");
 
     ret = tcp_server_run(server, onReceiveFromClient);
     if (ret != 0) {
-        printf("%s: tcp_server_run failed\n", TAG);
+        printError(TAG, "tcp_server_run failed");
         return 1;
     } else {
-        printf("%s: fdb server finish\n", TAG);
+        printInfo(TAG, "fdb server finish");
     }
 
     ret = tcp_server_stop(server);
     if (ret != 0) {
-        printf("%s: tcp_server_stop failed\n", TAG);
+        printError(TAG, "tcp_server_stop failed");
         return 1;
     }
 
