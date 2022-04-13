@@ -3,9 +3,6 @@ project(fdb)
 
 set(CMAKE_CXX_STANDARD 14)
 
-#set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
-set(CMAKE_EXE_LINKER_FLAGS -static)
-
 #option(HOST_OS "Use tutorial provided math implementation" OFF)
 #option(FDB_TARGET "Use tutorial provided math implementation" OFF)
 
@@ -56,3 +53,4 @@ target_link_libraries(fdbserver fdbcore tcp ${EXTRA_LIBS})
 add_executable(fdbd fdbd_main.cpp)
 target_link_libraries(fdbd fdbcore tcp ${EXTRA_LIBS})
 
+set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
