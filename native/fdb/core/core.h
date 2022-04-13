@@ -7,12 +7,12 @@
 
 #include <string>
 
-static const int FDB_SERVER_PORT = 10000;
-static const int FDBD_SERVER_PORT = 10001;
+extern const int FDB_SERVER_PORT;
+extern const int FDBD_SERVER_PORT;
 
-static const char *COMMAND_CONNECT = "connect";
-static const char *COMMAND_DISCONNECT = "disconnect";
-static const char *COMMAND_APPS = "apps";
+extern const char *COMMAND_CONNECT;
+extern const char *COMMAND_DISCONNECT;
+extern const char *COMMAND_APPS;
 
 void printHelp();
 

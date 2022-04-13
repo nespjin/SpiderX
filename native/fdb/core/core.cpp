@@ -5,6 +5,13 @@
 #include <iostream>
 #include "core.h"
 
+const int FDB_SERVER_PORT = 10000;
+const int FDBD_SERVER_PORT = 10001;
+
+const char *COMMAND_CONNECT = "connect";
+const char *COMMAND_DISCONNECT = "disconnect";
+const char *COMMAND_APPS = "apps";
+
 /**
  * print help information
  */

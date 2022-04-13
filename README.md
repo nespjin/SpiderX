@@ -2,6 +2,15 @@
 
 轻量的爬虫插件框架
 
+> 动态下发部署爬虫插件
+
+## 支持的平台
+    - Android
+    - Linux
+    - MacOS
+    - Windows
+
+
 ```bash
 ROOT
 |-- android

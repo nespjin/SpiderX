@@ -2,7 +2,6 @@
 // Created by jin on 2022/4/12.
 //
 
-#include <iostream>
 #include "core/core.h"
 #include "tcp_client.h"
 
@@ -38,7 +37,7 @@ int main(int argc, char **argv) {
 
     InitConfig initConfig = {
             (char *) "127.0.0.1",
-            FDB_SERVER_PORT,
+            (unsigned int) FDB_SERVER_PORT,
             0,
             0,
     };

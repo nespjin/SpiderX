@@ -53,4 +53,4 @@ target_link_libraries(fdbserver fdbcore tcp ${EXTRA_LIBS})
 add_executable(fdbd fdbd_main.cpp)
 target_link_libraries(fdbd fdbcore tcp ${EXTRA_LIBS})
 
-set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
+set(CMAKE_EXE_LINKER_FLAGS "-static")

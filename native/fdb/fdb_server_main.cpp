@@ -1,7 +1,6 @@
 //
 // Created by jin on 2022/4/12.
 //
-#include "./core/core.h"
 #include <cstring>
 #include "tcp_server.h"
 #include "./utils/str_util.h"
@@ -214,7 +213,7 @@ void *onReceiveFromClient(void *serverOrClient, char *data, int len) {
  *
  * @return
  */
-int main() {
+int main(int argc, char *argv[]) {
     int ret;
 
     TcpServer server{
@@ -224,7 +223,7 @@ int main() {
 
     InitConfig initConfig = {
             (char *) "127.0.0.1",
-            FDB_SERVER_PORT,
+            (unsigned int) FDB_SERVER_PORT,
             0,
             0
     };
