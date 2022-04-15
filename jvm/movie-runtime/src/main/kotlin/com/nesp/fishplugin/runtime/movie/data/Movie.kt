@@ -66,7 +66,9 @@ open class Movie(
     /**
      * movie source
      */
-    var sourceName: String = "",
+    var pluginName: String = "",
+
+    var pluginId: String = "",
 
     /**
      * Movie details page url

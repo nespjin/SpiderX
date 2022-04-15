@@ -98,8 +98,10 @@ class MovieAndroidJsRuntime(context: Context) : AndroidJsRuntime(context) {
                                         gson.fromJson(json, SearchPage::class.java)
                                 }
                                 page.id == MoviePage.DETAIL.id -> {
-                                    process.execResult.data =
-                                        gson.fromJson(json, Movie::class.java)
+                                    val movie = gson.fromJson(json, Movie::class.java)
+                                    movie.pluginId = page.owner!!.id
+                                    movie.pluginName = page.owner!!.name
+                                    process.execResult.data = movie
                                 }
                             }
                         } catch (e: Exception) {

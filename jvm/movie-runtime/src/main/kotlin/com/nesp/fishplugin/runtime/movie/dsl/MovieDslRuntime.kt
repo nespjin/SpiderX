@@ -179,7 +179,7 @@ class MovieDslRuntime : DslRuntime() {
                 return
             }
             val movie = Movie()
-            movie.sourceName = page.owner!!.name
+            movie.pluginName = page.owner!!.name
 
             getValueByDsl(
                 moviesElement,
@@ -511,7 +511,7 @@ class MovieDslRuntime : DslRuntime() {
                 return mutableListOf()
             }
             val movie = Movie()
-            movie.sourceName = page.owner!!.name
+            movie.pluginName = page.owner!!.name
 
             if (coverImageUrlDsl.trim().isNotEmpty()) {
                 getValueByDsl(slideElement, coverImageUrlDsl).also {

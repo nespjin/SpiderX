@@ -176,11 +176,14 @@ class Plugin2 constructor(val store: JSONObject = JSONObject()) {
             for (item in originList) {
                 if (item !is Page2) {
                     if (item is Map<*, *>) {
-                        ret.add(Page2(JSONObject(item)))
+                        ret.add(Page2(JSONObject(item)).apply {
+                            owner = this@Plugin2
+                        })
                     } else {
                         throw IllegalStateException("The type ${item::class.java.simpleName} is not supported")
                     }
                 } else {
+                    item.owner = this@Plugin2
                     ret.add(item)
                 }
             }
