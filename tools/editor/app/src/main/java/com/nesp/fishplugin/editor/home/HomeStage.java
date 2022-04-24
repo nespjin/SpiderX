@@ -469,7 +469,7 @@ public class HomeStage extends AppBaseStage {
         binding.cbBuildType.getSelectionModel().selectedItemProperty().addListener(new ChangeListener() {
             @Override
             public void changed(ObservableValue observable, Object oldValue, Object newValue) {
-                binding.cbDeviceType.setVisible(!newValue.equals(MoviePluginBuilder.getInstance().getBuildPluginTask().name()));
+                binding.cbDeviceType.setVisible(newValue != null && !newValue.equals(MoviePluginBuilder.getInstance().getBuildPluginTask().name()));
             }
         });
 
