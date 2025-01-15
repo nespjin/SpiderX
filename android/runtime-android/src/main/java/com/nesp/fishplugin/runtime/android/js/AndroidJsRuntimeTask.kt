@@ -194,7 +194,7 @@ abstract class AndroidJsRuntimeTask(context: Context) : JsRuntimeTask<WebView>()
                 withContext(Dispatchers.Main) {
                     cancelTimer(timeoutWatcherTimer)
                     setReceivePageOrError(true)
-                    if (DEBUG){
+                    if (DEBUG) {
                         Log.d(TAG, "execCurrentJs: result=$result")
                     }
                     if (result != null && result is String) {
@@ -293,8 +293,8 @@ abstract class AndroidJsRuntimeTask(context: Context) : JsRuntimeTask<WebView>()
         settings.loadsImagesAutomatically = false
         settings.blockNetworkImage = true
         settings.blockNetworkLoads = false
-        settings.setAppCacheEnabled(true)
-        settings.setAppCachePath(context.cacheDir.absolutePath)
+        // settings.setAppCacheEnabled(true)
+        // settings.setAppCachePath(context.cacheDir.absolutePath)
         settings.databaseEnabled = true
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
 
