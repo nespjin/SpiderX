@@ -19,9 +19,16 @@ plugins {
     id 'kotlin-android'
 }
 
+def artifactGroup = "com.nesp.fishplugin.runtime.movie.android"
+def artifactVersionCode = 1
+def artifactVersionName = "1.0"
+
+group artifactGroup
+version artifactVersionName
+
 android {
     if (project.android.hasProperty("namespace")) {
-        namespace 'com.nesp.fishplugin.runtime.movie.android'
+        namespace artifactGroup
     }
 
     compileSdk 35
@@ -29,8 +36,8 @@ android {
     defaultConfig {
         minSdk 21
         targetSdk 31
-        versionCode 1
-        versionName "1.0"
+        versionCode artifactVersionCode
+        versionName artifactVersionName
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
