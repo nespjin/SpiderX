@@ -53,12 +53,12 @@
 插件都定义了相同的字段，则子插件的字段会覆盖父插件的字段。
 支持对象、路径引用和网络引用三种形式。（见 [引用](#引用)）。
 
-### name
-插件名称
-
 ### id
 插件的唯一标识符，采用域名命名空间，如：com.example.plugin。
 插件 `id` 不可重复。
+
+### name
+插件名称
 
 ### author
 插件的作者。
@@ -69,19 +69,19 @@
 ### runtimeVersion
 插件兼容的运行时版本号。支持 `>=`、`>`、`<=`、`<` 运算符。
 
+### description
+插件的简介。
+
 ### tags
 插件的标签，用于标识插件的特点。
 
-### supportedScreenType
+### supportedScreenTypes
 插件支持的屏幕类型。一个或多个值，可选值有：
 `compact`、 `medium`、　`expanded`。
 
-### introduction
-插件的简介。
-
-### ref
+### variables
 引用。可自定义 字段、对象、js代码
-1. 在引用内不能使用引用
+1. 在引用内不能引用其她变量
 2. 只能定义一级引用
 
 ### dataset
@@ -119,15 +119,15 @@
 ```jsonc
 {
     "parent": { },
-    "name": "", 
     "id": "", 
+    "name": "", 
     "author": "",
     "version": "1.0.0+1",
     "runtimeVersion": ">=1.1.0,<2.0.0", 
+    "description": "",
     "tags": [],
-    "supportedScreenType":[],
-    "introduction": "",
-    "ref": {
+    "supportedScreenTypes":[],
+    "variables": {
         "commonUrl":"post:http://xxx.xx/a?id=1", // 字段引用 url 格式，请求类型:地址?统一参数表
         "searchUrl":"http://xxxx.xxx/index.php?m=vod-search&wd=${st}", // {{st}} 会替换为用户输入的关键字
         "detailPageUrl":"https://www.baidu.com",
