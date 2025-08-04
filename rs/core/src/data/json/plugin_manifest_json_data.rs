@@ -128,4 +128,122 @@ mod tests {
             deserialized_manifest.runtime_version
         );
     }
+    
+    #[test]
+    fn test_plugin_manifest_parent_field() {
+        // Test with string parent
+        let manifest_with_string_parent = PluginManifestJsonData {
+            parent: Some(serde_json::json!("https://example.com/parent-plugin.json")),
+            id: "test_id".to_string(),
+            name: "Test Plugin".to_string(),
+            author: Some("Test Author".to_string()),
+            version: "1.0.0".to_string(),
+            runtime_version: "1.0".to_string(),
+            description: Some("A test plugin".to_string()),
+            tags: vec![],
+            supported_screen_types: vec![],
+            variables: serde_json::json!({}),
+            dataset: vec![],
+        };
+
+        let json_string = serde_json::to_string_pretty(&manifest_with_string_parent).unwrap();
+        let deserialized: PluginManifestJsonData = serde_json::from_str(&json_string).unwrap();
+        
+        assert_eq!(manifest_with_string_parent.parent, deserialized.parent);
+        
+        // Test with object parent
+        let manifest_with_object_parent = PluginManifestJsonData {
+            parent: Some(serde_json::json!({
+                "id": "parent_id",
+                "name": "Parent Plugin",
+                "version": "1.0.0"
+            })),
+            id: "test_id".to_string(),
+            name: "Test Plugin".to_string(),
+            author: Some("Test Author".to_string()),
+            version: "1.0.0".to_string(),
+            runtime_version: "1.0".to_string(),
+            description: Some("A test plugin".to_string()),
+            tags: vec![],
+            supported_screen_types: vec![],
+            variables: serde_json::json!({}),
+            dataset: vec![],
+        };
+
+        let json_string = serde_json::to_string_pretty(&manifest_with_object_parent).unwrap();
+        let deserialized: PluginManifestJsonData = serde_json::from_str(&json_string).unwrap();
+        
+        assert_eq!(manifest_with_object_parent.parent, deserialized.parent);
+    }
+
+    #[test]
+    fn test_plugin_manifest_variables_field() {
+        let complex_variables = serde_json::json!({
+            "string_var": "value1",
+            "int_var": 42,
+            "bool_var": true,
+            "array_var": [1, 2, 3],
+            "object_var": {
+                "nested_key": "nested_value"
+            }
+        });
+
+        let manifest = PluginManifestJsonData {
+            parent: None,
+            id: "test_id".to_string(),
+            name: "Test Plugin".to_string(),
+            author: Some("Test Author".to_string()),
+            version: "1.0.0".to_string(),
+            runtime_version: "1.0".to_string(),
+            description: Some("A test plugin".to_string()),
+            tags: vec![],
+            supported_screen_types: vec![],
+            variables: complex_variables.clone(),
+            dataset: vec![],
+        };
+
+        let json_string = serde_json::to_string_pretty(&manifest).unwrap();
+        let deserialized: PluginManifestJsonData = serde_json::from_str(&json_string).unwrap();
+        
+        assert_eq!(complex_variables, deserialized.variables);
+    }
+
+    #[test]
+    fn test_plugin_manifest_dataset_field() {
+        let complex_dataset = vec![
+            serde_json::json!({
+                "type": "user",
+                "data": {
+                    "name": "John Doe",
+                    "age": 30
+                }
+            }),
+            serde_json::json!({
+                "type": "product",
+                "data": {
+                    "name": "Product 1",
+                    "price": 99.99
+                }
+            })
+        ];
+
+        let manifest = PluginManifestJsonData {
+            parent: None,
+            id: "test_id".to_string(),
+            name: "Test Plugin".to_string(),
+            author: Some("Test Author".to_string()),
+            version: "1.0.0".to_string(),
+            runtime_version: "1.0".to_string(),
+            description: Some("A test plugin".to_string()),
+            tags: vec![],
+            supported_screen_types: vec![],
+            variables: serde_json::json!({}),
+            dataset: complex_dataset.clone(),
+        };
+
+        let json_string = serde_json::to_string_pretty(&manifest).unwrap();
+        let deserialized: PluginManifestJsonData = serde_json::from_str(&json_string).unwrap();
+        
+        assert_eq!(complex_dataset, deserialized.dataset);
+    }
 }
