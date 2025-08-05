@@ -12,6 +12,60 @@
 
 use serde::{Deserialize, Serialize};
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DatasetJsonData {
+    /// The id of current dataset.
+    ///
+    /// The id must be unique in the same plugin.
+    pub id: String,
+
+    /// The url will be used to request data.
+    pub url: String,
+
+    /// The url for `Compact` screen type.
+    #[serde(rename = "url@compact")]
+    pub url_compact: Option<String>,
+
+    /// The url for `Medium` screen type.
+    #[serde(rename = "url@medium")]
+    pub url_medium: Option<String>,
+
+    /// The url for `Expanded` screen type.
+    #[serde(rename = "url@expanded")]
+    pub url_expanded: Option<String>,
+
+    /// The javascript code that will be executed when the data is requested.
+    pub js: Option<String>,
+
+    /// The js for `Compact` screen type.
+    #[serde(rename = "js@compact")]
+    pub js_compact: Option<String>,
+
+    /// The js for `Medium` screen type.
+    #[serde(rename = "js@medium")]
+    pub js_medium: Option<String>,
+
+    /// The js for `Expanded` screen type.
+    #[serde(rename = "js@expanded")]
+    pub js_expanded: Option<String>,
+
+    /// The dsl code that will be executed when the data is requested.
+    pub dsl: Option<serde_json::Value>,
+
+    /// The dsl for `Compact` screen type.
+    #[serde(rename = "dsl@compact")]
+    pub dsl_compact: Option<serde_json::Value>,
+
+    /// The dsl for `Medium` screen type.
+    #[serde(rename = "dsl@medium")]
+    pub dsl_medium: Option<serde_json::Value>,
+
+    /// The dsl for `Expanded` screen type.
+    #[serde(rename = "dsl@expanded")]
+    pub dsl_expanded: Option<serde_json::Value>,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PluginManifestJsonData {
@@ -43,7 +97,7 @@ pub struct PluginManifestJsonData {
     pub version: String,
 
     /// The plugin runtime version compatible with.
-    /// 
+    ///
     /// The version must format as [semver2.0](https://semver.org/)
     pub runtime_version: String,
 
@@ -54,7 +108,7 @@ pub struct PluginManifestJsonData {
     pub tags: Vec<String>,
 
     /// The plugin supported screen types.
-    /// 
+    ///
     /// The screen types must be one of the following:
     /// - `compact`: Compact screen such as Mobile phone.
     /// - `medium`: Medium screen such as Tablet.
@@ -65,7 +119,7 @@ pub struct PluginManifestJsonData {
     pub variables: serde_json::Value,
 
     /// The plugin dataset.
-    pub dataset: Vec<serde_json::Value>,
+    pub dataset: Vec<DatasetJsonData>,
 }
 
 #[cfg(test)]
@@ -85,7 +139,21 @@ mod tests {
             tags: vec!["test".to_string(), "example".to_string()],
             supported_screen_types: vec!["mobile".to_string(), "tablet".to_string()],
             variables: serde_json::json!({}),
-            dataset: vec![],
+            dataset: vec![DatasetJsonData {
+                id: "test_dataset".to_string(),
+                url: "https://api.example.com/data".to_string(),
+                url_compact: None,
+                url_medium: None,
+                url_expanded: None,
+                js: None,
+                js_compact: None,
+                js_medium: None,
+                js_expanded: None,
+                dsl: None,
+                dsl_compact: None,
+                dsl_medium: None,
+                dsl_expanded: None,
+            }],
         };
 
         assert_eq!(manifest.id, "test_id");
@@ -110,10 +178,23 @@ mod tests {
                 "key1": "value1",
                 "key2": 123
             }),
-            dataset: vec![serde_json::json!({
-                "name": "data1",
-                "value": "value1"
-            })],
+            dataset: vec![DatasetJsonData {
+                id: "data1".to_string(),
+                url: "https://api.example.com/data1".to_string(),
+                url_compact: None,
+                url_medium: None,
+                url_expanded: None,
+                js: Some("function process(data) { return data; }".to_string()),
+                js_compact: None,
+                js_medium: None,
+                js_expanded: None,
+                dsl: Some(serde_json::json!({
+                    "type": "json"
+                })),
+                dsl_compact: None,
+                dsl_medium: None,
+                dsl_expanded: None,
+            }],
         };
 
         let json_string = serde_json::to_string_pretty(&manifest).unwrap();
@@ -128,7 +209,7 @@ mod tests {
             deserialized_manifest.runtime_version
         );
     }
-    
+
     #[test]
     fn test_plugin_manifest_parent_field() {
         // Test with string parent
@@ -148,9 +229,9 @@ mod tests {
 
         let json_string = serde_json::to_string_pretty(&manifest_with_string_parent).unwrap();
         let deserialized: PluginManifestJsonData = serde_json::from_str(&json_string).unwrap();
-        
+
         assert_eq!(manifest_with_string_parent.parent, deserialized.parent);
-        
+
         // Test with object parent
         let manifest_with_object_parent = PluginManifestJsonData {
             parent: Some(serde_json::json!({
@@ -172,7 +253,7 @@ mod tests {
 
         let json_string = serde_json::to_string_pretty(&manifest_with_object_parent).unwrap();
         let deserialized: PluginManifestJsonData = serde_json::from_str(&json_string).unwrap();
-        
+
         assert_eq!(manifest_with_object_parent.parent, deserialized.parent);
     }
 
@@ -204,27 +285,64 @@ mod tests {
 
         let json_string = serde_json::to_string_pretty(&manifest).unwrap();
         let deserialized: PluginManifestJsonData = serde_json::from_str(&json_string).unwrap();
-        
+
         assert_eq!(complex_variables, deserialized.variables);
     }
 
     #[test]
     fn test_plugin_manifest_dataset_field() {
         let complex_dataset = vec![
-            serde_json::json!({
-                "type": "user",
-                "data": {
-                    "name": "John Doe",
-                    "age": 30
-                }
-            }),
-            serde_json::json!({
-                "type": "product",
-                "data": {
-                    "name": "Product 1",
-                    "price": 99.99
-                }
-            })
+            DatasetJsonData {
+                id: "user_data".to_string(),
+                url: "https://api.example.com/users".to_string(),
+                url_compact: Some("https://api.example.com/users/compact".to_string()),
+                url_medium: Some("https://api.example.com/users/medium".to_string()),
+                url_expanded: Some("https://api.example.com/users/expanded".to_string()),
+                js: Some("function parse(data) { return JSON.parse(data); }".to_string()),
+                js_compact: Some(
+                    "function parse_compact(data) { return JSON.parse(data); }".to_string(),
+                ),
+                js_medium: Some(
+                    "function parse_medium(data) { return JSON.parse(data); }".to_string(),
+                ),
+                js_expanded: Some(
+                    "function parse_expanded(data) { return JSON.parse(data); }".to_string(),
+                ),
+                dsl: Some(serde_json::json!({
+                    "parser": "json",
+                    "fields": ["name", "age"]
+                })),
+                dsl_compact: Some(serde_json::json!({
+                    "parser@compact": "json",
+                    "fields@compact": ["name", "age"]
+                })),
+                dsl_medium: Some(serde_json::json!({
+                    "parser@medium": "json",
+                    "fields@medium": ["name", "age"]
+                })),
+                dsl_expanded: Some(serde_json::json!({
+                    "parser@expanded": "json",
+                    "fields@expanded": ["name", "age"]
+                })),
+            },
+            DatasetJsonData {
+                id: "product_data".to_string(),
+                url: "https://api.example.com/products".to_string(),
+                url_compact: None,
+                url_medium: None,
+                url_expanded: None,
+                js: None,
+                js_compact: None,
+                js_medium: None,
+                js_expanded: None,
+                dsl: Some(serde_json::json!({
+                    "parser": "json",
+                    "fields": ["name", "price"]
+                })),
+                dsl_compact: None,
+                dsl_medium: None,
+                dsl_expanded: None,
+            },
         ];
 
         let manifest = PluginManifestJsonData {
@@ -243,7 +361,99 @@ mod tests {
 
         let json_string = serde_json::to_string_pretty(&manifest).unwrap();
         let deserialized: PluginManifestJsonData = serde_json::from_str(&json_string).unwrap();
+
+        assert!(json_string.contains("url@compact"));
+        assert!(json_string.contains("url@medium"));
+        assert!(json_string.contains("url@expanded"));
+
+        assert!(json_string.contains("js@compact"));
+        assert!(json_string.contains("js@medium"));
+        assert!(json_string.contains("js@expanded"));
         
-        assert_eq!(complex_dataset, deserialized.dataset);
+        assert!(json_string.contains("dsl@compact"));
+        assert!(json_string.contains("dsl@medium"));
+        assert!(json_string.contains("dsl@expanded"));
+        
+        assert_eq!(complex_dataset.len(), deserialized.dataset.len());
+        assert_eq!(complex_dataset[0].id, deserialized.dataset[0].id);
+        assert_eq!(complex_dataset[0].url, deserialized.dataset[0].url);
+        assert_eq!(
+            complex_dataset[0].url_compact,
+            deserialized.dataset[0].url_compact
+        );
+        assert_eq!(
+            complex_dataset[0].url_medium,
+            deserialized.dataset[0].url_medium
+        );
+        assert_eq!(
+            complex_dataset[0].url_expanded,
+            deserialized.dataset[0].url_expanded
+        );
+        assert_eq!(complex_dataset[0].js, deserialized.dataset[0].js);
+        assert_eq!(
+            complex_dataset[0].js_compact,
+            deserialized.dataset[0].js_compact
+        );
+        assert_eq!(
+            complex_dataset[0].js_medium,
+            deserialized.dataset[0].js_medium
+        );
+        assert_eq!(
+            complex_dataset[0].js_expanded,
+            deserialized.dataset[0].js_expanded
+        );
+        assert_eq!(complex_dataset[0].dsl, deserialized.dataset[0].dsl);
+        assert_eq!(
+            complex_dataset[0].dsl_compact,
+            deserialized.dataset[0].dsl_compact
+        );
+        assert_eq!(
+            complex_dataset[0].dsl_medium,
+            deserialized.dataset[0].dsl_medium
+        );
+        assert_eq!(
+            complex_dataset[0].dsl_expanded,
+            deserialized.dataset[0].dsl_expanded
+        );
+        assert_eq!(complex_dataset[1].id, deserialized.dataset[1].id);
+        assert_eq!(complex_dataset[1].url, deserialized.dataset[1].url);
+        assert_eq!(
+            complex_dataset[1].url_compact,
+            deserialized.dataset[1].url_compact
+        );
+        assert_eq!(
+            complex_dataset[1].url_medium,
+            deserialized.dataset[1].url_medium
+        );
+        assert_eq!(
+            complex_dataset[1].url_expanded,
+            deserialized.dataset[1].url_expanded
+        );
+        assert_eq!(complex_dataset[1].js, deserialized.dataset[1].js);
+        assert_eq!(
+            complex_dataset[1].js_compact,
+            deserialized.dataset[1].js_compact
+        );
+        assert_eq!(
+            complex_dataset[1].js_medium,
+            deserialized.dataset[1].js_medium
+        );
+        assert_eq!(
+            complex_dataset[1].js_expanded,
+            deserialized.dataset[1].js_expanded
+        );
+        assert_eq!(complex_dataset[1].dsl, deserialized.dataset[1].dsl);
+        assert_eq!(
+            complex_dataset[1].dsl_compact,
+            deserialized.dataset[1].dsl_compact
+        );
+        assert_eq!(
+            complex_dataset[1].dsl_medium,
+            deserialized.dataset[1].dsl_medium
+        );
+        assert_eq!(
+            complex_dataset[1].dsl_expanded,
+            deserialized.dataset[1].dsl_expanded
+        );
     }
 }
