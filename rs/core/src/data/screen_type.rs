@@ -1,3 +1,5 @@
+use std::hash::Hash;
+
 /*
 * Copyright (c) 2025. NESP Technology Corporation. All rights reserved.
 *
@@ -14,4 +16,42 @@ pub enum ScreenType {
     Compact,
     Medium,
     Expanded,
+}
+
+impl ScreenType {
+    pub fn from_string(string: String) -> Result<ScreenType, String> {
+        match string.to_lowercase().as_str() {
+            "compact" => Ok(ScreenType::Compact),
+            "medium" => Ok(ScreenType::Medium),
+            "expanded" => Ok(ScreenType::Expanded),
+            _ => Err(format!("Invalid screen type: {}", string)),
+        }
+    }
+}
+
+impl PartialEq for ScreenType {
+    fn ne(&self, other: &Self) -> bool {
+        !self.eq(other)
+    }
+
+    fn eq(&self, other: &Self) -> bool {
+        core::mem::discriminant(self) == core::mem::discriminant(other)
+    }
+}
+
+impl Eq for ScreenType {}
+
+impl Hash for ScreenType {
+    fn hash_slice<H: std::hash::Hasher>(data: &[Self], state: &mut H)
+    where
+        Self: Sized,
+    {
+        for piece in data {
+            piece.hash(state)
+        }
+    }
+
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        core::mem::discriminant(self).hash(state);
+    }
 }

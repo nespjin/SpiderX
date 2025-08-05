@@ -11,6 +11,7 @@
 */
 
 use serde::{Deserialize, Serialize};
+use serde_json::Error;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -120,6 +121,16 @@ pub struct PluginManifestJsonData {
 
     /// The plugin dataset.
     pub dataset: Vec<DatasetJsonData>,
+}
+
+impl PluginManifestJsonData {
+    pub fn parse(json_string: String) -> Result<PluginManifestJsonData, Error> {
+        serde_json::from_str(&json_string)
+    }
+
+    pub fn to_json(&self) -> Result<String, Error> {
+        serde_json::to_string_pretty(self)
+    }
 }
 
 #[cfg(test)]
@@ -369,11 +380,11 @@ mod tests {
         assert!(json_string.contains("js@compact"));
         assert!(json_string.contains("js@medium"));
         assert!(json_string.contains("js@expanded"));
-        
+
         assert!(json_string.contains("dsl@compact"));
         assert!(json_string.contains("dsl@medium"));
         assert!(json_string.contains("dsl@expanded"));
-        
+
         assert_eq!(complex_dataset.len(), deserialized.dataset.len());
         assert_eq!(complex_dataset[0].id, deserialized.dataset[0].id);
         assert_eq!(complex_dataset[0].url, deserialized.dataset[0].url);
