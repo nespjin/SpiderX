@@ -1,2 +1,2 @@
 [workspace]
-members = ["crates/compiler", "crates/core", "crates/loader"]
+members = ["packages/*"]
