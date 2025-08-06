@@ -14,36 +14,38 @@
 
 use core::data::plugin::Plugin;
 
-use diesel::SqliteConnection;
-
 use crate::{
-    database::{dataset_dao, plugin_dao},
+    database::{database, dataset_dao, plugin_dao},
     repository::model::plugin,
 };
 
-pub(crate) struct PluginRepository {
-    sqlite_connection: SqliteConnection,
+pub(crate) struct PluginRepository<'a> {
+    database_path: &'a str,
 }
 
-impl PluginRepository {
-    pub(crate) fn new(sqlite_connection: SqliteConnection) -> PluginRepository {
-        PluginRepository { sqlite_connection }
+impl<'a> PluginRepository<'a> {
+    pub(crate) fn new(database_path: &'a str) -> PluginRepository<'a> {
+        PluginRepository { database_path }
     }
 
-    pub(crate) fn save_plugin(&mut self, plugin: Plugin) -> Result<(), String> {
+    pub(crate) fn save_plugin(&self, plugin: Plugin) -> Result<(), String> {
+        let mut sqlite_connection =
+            database::open(self.database_path).map_err(|e| e.to_string())?;
         let entities = plugin::plugins_to_entities(vec![plugin])?;
-        let result = plugin_dao::upsert_all(&mut self.sqlite_connection, &entities)
-            .map_err(|e| e.to_string())?;
+        let result =
+            plugin_dao::upsert_all(&mut sqlite_connection, &entities).map_err(|e| e.to_string())?;
         if result == 0 {
             return Err("PluginRepository save_plugin failed".to_string());
         }
         Ok(())
     }
 
-    pub(crate) fn save_plugins(&mut self, plugins: Vec<Plugin>) -> Result<(), String> {
+    pub(crate) fn save_plugins(&self, plugins: Vec<Plugin>) -> Result<(), String> {
+        let mut sqlite_connection =
+            database::open(self.database_path).map_err(|e| e.to_string())?;
         let entities = plugin::plugins_to_entities(plugins)?;
-        let result = plugin_dao::upsert_all(&mut self.sqlite_connection, &entities)
-            .map_err(|e| e.to_string())?;
+        let result =
+            plugin_dao::upsert_all(&mut sqlite_connection, &entities).map_err(|e| e.to_string())?;
         if result == 0 {
             return Err("PluginRepository save_plugins failed".to_string());
         }
@@ -51,12 +53,13 @@ impl PluginRepository {
     }
 
     pub(crate) fn get_plugins(&mut self) -> Result<Vec<Plugin>, String> {
-        let entities =
-            plugin_dao::find_all(&mut self.sqlite_connection).map_err(|e| e.to_string())?;
+        let mut sqlite_connection =
+            database::open(self.database_path).map_err(|e| e.to_string())?;
+        let entities = plugin_dao::find_all(&mut sqlite_connection).map_err(|e| e.to_string())?;
         let mut dataset_entities = Vec::new();
         for entity in &entities {
             let datasets =
-                dataset_dao::find_by_plugin_id(&mut self.sqlite_connection, entity.id.as_str())
+                dataset_dao::find_by_plugin_id(&mut sqlite_connection, entity.id.as_str())
                     .map_err(|e| e.to_string())?;
             dataset_entities.push(datasets);
         }
@@ -65,8 +68,10 @@ impl PluginRepository {
     }
 
     pub(crate) fn get_plugin(&mut self, id: &str) -> Result<Plugin, String> {
+        let mut sqlite_connection =
+            database::open(self.database_path).map_err(|e| e.to_string())?;
         let entity =
-            plugin_dao::find_by_id(&mut self.sqlite_connection, id).map_err(|e| e.to_string())?;
+            plugin_dao::find_by_id(&mut sqlite_connection, id).map_err(|e| e.to_string())?;
         let dataset_entities = dataset_dao::find_by_plugin_id(&mut self.sqlite_connection, id)
             .map_err(|e| e.to_string())?;
         let plugin = plugin::entity_to_external_model(entity, dataset_entities)?;
@@ -74,13 +79,16 @@ impl PluginRepository {
     }
 
     pub(crate) fn delete_plugin(&mut self, id: &str) -> Result<(), String> {
-        let _ =
-            plugin_dao::delete_by_id(&mut self.sqlite_connection, id).map_err(|e| e.to_string())?;
+        let mut sqlite_connection =
+            database::open(self.database_path).map_err(|e| e.to_string())?;
+        let _ = plugin_dao::delete_by_id(&mut sqlite_connection, id).map_err(|e| e.to_string())?;
         Ok(())
     }
 
     pub(crate) fn delete_plugins(&mut self) -> Result<(), String> {
-        let _ = plugin_dao::delete_all(&mut self.sqlite_connection).map_err(|e| e.to_string())?;
+        let mut sqlite_connection =
+            database::open(self.database_path).map_err(|e| e.to_string())?;
+        let _ = plugin_dao::delete_all(&mut sqlite_connection).map_err(|e| e.to_string())?;
         Ok(())
     }
 }

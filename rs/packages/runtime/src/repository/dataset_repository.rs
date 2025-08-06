@@ -14,55 +14,67 @@
 
 use core::data::plugin::Dataset;
 
-use diesel::SqliteConnection;
+use crate::{
+    database::{database, dataset_dao},
+    repository::model::dataset,
+};
 
-use crate::{database::dataset_dao, repository::model::dataset};
-
-pub(crate) struct DatasetRepository {
-    sqlite_connection: SqliteConnection,
+pub(crate) struct DatasetRepository<'a> {
+    database_path: &'a str,
 }
 
-impl DatasetRepository {
-    pub(crate) fn new(sqlite_connection: SqliteConnection) -> DatasetRepository {
-        DatasetRepository { sqlite_connection }
+impl<'a> DatasetRepository<'a> {
+    pub(crate) fn new(database_path: &'a str) -> DatasetRepository<'a> {
+        DatasetRepository { database_path }
     }
 
-    pub(crate) fn save_dataset(&mut self, plugin_id: &str, dataset: Dataset) -> Result<(), String> {
+    pub(crate) fn save_dataset(&self, plugin_id: &str, dataset: Dataset) -> Result<(), String> {
+        let mut sqlite_connection =
+            database::open(self.database_path).map_err(|e| e.to_string())?;
         let entity = dataset::dataset_to_entity(plugin_id.to_string(), dataset)?;
-        dataset_dao::upsert(&mut self.sqlite_connection, &entity).map_err(|e| e.to_string())?;
+        dataset_dao::upsert(&mut sqlite_connection, &entity).map_err(|e| e.to_string())?;
         Ok(())
     }
 
     pub(crate) fn save_datasets(
-        &mut self,
+        &self,
         plugin_id: &str,
         datasets: Vec<Dataset>,
     ) -> Result<(), String> {
+        let mut sqlite_connection =
+            database::open(self.database_path).map_err(|e| e.to_string())?;
         let entities = dataset::datasets_to_entities(plugin_id.to_string(), datasets)?;
-        dataset_dao::upsert_all(&mut self.sqlite_connection, &entities)
-            .map_err(|e| e.to_string())?;
+        dataset_dao::upsert_all(&mut sqlite_connection, &entities).map_err(|e| e.to_string())?;
         Ok(())
     }
 
-    pub(crate) fn get_datasets(&mut self, plugin_id: &str) -> Result<Vec<Dataset>, String> {
-        let entities = dataset_dao::find_by_plugin_id(&mut self.sqlite_connection, plugin_id)
+    pub(crate) fn get_datasets(&self, plugin_id: &str) -> Result<Vec<Dataset>, String> {
+        let mut sqlite_connection =
+            database::open(self.database_path).map_err(|e| e.to_string())?;
+        let entities = dataset_dao::find_by_plugin_id(&mut sqlite_connection, plugin_id)
             .map_err(|e| e.to_string())?;
         Ok(dataset::datasets_entities_to_external_models(entities)?)
     }
 
-    pub(crate) fn get_dataset(&mut self, id: &str) -> Result<Dataset, String> {
+    pub(crate) fn get_dataset(&self, id: &str) -> Result<Dataset, String> {
+        let mut sqlite_connection =
+            database::open(self.database_path).map_err(|e| e.to_string())?;
         let entity =
-            dataset_dao::find_by_id(&mut self.sqlite_connection, id).map_err(|e| e.to_string())?;
+            dataset_dao::find_by_id(&mut sqlite_connection, id).map_err(|e| e.to_string())?;
         Ok(dataset::dataset_entity_to_external_model(entity)?)
     }
 
-    pub(crate) fn delete_dataset(&mut self, id: &str) -> Result<(), String> {
-        dataset_dao::delete_by_id(&mut self.sqlite_connection, id).map_err(|e| e.to_string())?;
+    pub(crate) fn delete_dataset(&self, id: &str) -> Result<(), String> {
+        let mut sqlite_connection =
+            database::open(self.database_path).map_err(|e| e.to_string())?;
+        dataset_dao::delete_by_id(&mut sqlite_connection, id).map_err(|e| e.to_string())?;
         Ok(())
     }
 
-    pub(crate) fn delete_datasets(&mut self, plugin_id: &str) -> Result<(), String> {
-        dataset_dao::delete_by_plugin_id(&mut self.sqlite_connection, plugin_id)
+    pub(crate) fn delete_datasets(&self, plugin_id: &str) -> Result<(), String> {
+        let mut sqlite_connection =
+            database::open(self.database_path).map_err(|e| e.to_string())?;
+        dataset_dao::delete_by_plugin_id(&mut sqlite_connection, plugin_id)
             .map_err(|e| e.to_string())?;
         Ok(())
     }

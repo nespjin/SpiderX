@@ -14,7 +14,7 @@
 
 use diesel::{Connection, ConnectionResult, SqliteConnection};
 
-pub async fn open(path: &str) -> ConnectionResult<SqliteConnection> {
+pub(crate) fn open(path: &str) -> ConnectionResult<SqliteConnection> {
     // sqlite://path/to/db.sqlite?mode=rwc;
     let path = format!("sqlite://{}?mode=rw", path);
     let db: SqliteConnection = SqliteConnection::establish(&path)?;
