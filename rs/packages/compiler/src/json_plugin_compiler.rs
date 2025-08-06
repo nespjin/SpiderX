@@ -67,7 +67,7 @@ impl PluginCompiler for JsonPluginCompiler {
         let screen_type_results = json_data
             .supported_screen_types
             .iter()
-            .map(|e| ScreenType::from_string(e.to_string()));
+            .map(|e| ScreenType::from_str(e));
 
         let mut screen_types: Vec<ScreenType> = vec![];
         for type_result in screen_type_results {

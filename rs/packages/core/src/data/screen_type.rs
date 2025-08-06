@@ -21,12 +21,20 @@ pub enum ScreenType {
 }
 
 impl ScreenType {
-    pub fn from_string(string: String) -> Result<ScreenType, String> {
+    pub fn from_str(string: &str) -> Result<ScreenType, String> {
         match string.to_lowercase().as_str() {
             "compact" => Ok(ScreenType::Compact),
             "medium" => Ok(ScreenType::Medium),
             "expanded" => Ok(ScreenType::Expanded),
             _ => Err(format!("Invalid screen type: {}", string)),
+        }
+    }
+
+    pub fn as_str(&self) -> &str {
+        match self {
+            ScreenType::Compact => "compact",
+            ScreenType::Medium => "medium",
+            ScreenType::Expanded => "expanded",
         }
     }
 }

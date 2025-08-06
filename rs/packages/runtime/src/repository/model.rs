@@ -13,3 +13,4 @@
 // limitations under the License.
 
 pub(crate) mod dataset;
+pub(crate) mod plugin;
