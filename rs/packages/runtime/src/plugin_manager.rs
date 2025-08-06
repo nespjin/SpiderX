@@ -17,6 +17,11 @@ use std::sync::{Arc, Mutex, OnceLock};
 
 use compiler::{json_plugin_compiler::JsonPluginCompiler, plugin_compiler::PluginCompiler};
 
+use crate::repository::{
+    dataset_repository::DatasetRepository,
+    plugin_repository::{self, PluginRepository},
+};
+
 pub struct PluginManagerConfig {
     pub database_path: String,
 }
@@ -28,22 +33,34 @@ pub enum PluginSource {
 
 pub struct PluginManager {
     config: Option<PluginManagerConfig>,
+    dataset_repository: Option<DatasetRepository>,
+    plugin_repository: Option<PluginRepository>,
 }
 
 impl PluginManager {
     fn get_instance() -> Arc<Mutex<PluginManager>> {
         static INSTANCE: OnceLock<Arc<Mutex<PluginManager>>> = OnceLock::new();
         INSTANCE
-            .get_or_init(|| Arc::new(Mutex::new(PluginManager { config: None })))
+            .get_or_init(|| {
+                Arc::new(Mutex::new(PluginManager {
+                    config: None,
+                    dataset_repository: None,
+                    plugin_repository: None,
+                }))
+            })
             .clone()
     }
 
     pub fn init(&mut self, config: PluginManagerConfig) {
+        self.plugin_repository = Some(PluginRepository::new(config.database_path.clone()));
+        self.dataset_repository = Some(DatasetRepository::new(config.database_path.clone()));
         self.config = Some(config);
     }
 
-    pub fn database_path(&self) -> String {
-        todo!()
+    pub fn database_path(&self) -> Option<String> {
+        self.config
+            .as_ref()
+            .map(|config| config.database_path.clone())
     }
 
     pub fn install_plugin(&self, source: &PluginSource) -> Result<(), String> {
@@ -68,7 +85,20 @@ impl PluginManager {
     }
 
     /// Uninstall a plugin by id
-    pub fn uninstall_plugin(&self, id: &str) -> Result<(), String> {
-        todo!()
+    pub fn uninstall_plugin(&mut self, id: &str) -> Result<(), String> {
+        self.ensure_initialized()?;
+        self.plugin_repository.as_ref().unwrap().delete_plugin(id)?;
+        self.dataset_repository
+            .as_ref()
+            .unwrap()
+            .delete_datasets(id)?;
+        Ok(())
+    }
+
+    fn ensure_initialized(&self) -> Result<(), String> {
+        if self.config.is_none() {
+            return Err("Not initialized".to_string());
+        }
+        Ok(())
     }
 }
