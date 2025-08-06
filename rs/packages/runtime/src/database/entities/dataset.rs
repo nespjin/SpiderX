@@ -15,15 +15,21 @@
 use diesel::prelude::*;
 
 #[derive(Insertable, Queryable, Selectable, AsChangeset, Debug, Clone)]
-#[diesel(table_name = crate::database::schema::plugin)]
+#[diesel(table_name = crate::database::schema::dataset)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
-pub struct PluginEntity {
+pub struct DatasetEntity {
     pub id: String,
-    pub name: String,
-    pub author: Option<String>,
-    pub version: String,
-    pub runtime_version: String,
-    pub description: Option<String>,
-    pub tags: Option<String>,
-    pub supported_screen_types: Option<String>,
+    pub plugin_id: String,
+    pub url: String,
+    pub url_compact: Option<String>,
+    pub url_medium: Option<String>,
+    pub url_expanded: Option<String>,
+    pub js: Option<String>,
+    pub js_compact: Option<String>,
+    pub js_medium: Option<String>,
+    pub js_expanded: Option<String>,
+    pub dsl_default: Option<String>,
+    pub dsl_compact: Option<String>,
+    pub dsl_medium: Option<String>,
+    pub dsl_expanded: Option<String>,
 }

@@ -1,0 +1,74 @@
+// Copyright (c) 2025. NESP Technology Corporation.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//       http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+use diesel::{
+    ExpressionMethods, QueryDsl, QueryResult, RunQueryDsl, SelectableHelper, SqliteConnection,
+};
+
+use crate::database::{entities::dataset::DatasetEntity, schema::dataset};
+
+pub(crate) fn upsert(
+    conn: &mut SqliteConnection,
+    entity: &DatasetEntity,
+) -> QueryResult<DatasetEntity> {
+    diesel::insert_or_ignore_into(dataset::table)
+        .values(entity)
+        .on_conflict(dataset::id)
+        .do_update()
+        .set(entity)
+        .returning(DatasetEntity::as_returning())
+        .get_result(conn)
+}
+
+pub(crate) fn update_by_id(
+    conn: &mut SqliteConnection,
+    id: &str,
+    entity: &DatasetEntity,
+) -> QueryResult<usize> {
+    diesel::update(dataset::table.filter(dataset::id.eq(id)))
+        .set(entity)
+        .execute(conn)
+}
+
+pub(crate) fn find_by_id(conn: &mut SqliteConnection, id: &str) -> QueryResult<DatasetEntity> {
+    dataset::table.filter(dataset::id.eq(id)).first(conn)
+}
+
+pub(crate) fn find_by_plugin_id(
+    conn: &mut SqliteConnection,
+    plugin_id: &str,
+) -> QueryResult<Vec<DatasetEntity>> {
+    dataset::table
+        .filter(dataset::plugin_id.eq(plugin_id))
+        .load(conn)
+}
+
+pub(crate) fn find_all(conn: &mut SqliteConnection) -> QueryResult<Vec<DatasetEntity>> {
+    dataset::table.load(conn)
+}
+
+pub(crate) fn delete_by_plugin_id(
+    conn: &mut SqliteConnection,
+    plugin_id: &str,
+) -> QueryResult<usize> {
+    diesel::delete(dataset::table.filter(dataset::plugin_id.eq(plugin_id))).execute(conn)
+}
+
+pub(crate) fn delete_by_id(conn: &mut SqliteConnection, id: &str) -> QueryResult<usize> {
+    diesel::delete(dataset::table.filter(dataset::id.eq(id))).execute(conn)
+}
+
+pub(crate) fn delete_all(conn: &mut SqliteConnection) -> QueryResult<usize> {
+    diesel::delete(dataset::table).execute(conn)
+}

@@ -12,5 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod database;
-pub mod entities;
+pub(crate) mod database;
+pub(crate) mod dataset_dao;
+pub(crate) mod entities;
+pub(crate) mod plugin_dao;
+pub(crate) mod schema;
