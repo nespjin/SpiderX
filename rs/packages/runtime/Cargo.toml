@@ -1,0 +1,11 @@
+[package]
+name = "runtime"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+compiler = { path = "../compiler" }
+core = { path = "../core" }
+loader = { path = "../loader" }
+log = "0.4.27"
+sea-orm = { version = "^0.12.0", features = [ "sqlx-sqlite", "runtime-async-std-native-tls", "macros" ] }
