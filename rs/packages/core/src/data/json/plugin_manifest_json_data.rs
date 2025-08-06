@@ -126,8 +126,8 @@ pub struct PluginManifestJsonData {
 }
 
 impl PluginManifestJsonData {
-    pub fn parse(json_string: String) -> Result<PluginManifestJsonData, Error> {
-        serde_json::from_str(&json_string)
+    pub fn parse(json_string: &String) -> Result<PluginManifestJsonData, Error> {
+        serde_json::from_str(json_string)
     }
 
     pub fn to_json(&self) -> Result<String, Error> {
