@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::collections::HashMap;
-
 use crate::data::screen_type::ScreenType;
 
+#[derive(Debug, Clone)]
 pub struct Dataset {
     pub id: String,
     pub url: String,
@@ -26,13 +25,14 @@ pub struct Dataset {
     pub js_compact: Option<String>,
     pub js_medium: Option<String>,
     pub js_expanded: Option<String>,
-    pub dsl: Option<HashMap<String, String>>,
-    pub dsl_compact: Option<HashMap<String, String>>,
-    pub dsl_medium: Option<HashMap<String, String>>,
-    pub dsl_expanded: Option<HashMap<String, String>>,
+    pub dsl: Option<serde_json::Value>,
+    pub dsl_compact: Option<serde_json::Value>,
+    pub dsl_medium: Option<serde_json::Value>,
+    pub dsl_expanded: Option<serde_json::Value>,
 }
 
 /// The struct that represents a plugin.
+#[derive(Debug, Clone)]
 pub struct Plugin {
     pub id: String,
     pub name: String,

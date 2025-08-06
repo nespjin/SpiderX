@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 use diesel::{
-    ExpressionMethods, QueryDsl, QueryResult, RunQueryDsl, SelectableHelper, SqliteConnection,
+    Connection, ExpressionMethods, QueryDsl, QueryResult, RunQueryDsl, SelectableHelper,
+    SqliteConnection,
 };
 
 use crate::database::{entities::plugin::PluginEntity, schema::plugin};
@@ -30,6 +30,51 @@ pub(crate) fn upsert(
         .set(entity)
         .returning(PluginEntity::as_returning())
         .get_result(conn)
+}
+
+pub(crate) fn upsert_all(
+    conn: &mut SqliteConnection,
+    entities: &[PluginEntity],
+) -> QueryResult<usize> {
+    conn.transaction(|conn: &mut SqliteConnection| {
+        let mut count: usize = 0;
+        for entity in entities {
+            diesel::insert_or_ignore_into(plugin::table)
+                .values(entity)
+                .on_conflict(plugin::id)
+                .do_update()
+                .set(entity)
+                .returning(PluginEntity::as_returning())
+                .get_result(conn)?;
+            count += 1;
+        }
+        Ok(count)
+    })
+}
+
+pub(crate) fn insert_all(
+    conn: &mut SqliteConnection,
+    entities: &[PluginEntity],
+) -> QueryResult<usize> {
+    diesel::insert_or_ignore_into(plugin::table)
+        .values(entities)
+        .execute(conn)
+}
+
+pub(crate) fn update_all(
+    conn: &mut SqliteConnection,
+    entities: &[PluginEntity],
+) -> QueryResult<usize> {
+    conn.transaction(|conn: &mut SqliteConnection| {
+        let mut count: usize = 0;
+        for entity in entities {
+            diesel::update(plugin::table.filter(plugin::id.eq(&entity.id)))
+                .set(entity)
+                .execute(conn)?;
+            count += 1;
+        }
+        Ok(count)
+    })
 }
 
 pub(crate) fn update_by_id(
@@ -49,7 +94,6 @@ pub(crate) fn find_by_id(conn: &mut SqliteConnection, id: &str) -> QueryResult<P
 pub(crate) fn find_all(conn: &mut SqliteConnection) -> QueryResult<Vec<PluginEntity>> {
     plugin::table.load(conn)
 }
-
 
 pub(crate) fn delete_by_id(conn: &mut SqliteConnection, id: &str) -> QueryResult<usize> {
     diesel::delete(plugin::table.filter(plugin::id.eq(id))).execute(conn)

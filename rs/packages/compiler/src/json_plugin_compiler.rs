@@ -17,7 +17,7 @@ use core::data::{
     plugin::{Dataset, Plugin},
     screen_type::ScreenType,
 };
-use std::{collections::HashMap, string::String};
+use std::string::String;
 
 use serde_json::Error;
 
@@ -57,10 +57,10 @@ impl PluginCompiler for JsonPluginCompiler {
                 js_compact: json_dataset.js_compact.clone(),
                 js_medium: json_dataset.js_medium.clone(),
                 js_expanded: json_dataset.js_expanded.clone(),
-                dsl: Some(HashMap::new()),
-                dsl_compact: Some(HashMap::new()),
-                dsl_medium: Some(HashMap::new()),
-                dsl_expanded: Some(HashMap::new()),
+                dsl: json_dataset.dsl.clone(),
+                dsl_compact: json_dataset.dsl_compact.clone(),
+                dsl_medium: json_dataset.dsl_medium.clone(),
+                dsl_expanded: json_dataset.dsl_expanded.clone(),
             })
             .collect::<Vec<_>>();
 

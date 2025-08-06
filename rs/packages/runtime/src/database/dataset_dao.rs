@@ -13,7 +13,8 @@
 // limitations under the License.
 
 use diesel::{
-    ExpressionMethods, QueryDsl, QueryResult, RunQueryDsl, SelectableHelper, SqliteConnection,
+    Connection, ExpressionMethods, QueryDsl, QueryResult, RunQueryDsl, SelectableHelper,
+    SqliteConnection,
 };
 
 use crate::database::{entities::dataset::DatasetEntity, schema::dataset};
@@ -29,6 +30,51 @@ pub(crate) fn upsert(
         .set(entity)
         .returning(DatasetEntity::as_returning())
         .get_result(conn)
+}
+
+pub(crate) fn upsert_all(
+    conn: &mut SqliteConnection,
+    entities: &[DatasetEntity],
+) -> QueryResult<usize> {
+    conn.transaction(|conn: &mut SqliteConnection| {
+        let mut count: usize = 0;
+        for entity in entities {
+            diesel::insert_or_ignore_into(dataset::table)
+                .values(entity)
+                .on_conflict(dataset::id)
+                .do_update()
+                .set(entity)
+                .returning(DatasetEntity::as_returning())
+                .get_result(conn)?;
+            count += 1;
+        }
+        Ok(count)
+    })
+}
+
+pub(crate) fn insert_all(
+    conn: &mut SqliteConnection,
+    entities: &[DatasetEntity],
+) -> QueryResult<usize> {
+    diesel::insert_or_ignore_into(dataset::table)
+        .values(entities)
+        .execute(conn)
+}
+
+pub(crate) fn update_all(
+    conn: &mut SqliteConnection,
+    entities: &[DatasetEntity],
+) -> QueryResult<usize> {
+    conn.transaction(|conn: &mut SqliteConnection| {
+        let mut count: usize = 0;
+        for entity in entities {
+            diesel::update(dataset::table.filter(dataset::id.eq(&entity.id)))
+                .set(entity)
+                .execute(conn)?;
+            count += 1;
+        }
+        Ok(count)
+    })
 }
 
 pub(crate) fn update_by_id(
