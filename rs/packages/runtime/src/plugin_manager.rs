@@ -13,13 +13,16 @@
 // limitations under the License.
 
 use core::data::plugin::Plugin;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::{
+    fs,
+    sync::{Arc, Mutex, OnceLock},
+};
 
 use compiler::{json_plugin_compiler::JsonPluginCompiler, plugin_compiler::PluginCompiler};
 
 use crate::repository::{
     dataset_repository::DatasetRepository,
-    plugin_repository::{self, PluginRepository},
+    plugin_repository::PluginRepository,
 };
 
 pub struct PluginManagerConfig {
@@ -66,21 +69,20 @@ impl PluginManager {
     pub fn install_plugin(&self, source: &PluginSource) -> Result<(), String> {
         match source {
             PluginSource::ManifestJson(json) => self.install_plugin_from_manifest_json(json),
-            PluginSource::ManifestJsonFile(path) => todo!(),
+            PluginSource::ManifestJsonFile(path) => fs::read_to_string(path)
+                .map_err(|err| format!("Failed to read plugin manifest file: {}", err))
+                .and_then(|json| self.install_plugin_from_manifest_json(&json)),
         }
     }
 
     fn install_plugin_from_manifest_json(&self, json: &String) -> Result<(), String> {
-        let compiler_result = JsonPluginCompiler::parse(json);
-        if let Err(error) = compiler_result {
-            return Err(error.to_string());
-        }
-        let compiler = compiler_result.unwrap();
-        self.do_install_plugin(&compiler.compile()?);
+        let compiler = JsonPluginCompiler::parse(json).map_err(|e| e.to_string())?;
+        self.do_install_plugin(&compiler.compile()?)?;
         Ok(())
     }
 
     fn do_install_plugin(&self, plugin: &Plugin) -> Result<(), String> {
+        self.ensure_initialized()?;
         todo!()
     }
 
