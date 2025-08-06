@@ -28,7 +28,7 @@ pub struct JsonPluginCompiler {
 }
 
 impl JsonPluginCompiler {
-    pub fn parse(json_string: String) -> Result<JsonPluginCompiler, Error> {
+    pub fn parse(json_string: &String) -> Result<JsonPluginCompiler, Error> {
         let json_data = PluginManifestJsonData::parse(json_string)?;
         Ok(JsonPluginCompiler::from_json_data(json_data))
     }
