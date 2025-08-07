@@ -15,6 +15,7 @@
 use core::data::plugin::Plugin;
 use std::{
     fs,
+    path::Path,
     sync::{Arc, Mutex, OnceLock},
 };
 
@@ -58,11 +59,21 @@ impl PluginManager {
         if self.config.is_some() {
             return Err("PluginManager has been initialized.".to_string());
         }
-        self.plugin_repository = Some(PluginRepository::new(config.database_path.clone()));
-        self.dataset_repository = Some(DatasetRepository::new(config.database_path.clone()));
+
+        let database_path_str = config.database_path.clone();
+        let database_path = Path::new(&database_path_str);
+        let database_parent_path = database_path.parent();
+        let is_database_parent_path_exists = &database_path.parent().map(|e| e.exists()).unwrap_or(true);
+        if !is_database_parent_path_exists {
+            fs::create_dir_all(&database_parent_path.unwrap()).map_err(|e| e.to_string())?;
+        }
+
+        self.plugin_repository = Some(PluginRepository::new(database_path_str.clone()));
+        self.dataset_repository = Some(DatasetRepository::new(database_path_str.clone()));
 
         // Initialize the database.
-        let mut conn = database::open(&config.database_path.clone()).map_err(|e| e.to_string())?;
+        let mut conn: diesel::SqliteConnection =
+            database::open(&database_path_str.clone()).map_err(|e| e.to_string())?;
         database::run_migrations(&mut conn).map_err(|e| e.to_string())?;
 
         self.config = Some(config);
@@ -122,5 +133,20 @@ impl PluginManager {
             return Err("Not initialized".to_string());
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_plugin_manager_init() {
+        let plugin_manager = PluginManager::get_instance();
+        let mut plugin_manager = plugin_manager.lock().unwrap();
+        let result = plugin_manager.init(PluginManagerConfig {
+            database_path: "target/runtime.db".to_string(),
+        });
+        assert!(result.is_ok());
     }
 }
