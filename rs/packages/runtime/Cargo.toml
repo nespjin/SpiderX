@@ -3,9 +3,17 @@ name = "runtime"
 version = "0.1.0"
 edition = "2024"
 
+
 [lib]
 name = "spiderx_runtime"
 crate-type = ["cdylib", "staticlib"]
+
+[features]
+default = []
+jni = []
+dart = []
+# android = ["jni"]
+# desktop = []
 
 [dependencies]
 compiler = { path = "../compiler" }
@@ -20,3 +28,4 @@ libsqlite3-sys = { version = "0.35.0", features = ["bundled"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 diesel_migrations = { version = "2.2.0", features = ["sqlite"] }
+jni = "0.21.1"

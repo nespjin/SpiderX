@@ -11,25 +11,3 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-// #![no_std]
-// #![crate_type = "staticlib"]
-// #![crate_type = "cdylib"]
-
-#[cfg(not(any(
-    target_os = "android",
-    target_os = "windows",
-    target_os = "macos",
-    target_os = "linux"
-)))]
-compile_error!("Only Android, Windows, MacOS, Linux are supported");
-
-pub(crate) mod database;
-pub(crate) mod dsl_engine;
-pub(crate) mod plugin_manager;
-pub(crate) mod repository;
-pub(crate) mod web_engine;
-
-// #[cfg(any(target_os = "android", feature = "jni"))]
-#[allow(non_snake_case)]
-pub(crate) mod jni_plugin_manager;
