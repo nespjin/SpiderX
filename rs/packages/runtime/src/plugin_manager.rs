@@ -21,8 +21,7 @@ use std::{
 use compiler::{json_plugin_compiler::JsonPluginCompiler, plugin_compiler::PluginCompiler};
 
 use crate::repository::{
-    dataset_repository::DatasetRepository,
-    plugin_repository::PluginRepository,
+    dataset_repository::DatasetRepository, plugin_repository::PluginRepository,
 };
 
 pub struct PluginManagerConfig {
@@ -77,13 +76,23 @@ impl PluginManager {
 
     fn install_plugin_from_manifest_json(&self, json: &String) -> Result<(), String> {
         let compiler = JsonPluginCompiler::parse(json).map_err(|e| e.to_string())?;
-        self.do_install_plugin(&compiler.compile()?)?;
+        self.do_install_plugin(compiler.compile()?)?;
         Ok(())
     }
 
-    fn do_install_plugin(&self, plugin: &Plugin) -> Result<(), String> {
+    fn do_install_plugin(&self, plugin: Plugin) -> Result<(), String> {
         self.ensure_initialized()?;
-        todo!()
+        let plugin_id = &plugin.id.to_string();
+        let datasets = plugin.datasets.clone();
+        self.plugin_repository
+            .as_ref()
+            .unwrap()
+            .save_plugin(plugin)?;
+        self.dataset_repository
+            .as_ref()
+            .unwrap()
+            .save_datasets(plugin_id, datasets)?;
+        Ok(())
     }
 
     /// Uninstall a plugin by id
