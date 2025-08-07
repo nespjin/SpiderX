@@ -3,6 +3,10 @@ name = "runtime"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "spiderx_runtime"
+crate-type = ["cdylib", "staticlib"]
+
 [dependencies]
 compiler = { path = "../compiler" }
 core = { path = "../core" }

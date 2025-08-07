@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// #![no_std]
+// #![crate_type = "staticlib"]
+// #![crate_type = "cdylib"]
+
 pub mod database;
 pub mod plugin_manager;
 pub mod repository;
