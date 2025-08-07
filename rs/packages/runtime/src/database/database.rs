@@ -12,11 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use diesel::{Connection, ConnectionResult, SqliteConnection};
+use std::error::Error;
+
+use diesel::{Connection, ConnectionResult, SqliteConnection, sqlite::Sqlite};
+use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
+
+const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
 pub(crate) fn open(path: &str) -> ConnectionResult<SqliteConnection> {
     // sqlite://path/to/db.sqlite?mode=rwc;
-    let path = format!("sqlite://{}?mode=rw", path);
+    let path = format!("sqlite://{}?mode=rwc", path);
     let db: SqliteConnection = SqliteConnection::establish(&path)?;
     Ok(db)
+}
+
+pub(crate) fn run_migrations(
+    connection: &mut impl MigrationHarness<Sqlite>,
+) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    // This will run the necessary migrations.
+    //
+    // See the documentation for `MigrationHarness` for
+    // all available methods.
+    connection.run_pending_migrations(MIGRATIONS)?;
+
+    Ok(())
 }

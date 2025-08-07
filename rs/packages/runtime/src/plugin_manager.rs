@@ -20,8 +20,9 @@ use std::{
 
 use compiler::{json_plugin_compiler::JsonPluginCompiler, plugin_compiler::PluginCompiler};
 
-use crate::repository::{
-    dataset_repository::DatasetRepository, plugin_repository::PluginRepository,
+use crate::{
+    database::database,
+    repository::{dataset_repository::DatasetRepository, plugin_repository::PluginRepository},
 };
 
 pub struct PluginManagerConfig {
@@ -53,10 +54,20 @@ impl PluginManager {
             .clone()
     }
 
-    pub fn init(&mut self, config: PluginManagerConfig) {
+    pub fn init(&mut self, config: PluginManagerConfig) -> Result<(), String> {
+        if self.config.is_some() {
+            return Err("PluginManager has been initialized.".to_string());
+        }
         self.plugin_repository = Some(PluginRepository::new(config.database_path.clone()));
         self.dataset_repository = Some(DatasetRepository::new(config.database_path.clone()));
+
+        // Initialize the database.
+        let mut conn = database::open(&config.database_path.clone()).map_err(|e| e.to_string())?;
+        database::run_migrations(&mut conn).map_err(|e| e.to_string())?;
+
         self.config = Some(config);
+
+        Ok(())
     }
 
     pub fn database_path(&self) -> Option<String> {
