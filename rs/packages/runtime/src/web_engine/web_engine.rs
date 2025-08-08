@@ -25,16 +25,20 @@ pub trait WebEngine {
 
     fn evaluate(&self, script: &str) -> Result<String, String>;
 
-    fn add_listener(&mut self, listener: Arc<dyn WebEngineListener>) -> i64;
+    // fn add_listener(&mut self, listener: Arc<dyn WebEngineListener>) -> i64;
 
-    fn remove_listener(&mut self, id: i64);
+    // fn remove_listener(&mut self, id: i64);
 
-    fn notify_listeners<F>(&self, callback: F)
-    where
-        Self: Sized,
-        F: FnMut(Arc<dyn WebEngineListener>);
+    // fn notify_listeners<F>(&self, callback: F)
+    // where
+    //     Self: Sized,
+    //     F: FnMut(Arc<dyn WebEngineListener>);
 
-    fn listeners(&self) -> Vec<Arc<dyn WebEngineListener>>;
+    // fn listeners(&self) -> Vec<Arc<dyn WebEngineListener>>;
+
+    fn set_listener(&mut self, listener: Arc<dyn WebEngineListener>);
+
+    fn listener(&self) -> Option<Arc<dyn WebEngineListener>>;
 
     fn destroy(&mut self) -> Result<(), String>;
 }
