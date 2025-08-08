@@ -12,40 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::web_engine::web_engine::WebEngine;
+// use crate::web_engine::web_engine::WebEngine;
 
 
-pub struct DesktopWebView {
+// pub struct DesktopWebView {
 
-}
+// }
 
 
-impl WebEngine for DesktopWebView {
-    fn init(&mut self) -> Result<(), String> {
-        todo!()
-    }
+// impl WebEngine for DesktopWebView {
+//     fn init(&mut self) -> Result<(), String> {
+//         todo!()
+//     }
 
-    fn load_url(&self, url: &str) -> Result<(), String> {
-        todo!()
-    }
+//     fn load_url(&self, url: &str) -> Result<(), String> {
+//         todo!()
+//     }
 
-    fn load_data(&self, data: &str) -> Result<(), String> {
-        todo!()
-    }
+//     fn load_data(&self, data: &str) -> Result<(), String> {
+//         todo!()
+//     }
 
-    fn reload(&self) -> Result<(), String> {
-        todo!()
-    }
+//     fn reload(&self) -> Result<(), String> {
+//         todo!()
+//     }
 
-    fn evaluate(&self, script: &str) -> Result<String, String> {
-        todo!()
-    }
+//     fn evaluate(&self, script: &str) -> Result<String, String> {
+//         todo!()
+//     }
 
-    fn set_listener(&mut self, listener: super::web_engine::WebEngineListener) {
-        todo!()
-    }
+//     fn set_listener(&mut self, listener: super::web_engine::WebEngineListener) {
+//         todo!()
+//     }
 
-    fn destroy(&mut self) -> Result<(), String> {
-        todo!()
-    }
-}
+//     fn destroy(&mut self) -> Result<(), String> {
+//         todo!()
+//     }
+// }

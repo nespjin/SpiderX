@@ -43,7 +43,7 @@ pub struct PluginManager {
 }
 
 impl PluginManager {
-    fn get_instance() -> Arc<Mutex<PluginManager>> {
+    pub fn get_instance() -> Arc<Mutex<PluginManager>> {
         static INSTANCE: OnceLock<Arc<Mutex<PluginManager>>> = OnceLock::new();
         INSTANCE
             .get_or_init(|| {

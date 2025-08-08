@@ -12,27 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub struct WebEngineListener {
-    on_page_started: Option<Box<dyn FnMut(&str)>>,
-    on_page_finished: Option<Box<dyn FnMut(&str)>>,
-    on_page_error: Option<Box<dyn FnMut(&str)>>,
-    on_load_progress: Option<Box<dyn FnMut(f64)>>,
-    should_override_url_loading: Option<Box<dyn FnMut(&str) -> bool>>,
-    should_intercept_request: Option<Box<dyn FnMut(&str) -> String>>,
-}
-
-impl WebEngineListener {
-    pub fn new() -> Self {
-        WebEngineListener {
-            on_page_started: None,
-            on_page_finished: None,
-            on_page_error: None,
-            on_load_progress: None,
-            should_override_url_loading: None,
-            should_intercept_request: None,
-        }
-    }
-}
+use std::sync::Arc;
 
 pub trait WebEngine {
     fn init(&mut self) -> Result<(), String>;
@@ -45,41 +25,30 @@ pub trait WebEngine {
 
     fn evaluate(&self, script: &str) -> Result<String, String>;
 
-    fn set_listener(&mut self, listener: WebEngineListener);
+    fn add_listener(&mut self, listener: Arc<dyn WebEngineListener>) -> i64;
+
+    fn remove_listener(&mut self, id: i64);
+
+    fn notify_listeners<F>(&self, callback: F)
+    where
+        Self: Sized,
+        F: FnMut(Arc<dyn WebEngineListener>);
+
+    fn listeners(&self) -> Vec<Arc<dyn WebEngineListener>>;
 
     fn destroy(&mut self) -> Result<(), String>;
 }
 
-pub struct SimpleWebEngine {
-    listener: WebEngineListener,
-}
+pub trait WebEngineListener: Send + Sync {
+    fn on_page_started(&self, engine: Arc<dyn WebEngine>, url: &str);
 
-impl WebEngine for SimpleWebEngine {
-    fn init(&mut self) -> Result<(), String> {
-        todo!()
-    }
+    fn on_page_finished(&self, engine: Arc<dyn WebEngine>, url: &str);
 
-    fn load_url(&self, url: &str) -> Result<(), String> {
-        todo!()
-    }
+    fn on_page_error(&self, engine: Arc<dyn WebEngine>, url: &str);
 
-    fn load_data(&self, data: &str) -> Result<(), String> {
-        todo!()
-    }
+    fn on_load_progress(&self, engine: Arc<dyn WebEngine>, progress: i32);
 
-    fn reload(&self) -> Result<(), String> {
-        todo!()
-    }
+    fn should_override_url_loading(&self, engine: Arc<dyn WebEngine>, url: &str) -> bool;
 
-    fn evaluate(&self, script: &str) -> Result<String, String> {
-        todo!()
-    }
-
-    fn set_listener(&mut self, listener: WebEngineListener) {
-        self.listener = listener;
-    }
-
-    fn destroy(&mut self) -> Result<(), String> {
-        todo!()
-    }
+    fn should_intercept_request(&self, engine: Arc<dyn WebEngine>, url: &str) -> String;
 }

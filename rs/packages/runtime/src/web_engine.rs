@@ -14,6 +14,4 @@
 
 // #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
 pub(crate) mod desktop_webview;
-// #[cfg(any(target_os = "android", feature = "jni"))]
-pub(crate) mod jni_webview;
 pub(crate) mod web_engine;
