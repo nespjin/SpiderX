@@ -363,12 +363,13 @@ where
     let wv_id = match ptr {
         JValueGen::Long(ptr) => Some(ptr),
         _ => None,
-    }
-    .unwrap();
+    }.expect("wv_id is none in java object");
 
     let jni_plg_mgr = JniPluginManager::get_instance();
     let jni_plg_mgr: MutexGuard<'_, JniPluginManager> = jni_plg_mgr.lock().unwrap();
 
-    let jni_wv = jni_plg_mgr.get_jni_wv(wv_id).unwrap();
-    jni_wv
+     jni_plg_mgr.get_jni_wv(wv_id)
+        .expect("jni_wv is none in jni_plg_mgr")
+        .expect("jni_wv is none in jni_plg_mgr")
+
 }

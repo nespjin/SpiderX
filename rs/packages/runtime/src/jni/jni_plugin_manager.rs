@@ -106,32 +106,56 @@ impl JniPluginManager {
     pub fn new_jni_wv(&mut self) -> Result<i64, String> {
         let wv_java_obj = self
             .java_env()
-            .unwrap()
-            .new_global_ref(self.new_wv_obj().unwrap())
-            .unwrap();
+            .map_err(|e| e.to_string())?
+            .new_global_ref(self.new_wv_obj().map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
 
         let id: i64 = self.wv_id;
 
         self.java_env()
-            .unwrap()
+            .map_err(|e| e.to_string())?
             .set_field(
                 wv_java_obj.clone(),
                 JNI_WV_JAVA_FIELD_NAME_PTR,
                 "J",
                 JValueGen::Long(id),
             )
-            .unwrap();
+            .map_err(|e| e.to_string())?;
 
         let wv = Arc::new(JniWebView::new(id, wv_java_obj));
-        self.webviews.write().unwrap().insert(id, wv);
+        self.webviews
+            .write()
+            .map_err(|e| e.to_string())?
+            .insert(id, wv);
 
         self.wv_id = id;
 
         Ok(id)
     }
 
-    pub fn get_jni_wv(&self, id: i64) -> Result<Arc<JniWebView>, String> {
-        Ok(self.webviews.read().unwrap().get(&id).unwrap().clone())
+    pub fn is_jni_wv_exist(&self, id: i64) -> bool {
+        self.webviews
+            .read()
+            .map(|e| e.contains_key(&id))
+            .unwrap_or(false)
+    }
+
+    pub fn get_jni_wv(&self, id: i64) -> Result<Option<Arc<JniWebView>>, String> {
+        Ok(self
+            .webviews
+            .read()
+            .map_err(|e| e.to_string())?
+            .get(&id)
+            .map(|e| e.clone())
+            .clone())
+    }
+
+    pub fn remove_jni_wv(&mut self, id: i64) -> Result<(), String> {
+        self.webviews
+            .write()
+            .map_err(|e| e.to_string())?
+            .remove(&id);
+        Ok(())
     }
 }
 
