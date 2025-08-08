@@ -22,6 +22,7 @@ use std::sync::Mutex;
 use std::sync::OnceLock;
 use std::sync::RwLock;
 
+use crate::jni::jni_utils;
 use crate::jni::jni_webview::JNI_WV_JAVA_FIELD_NAME_PTR;
 use crate::jni::jni_webview::JniWebView;
 use crate::plugin_manager::PluginManager;
@@ -141,34 +142,25 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeInit(
     databasePath: JString,
     webviewClass: JClass<'static>,
 ) {
-    let database_path_java_str = env
-        .get_string(&databasePath)
-        .expect("Can't get java string");
-    let database_path = String::from(database_path_java_str);
+    let database_path = env.get_string(&databasePath).map_err(|e| e.to_string());
+    let database_path = match jni_utils::throw_java_expception_if_error(&mut env, database_path) {
+        Some(path) => String::from(path),
+        None => return,
+    };
 
     let config = PluginManagerConfig { database_path };
     let plugin_manager = PluginManager::get_instance();
     let mut plugin_manager = plugin_manager.lock().unwrap();
 
-    let plugin_init_ret = plugin_manager.init(config);
-    if let Err(e) = plugin_init_ret {
-        env.throw_new(
-            "java/lang/Exception",
-            format!("Init PluginManger failed {}", e.to_string()),
-        )
-        .expect("throw failed when PluginManger init failed");
+    if jni_utils::throw_java_expception_if_error(&mut env, plugin_manager.init(config)).is_none() {
+        return;
     }
 
     let jni_plugin_manager = JniPluginManager::get_instance();
     let mut jni_plugin_manager = jni_plugin_manager.lock().unwrap();
 
-    let java_vm = env.get_java_vm().expect("Get java vm failed");
-    let jni_plugin_manager_init_ret = jni_plugin_manager.init(java_vm, webviewClass);
-    if let Err(e) = jni_plugin_manager_init_ret {
-        env.throw_new(
-            "java/lang/Exception",
-            &format!("Set WebView Java Class failed {}", e.to_string()),
-        )
-        .expect("throw failed when Set WebView Java Class failed");
-    }
+    let java_vm = env.get_java_vm().map_err(|e| e.to_string());
+    jni_utils::throw_java_expception_if_error(&mut env, java_vm)
+        .map(|e| jni_plugin_manager.init(e, webviewClass))
+        .map(|e| jni_utils::throw_java_expception_if_error(&mut env, e));
 }

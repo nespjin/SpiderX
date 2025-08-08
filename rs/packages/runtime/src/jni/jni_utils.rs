@@ -12,6 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub(crate) mod jni_plugin_manager;
-pub(crate) mod jni_utils;
-pub(crate) mod jni_webview;
+use jni::JNIEnv;
+
+pub(crate) fn throw_java_expception_if_error<T>(
+    env: &mut JNIEnv,
+    error: Result<T, String>,
+) -> Option<T> {
+    if let Err(e) = &error {
+        env.throw_new("java/lang/Exception", e.as_str()).unwrap();
+        return None;
+    }
+    Some(error.unwrap())
+}
+
+pub(crate) fn throw_java_expception_msg(env: &mut JNIEnv, msg: &str) {
+    env.throw_new("java/lang/Exception", msg).unwrap();
+}
