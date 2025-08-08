@@ -28,11 +28,14 @@ use crate::jni::jni_webview::JniWebView;
 use crate::plugin_manager::PluginManager;
 use crate::plugin_manager::PluginManagerConfig;
 
+const MAX_WV_POOL_SIZE: usize = 10;
+
 pub(crate) struct JniPluginManager {
     wv_java_class: Option<JClass<'static>>,
     java_vm: Option<JavaVM>,
     wv_id: i64,
     webviews: Arc<RwLock<HashMap<i64, Arc<JniWebView>>>>,
+    wv_pool: Arc<RwLock<Vec<Arc<JniWebView>>>>,
 }
 
 impl JniPluginManager {
@@ -45,6 +48,7 @@ impl JniPluginManager {
                     java_vm: None,
                     wv_id: 0,
                     webviews: Arc::new(RwLock::new(HashMap::new())),
+                    wv_pool: Arc::new(RwLock::new(Vec::new())),
                 }))
             })
             .clone()
@@ -104,31 +108,36 @@ impl JniPluginManager {
     }
 
     pub fn new_jni_wv(&mut self) -> Result<i64, String> {
-        let wv_java_obj = self
-            .java_env()
-            .map_err(|e| e.to_string())?
-            .new_global_ref(self.new_wv_obj().map_err(|e| e.to_string())?)
-            .map_err(|e| e.to_string())?;
-
         let id: i64 = self.wv_id;
+        let next_id = id + 1;
+        self.wv_id = next_id;
 
-        self.java_env()
-            .map_err(|e| e.to_string())?
-            .set_field(
-                wv_java_obj.clone(),
-                JNI_WV_JAVA_FIELD_NAME_PTR,
-                "J",
-                JValueGen::Long(id),
-            )
-            .map_err(|e| e.to_string())?;
+        let wv = if !self.wv_pool.read().map_err(|e| e.to_string())?.is_empty() {
+            self.wv_pool.write().map_err(|e| e.to_string())?.remove(0)
+        } else {
+            let wv_java_obj = self
+                .java_env()
+                .map_err(|e| e.to_string())?
+                .new_global_ref(self.new_wv_obj().map_err(|e| e.to_string())?)
+                .map_err(|e| e.to_string())?;
 
-        let wv = Arc::new(JniWebView::new(id, wv_java_obj));
+            self.java_env()
+                .map_err(|e| e.to_string())?
+                .set_field(
+                    wv_java_obj.clone(),
+                    JNI_WV_JAVA_FIELD_NAME_PTR,
+                    "J",
+                    JValueGen::Long(id),
+                )
+                .map_err(|e| e.to_string())?;
+
+            Arc::new(JniWebView::new(id, wv_java_obj))
+        };
+
         self.webviews
             .write()
             .map_err(|e| e.to_string())?
             .insert(id, wv);
-
-        self.wv_id = id;
 
         Ok(id)
     }
@@ -151,10 +160,18 @@ impl JniPluginManager {
     }
 
     pub fn remove_jni_wv(&mut self, id: i64) -> Result<(), String> {
-        self.webviews
+        let wv = self
+            .webviews
             .write()
             .map_err(|e| e.to_string())?
             .remove(&id);
+
+        if let Some(wv) = wv {
+            if self.wv_pool.write().map_err(|e| e.to_string())?.len() < MAX_WV_POOL_SIZE {
+                self.wv_pool.write().map_err(|e| e.to_string())?.push(wv);
+            }
+        }
+
         Ok(())
     }
 }
