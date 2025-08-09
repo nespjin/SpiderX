@@ -119,6 +119,30 @@ impl PluginManager {
         Ok(())
     }
 
+    pub fn is_plugin_installed(&self, id: &str) -> Result<bool, String> {
+        self.ensure_initialized()?;
+        match self.plugin_repository.as_ref() {
+            Some(repo) => repo.is_plugin_exists(id),
+            None => Err("PluginRepository is not initialized".to_string()),
+        }
+    }
+
+    pub fn get_installed_plugin(&self, id: &str) -> Result<Plugin, String> {
+        self.ensure_initialized()?;
+        match self.plugin_repository.as_ref() {
+            Some(repo) => repo.get_plugin(id),
+            None => Err("PluginRepository is not initialized".to_string()),
+        }
+    }
+
+    pub fn get_installed_plugins(&self) -> Result<Vec<Plugin>, String> {
+        self.ensure_initialized()?;
+        match self.plugin_repository.as_ref() {
+            Some(repo) => repo.get_plugins(),
+            None => Err("PluginRepository is not initialized".to_string()),
+        }
+    }
+
     /// Uninstall a plugin by id
     pub fn uninstall_plugin(&mut self, id: &str) -> Result<(), String> {
         self.ensure_initialized()?;

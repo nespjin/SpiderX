@@ -100,6 +100,15 @@ pub(crate) fn find_by_plugin_id(
         .load(conn)
 }
 
+pub(crate) fn is_dataset_exists(conn: &mut SqliteConnection, id: &str) -> QueryResult<bool> {
+    dataset::table
+        .filter(dataset::id.eq(id))
+        .select(dataset::id)
+        .first::<String>(conn)
+        .map(|_| true)
+        .or_else(|_| Ok(false))
+}
+
 pub(crate) fn find_all(conn: &mut SqliteConnection) -> QueryResult<Vec<DatasetEntity>> {
     dataset::table.load(conn)
 }

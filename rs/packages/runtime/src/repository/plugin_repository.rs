@@ -78,6 +78,12 @@ impl PluginRepository {
         Ok(plugin)
     }
 
+    pub(crate) fn is_plugin_exists(&self, id: &str) -> Result<bool, String> {
+        let mut sqlite_connection =
+            database::open(&self.database_path).map_err(|e| e.to_string())?;
+        plugin_dao::is_plugin_exists(&mut sqlite_connection, id).map_err(|e| e.to_string())
+    }
+
     pub(crate) fn delete_plugin(&self, id: &str) -> Result<(), String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;

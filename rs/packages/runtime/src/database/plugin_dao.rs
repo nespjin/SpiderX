@@ -95,6 +95,15 @@ pub(crate) fn find_all(conn: &mut SqliteConnection) -> QueryResult<Vec<PluginEnt
     plugin::table.load(conn)
 }
 
+pub(crate) fn is_plugin_exists(conn: &mut SqliteConnection, id: &str) -> QueryResult<bool> {
+    plugin::table
+        .filter(plugin::id.eq(id))
+        .select(plugin::id)
+        .first::<String>(conn)
+        .map(|_| true)
+        .or_else(|_| Ok(false))
+}
+
 pub(crate) fn delete_by_id(conn: &mut SqliteConnection, id: &str) -> QueryResult<usize> {
     diesel::delete(plugin::table.filter(plugin::id.eq(id))).execute(conn)
 }
