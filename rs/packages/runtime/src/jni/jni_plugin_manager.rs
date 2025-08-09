@@ -205,3 +205,16 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeInit(
         .map(|e| jni_plugin_manager.init(e, webviewClass))
         .map(|e| jni_utils::throw_java_expception_if_error(&mut env, e));
 }
+
+
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeInstallPlugin(
+    mut env: JNIEnv,
+    _this: JObject,
+    databasePath: JString,
+    webviewClass: JClass<'static>,
+) {
+    // TODO: Implement plugin installation logic here.
+    // For now, this function does nothing.
+}

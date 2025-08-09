@@ -108,25 +108,28 @@ impl PluginManager {
         self.ensure_initialized()?;
         let plugin_id = &plugin.id.to_string();
         let datasets = plugin.datasets.clone();
-        self.plugin_repository
-            .as_ref()
-            .unwrap()
-            .save_plugin(plugin)?;
-        self.dataset_repository
-            .as_ref()
-            .unwrap()
-            .save_datasets(plugin_id, datasets)?;
+        match self.plugin_repository.as_ref() {
+            Some(repo) => repo.save_plugin(plugin),
+            None => Err("PluginRepository is not initialized".to_string()),
+        }?;
+        match self.dataset_repository.as_ref() {
+            Some(repo) => repo.save_datasets(plugin_id, datasets),
+            None => Err("DatasetRepository is not initialized".to_string()),
+        }?;
         Ok(())
     }
 
     /// Uninstall a plugin by id
     pub fn uninstall_plugin(&mut self, id: &str) -> Result<(), String> {
         self.ensure_initialized()?;
-        self.plugin_repository.as_ref().unwrap().delete_plugin(id)?;
-        self.dataset_repository
-            .as_ref()
-            .unwrap()
-            .delete_datasets(id)?;
+        match self.plugin_repository.as_ref() {
+            Some(repo) => repo.delete_plugin(id),
+            None => Err("PluginRepository is not initialized".to_string()),
+        }?;
+        match self.dataset_repository.as_ref() {
+            Some(repo) => repo.delete_datasets(id),
+            None => Err("DatasetRepository is not initialized".to_string()),
+        }?;
         Ok(())
     }
 
