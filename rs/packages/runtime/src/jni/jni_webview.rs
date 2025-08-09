@@ -331,7 +331,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
                 .expect(&format!("new string {} failed", &s))
         })
         .map(|e| e.into_raw())
-        .unwrap_or(std::ptr::null_mut())
+        .unwrap_or(JObject::null().into_raw())
 }
 
 fn get_jni_wv_from_java_obj<'other_local, O>(env: &mut JNIEnv, obj: O) -> Arc<JniWebView>
