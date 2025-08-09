@@ -17,7 +17,7 @@ use std::sync::{Arc, MutexGuard};
 use jni::{
     JNIEnv,
     objects::{GlobalRef, JObject, JString, JValueGen},
-    sys::{jboolean, jint, jstring},
+    sys::{JNI_FALSE, jboolean, jint, jstring},
 };
 
 use crate::{
@@ -323,8 +323,8 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOn
     jni_wv
         .listener()
         .map(|l| l.should_override_url_loading(jni_wv.clone(), &url))
-        .map(|b| if b { 1 } else { 0 })
-        .unwrap_or(0)
+        .map(|b| b.into())
+        .unwrap_or(JNI_FALSE)
 }
 
 #[unsafe(no_mangle)]
@@ -363,13 +363,14 @@ where
     let wv_id = match ptr {
         JValueGen::Long(ptr) => Some(ptr),
         _ => None,
-    }.expect("wv_id is none in java object");
+    }
+    .expect("wv_id is none in java object");
 
     let jni_plg_mgr = JniPluginManager::get_instance();
     let jni_plg_mgr: MutexGuard<'_, JniPluginManager> = jni_plg_mgr.lock().unwrap();
 
-     jni_plg_mgr.get_jni_wv(wv_id)
+    jni_plg_mgr
+        .get_jni_wv(wv_id)
         .expect("jni_wv is none in jni_plg_mgr")
         .expect("jni_wv is none in jni_plg_mgr")
-
 }

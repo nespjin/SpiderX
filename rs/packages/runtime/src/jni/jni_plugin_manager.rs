@@ -16,6 +16,7 @@ use jni::AttachGuard;
 use jni::JNIEnv;
 use jni::JavaVM;
 use jni::objects::*;
+use jni::sys::JNI_FALSE;
 use jni::sys::jboolean;
 use jni::sys::jint;
 use std::collections::HashMap;
@@ -284,14 +285,8 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeIsPlu
     let is_installed = plugin_manager.is_plugin_installed(&id);
 
     match jni_utils::throw_java_expception_if_error(&mut env, is_installed) {
-        Some(is_installed) => {
-            if is_installed {
-                1
-            } else {
-                0
-            }
-        }
-        None => return 0,
+        Some(is_installed) => is_installed.into(),
+        None => return JNI_FALSE,
     }
 }
 
