@@ -21,7 +21,7 @@ use jni::{
 };
 
 use crate::{
-    jni::{jni_plugin_manager::JniPluginManager, jni_utils},
+    jni::jni_plugin_manager::JniPluginManager,
     web_engine::web_engine::{WebEngine, WebEngineListener},
 };
 
@@ -227,11 +227,7 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOn
     this: JObject<'local>,
     url: JString,
 ) {
-    let url = env.get_string(&url).map_err(|e| e.to_string());
-    let url = match jni_utils::throw_java_expception_if_error(&mut env, url) {
-        Some(path) => String::from(path),
-        None => return,
-    };
+    let url: String = env.get_string(&url).expect("get url failed").into();
 
     let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
 
@@ -256,11 +252,7 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOn
     this: JObject<'local>,
     url: JString,
 ) {
-    let url = env.get_string(&url).map_err(|e| e.to_string());
-    let url = match jni_utils::throw_java_expception_if_error(&mut env, url) {
-        Some(path) => String::from(path),
-        None => return,
-    };
+    let url: String = env.get_string(&url).expect("get url failed").into();
 
     let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
     jni_wv
@@ -276,11 +268,7 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOn
     this: JObject<'local>,
     url: JString,
 ) {
-    let url = env.get_string(&url).map_err(|e| e.to_string());
-    let url = match jni_utils::throw_java_expception_if_error(&mut env, url) {
-        Some(path) => String::from(path),
-        None => return,
-    };
+    let url: String = env.get_string(&url).expect("get url failed").into();
 
     let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
 
@@ -312,11 +300,7 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOn
     this: JObject<'local>,
     url: JString,
 ) -> jboolean {
-    let url = env.get_string(&url).map_err(|e| e.to_string());
-    let url = match jni_utils::throw_java_expception_if_error(&mut env, url) {
-        Some(path) => String::from(path),
-        None => return 0,
-    };
+    let url: String = env.get_string(&url).expect("get url failed").into();
 
     let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
 
@@ -335,22 +319,18 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOn
     this: JObject<'local>,
     url: JString,
 ) -> jstring {
-    let url = env.get_string(&url).map_err(|e| e.to_string());
-    let url = match jni_utils::throw_java_expception_if_error(&mut env, url) {
-        Some(path) => String::from(path),
-        None => return std::ptr::null_mut(),
-    };
+    let url: String = env.get_string(&url).expect("get url failed").into();
 
     let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
 
     jni_wv
         .listener()
         .map(|l| l.should_intercept_request(jni_wv.clone(), &url))
-        .map(|s| env.new_string(s))
-        .map(|e| e.map_err(|e| e.to_string()))
-        .map(|e| jni_utils::throw_java_expception_if_error(&mut env, e))
-        .map(|e| e.map(|e| e.into_raw()))
-        .map(|e| e.unwrap_or(std::ptr::null_mut()))
+        .map(|s| {
+            env.new_string(&s)
+                .expect(&format!("new string {} failed", &s))
+        })
+        .map(|e| e.into_raw())
         .unwrap_or(std::ptr::null_mut())
 }
 
