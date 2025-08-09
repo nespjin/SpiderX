@@ -218,50 +218,52 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeInsta
     sourceType: jint,
     source: JByteArray,
 ) {
-    let array_len = env.get_array_length(&source).map_err(|e| e.to_string());
-    let array_len = jni_utils::throw_java_expception_if_error(&mut env, array_len);
-    let array_len = match array_len {
-        Some(len) => len,
-        None => return,
-    };
+    unsafe {
+        let array_len = env.get_array_length(&source).map_err(|e| e.to_string());
+        let array_len = jni_utils::throw_java_expception_if_error(&mut env, array_len);
+        let array_len = match array_len {
+            Some(len) => len,
+            None => return,
+        };
 
-    let mut buf = vec![0; array_len as usize];
-    let ret = env
-        .get_byte_array_region(&source, 0, &mut buf)
-        .map_err(|e| e.to_string());
-    jni_utils::throw_java_expception_if_error(&mut env, ret);
-    let buf: Vec<u8> = std::mem::transmute(buf);
+        let mut buf = vec![0; array_len as usize];
+        let ret = env
+            .get_byte_array_region(&source, 0, &mut buf)
+            .map_err(|e| e.to_string());
+        jni_utils::throw_java_expception_if_error(&mut env, ret);
+        let buf: Vec<u8> = std::mem::transmute(buf);
 
-    let plugin_source = match sourceType {
-        JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON | JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON_FILE => {
-            let source = String::from_utf8(buf).map_err(|e| e.to_string());
-            let source = jni_utils::throw_java_expception_if_error(&mut env, source);
-            let source = match source {
-                Some(source) => source,
-                None => return,
-            };
-            match sourceType {
-                JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON => PluginSource::ManifestJson(source),
-                JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON_FILE | _ => {
-                    PluginSource::ManifestJsonFile(source)
+        let plugin_source = match sourceType {
+            JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON | JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON_FILE => {
+                let source = String::from_utf8(buf).map_err(|e| e.to_string());
+                let source = jni_utils::throw_java_expception_if_error(&mut env, source);
+                let source = match source {
+                    Some(source) => source,
+                    None => return,
+                };
+                match sourceType {
+                    JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON => PluginSource::ManifestJson(source),
+                    JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON_FILE | _ => {
+                        PluginSource::ManifestJsonFile(source)
+                    }
                 }
             }
-        }
-        _ => {
-            jni_utils::throw_java_expception_msg(
-                &mut env,
-                &format!("Invalid source type {}.", sourceType),
-            );
-            return;
-        }
-    };
+            _ => {
+                jni_utils::throw_java_expception_msg(
+                    &mut env,
+                    &format!("Invalid source type {}.", sourceType),
+                );
+                return;
+            }
+        };
 
-    let plugin_manager = PluginManager::get_instance();
-    let plugin_manager = plugin_manager.lock().unwrap();
-    jni_utils::throw_java_expception_if_error(
-        &mut env,
-        plugin_manager.install_plugin(&plugin_source),
-    );
+        let plugin_manager = PluginManager::get_instance();
+        let plugin_manager = plugin_manager.lock().unwrap();
+        jni_utils::throw_java_expception_if_error(
+            &mut env,
+            plugin_manager.install_plugin(&plugin_source),
+        );
+    }
 }
 
 #[unsafe(no_mangle)]
