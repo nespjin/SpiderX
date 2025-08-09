@@ -127,7 +127,7 @@ impl PluginManager {
         }
     }
 
-    pub fn get_installed_plugin(&self, id: &str) -> Result<Plugin, String> {
+    pub fn get_installed_plugin(&self, id: &str) -> Result<Option<Plugin>, String> {
         self.ensure_initialized()?;
         match self.plugin_repository.as_ref() {
             Some(repo) => repo.get_plugin(id),

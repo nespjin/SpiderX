@@ -87,8 +87,15 @@ pub(crate) fn update_by_id(
         .execute(conn)
 }
 
-pub(crate) fn find_by_id(conn: &mut SqliteConnection, id: &str) -> QueryResult<PluginEntity> {
-    plugin::table.filter(plugin::id.eq(id)).first(conn)
+pub(crate) fn find_by_id(
+    conn: &mut SqliteConnection,
+    id: &str,
+) -> QueryResult<Option<PluginEntity>> {
+    match plugin::table.filter(plugin::id.eq(id)).first(conn) {
+        Ok(entity) => Ok(Some(entity)),
+        Err(diesel::NotFound) => Ok(None),
+        Err(e) => Err(e),
+    }
 }
 
 pub(crate) fn find_all(conn: &mut SqliteConnection) -> QueryResult<Vec<PluginEntity>> {

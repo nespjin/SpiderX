@@ -67,15 +67,20 @@ impl PluginRepository {
         Ok(plugins)
     }
 
-    pub(crate) fn get_plugin(&self, id: &str) -> Result<Plugin, String> {
+    pub(crate) fn get_plugin(&self, id: &str) -> Result<Option<Plugin>, String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
         let entity =
             plugin_dao::find_by_id(&mut sqlite_connection, id).map_err(|e| e.to_string())?;
-        let dataset_entities = dataset_dao::find_by_plugin_id(&mut sqlite_connection, id)
-            .map_err(|e| e.to_string())?;
-        let plugin = plugin::entity_to_external_model(entity, dataset_entities)?;
-        Ok(plugin)
+        match entity {
+            Some(entity) => {
+                let dataset_entities = dataset_dao::find_by_plugin_id(&mut sqlite_connection, id)
+                    .map_err(|e| e.to_string())?;
+                let plugin = plugin::entity_to_external_model(entity, dataset_entities)?;
+                Ok(Some(plugin))
+            }
+            None => Ok(None),
+        }
     }
 
     pub(crate) fn is_plugin_exists(&self, id: &str) -> Result<bool, String> {

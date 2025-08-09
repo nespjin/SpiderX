@@ -87,8 +87,15 @@ pub(crate) fn update_by_id(
         .execute(conn)
 }
 
-pub(crate) fn find_by_id(conn: &mut SqliteConnection, id: &str) -> QueryResult<DatasetEntity> {
-    dataset::table.filter(dataset::id.eq(id)).first(conn)
+pub(crate) fn find_by_id(
+    conn: &mut SqliteConnection,
+    id: &str,
+) -> QueryResult<Option<DatasetEntity>> {
+    match dataset::table.filter(dataset::id.eq(id)).first(conn) {
+        Ok(dataset) => Ok(Some(dataset)),
+        Err(diesel::NotFound) => Ok(None),
+        Err(err) => Err(err),
+    }
 }
 
 pub(crate) fn find_by_plugin_id(
