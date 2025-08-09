@@ -184,7 +184,7 @@ impl JniPluginManager {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeInit(
+pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeInit(
     mut env: JNIEnv,
     _this: JObject,
     databasePath: JString,
@@ -212,7 +212,7 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeInit(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeInstallPlugin(
+pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeInstallPlugin(
     mut env: JNIEnv,
     _this: JObject,
     sourceType: jint,
@@ -255,7 +255,7 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeInsta
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeIsPluginInstalled(
+pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeIsPluginInstalled(
     mut env: JNIEnv,
     _this: JObject,
     id: JString,
@@ -273,7 +273,7 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeIsPlu
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeUninstallPlugin(
+pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeUninstallPlugin(
     mut env: JNIEnv,
     _this: JObject,
     id: JString,

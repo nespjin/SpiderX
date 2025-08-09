@@ -220,7 +220,7 @@ impl WebEngine for JniWebView {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOnPageStarted<
+pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOnPageStarted<
     'local,
 >(
     mut env: JNIEnv,
@@ -245,7 +245,7 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOn
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOnPageFinished<
+pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOnPageFinished<
     'local,
 >(
     mut env: JNIEnv,
@@ -261,7 +261,7 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOn
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOnPageError<
+pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOnPageError<
     'local,
 >(
     mut env: JNIEnv,
@@ -278,7 +278,7 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOn
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOnLoadProgress<
+pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOnLoadProgress<
     'local,
 >(
     mut env: JNIEnv,
@@ -293,7 +293,7 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOn
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOnShouldOverrideUrlLoading<
+pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOnShouldOverrideUrlLoading<
     'local,
 >(
     mut env: JNIEnv,
@@ -312,7 +312,7 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOn
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOnShouldInterceptRequest<
+pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOnShouldInterceptRequest<
     'local,
 >(
     mut env: JNIEnv,
