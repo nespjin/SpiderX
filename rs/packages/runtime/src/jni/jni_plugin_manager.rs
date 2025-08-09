@@ -16,6 +16,7 @@ use jni::AttachGuard;
 use jni::JNIEnv;
 use jni::JavaVM;
 use jni::objects::*;
+use jni::sys::jint;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -27,8 +28,12 @@ use crate::jni::jni_webview::JNI_WV_JAVA_FIELD_NAME_PTR;
 use crate::jni::jni_webview::JniWebView;
 use crate::plugin_manager::PluginManager;
 use crate::plugin_manager::PluginManagerConfig;
+use crate::plugin_manager::PluginSource;
 
 const MAX_WV_POOL_SIZE: usize = 10;
+
+pub(crate) const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON: jint = 0;
+pub(crate) const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON_FILE: jint = 1;
 
 pub(crate) struct JniPluginManager {
     wv_java_class: Option<JClass<'static>>,
@@ -206,15 +211,72 @@ pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeInit(
         .map(|e| jni_utils::throw_java_expception_if_error(&mut env, e));
 }
 
-
-
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeInstallPlugin(
     mut env: JNIEnv,
     _this: JObject,
-    databasePath: JString,
-    webviewClass: JClass<'static>,
+    sourceType: jint,
+    source: JByteArray,
 ) {
-    // TODO: Implement plugin installation logic here.
-    // For now, this function does nothing.
+    let array_len = env.get_array_length(&source).map_err(|e| e.to_string());
+    let array_len = jni_utils::throw_java_expception_if_error(&mut env, array_len);
+    let array_len = match array_len {
+        Some(len) => len,
+        None => return,
+    };
+
+    let mut buf = vec![0; array_len as usize];
+    let ret = env
+        .get_byte_array_region(&source, 0, &mut buf)
+        .map_err(|e| e.to_string());
+    jni_utils::throw_java_expception_if_error(&mut env, ret);
+    let buf: Vec<u8> = std::mem::transmute(buf);
+
+    let plugin_source = match sourceType {
+        JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON | JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON_FILE => {
+            let source = String::from_utf8(buf).map_err(|e| e.to_string());
+            let source = jni_utils::throw_java_expception_if_error(&mut env, source);
+            let source = match source {
+                Some(source) => source,
+                None => return,
+            };
+            match sourceType {
+                JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON => PluginSource::ManifestJson(source),
+                JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON_FILE | _ => {
+                    PluginSource::ManifestJsonFile(source)
+                }
+            }
+        }
+        _ => {
+            jni_utils::throw_java_expception_msg(
+                &mut env,
+                &format!("Invalid source type {}.", sourceType),
+            );
+            return;
+        }
+    };
+
+    let plugin_manager = PluginManager::get_instance();
+    let plugin_manager = plugin_manager.lock().unwrap();
+    jni_utils::throw_java_expception_if_error(
+        &mut env,
+        plugin_manager.install_plugin(&plugin_source),
+    );
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeUninstallPlugin(
+    mut env: JNIEnv,
+    _this: JObject,
+    id: JString,
+) {
+    let id = env.get_string(&id).map_err(|e| e.to_string());
+    let id = match jni_utils::throw_java_expception_if_error(&mut env, id) {
+        Some(path) => String::from(path),
+        None => return,
+    };
+
+    let plugin_manager = PluginManager::get_instance();
+    let mut plugin_manager = plugin_manager.lock().unwrap();
+    jni_utils::throw_java_expception_if_error(&mut env, plugin_manager.uninstall_plugin(&id));
 }
