@@ -14,7 +14,9 @@
 
 use core::data::screen_type::ScreenType;
 
-use jni::{objects::JValueOwned, JNIEnv};
+use jni::objects::{JObject, JString, JValueGen};
+
+use crate::jni::jni_utils;
 
 pub const JAVA_CLASS_NAME_SCREEN_TYPE: &'static str = "com/nesp/spiderx/runtime/data/ScreenType";
 
@@ -22,12 +24,56 @@ pub const JAVA_FILED_SCREEN_TYPE_COMPACT: &'static str = "COMPACT";
 pub const JAVA_FILED_SCREEN_TYPE_MEDIUM: &'static str = "MEDIUM";
 pub const JAVA_FILED_SCREEN_TYPE_EXPANDED: &'static str = "EXPANDED";
 
-pub fn screen_type_to_java_object<'local>(
-    env: &'local mut JNIEnv,
-    screen_type: &'local ScreenType,
-) -> JValueOwned<'local> {
+pub fn java_object_to_screen_type(java_object: JObject) -> ScreenType {
+    let mut env = jni_utils::JVM
+        .get()
+        .unwrap()
+        .attach_current_thread()
+        .unwrap();
+    let enum_value = env
+        .call_method(&java_object, "name", "()Ljava/lang/String;", &[])
+        .expect("Unable to get ScreenType enum value!");
+    let enum_value: String = match enum_value {
+        JValueGen::Object(obj) => {
+            let jstr: JString = obj.into();
+            let str: String = env.get_string(&jstr).unwrap().into();
+            str
+        }
+        _ => {
+            let mut env = jni_utils::JVM
+                .get()
+                .unwrap()
+                .attach_current_thread()
+                .unwrap();
+            let msg = format!("Invalid screen type: {:?}", enum_value);
+            jni_utils::throw_java_expception_msg(&mut env, &msg);
+            "".to_string()
+        }
+    };
+    enum_value_to_screen_type(&enum_value)
+}
+
+pub fn screen_type_to_java_object(screen_type: &ScreenType) -> JObject {
     let enumValue = get_enum_value_name(screen_type);
-    get_enum_value(env, enumValue)
+    get_enum_value(enumValue)
+}
+
+pub fn enum_value_to_screen_type(enumValue: &str) -> ScreenType {
+    match enumValue {
+        JAVA_FILED_SCREEN_TYPE_COMPACT => ScreenType::Compact,
+        JAVA_FILED_SCREEN_TYPE_MEDIUM => ScreenType::Medium,
+        JAVA_FILED_SCREEN_TYPE_EXPANDED => ScreenType::Expanded,
+        _ => {
+            let mut env = jni_utils::JVM
+                .get()
+                .unwrap()
+                .attach_current_thread()
+                .unwrap();
+            let msg = format!("Invalid screen type: {}", enumValue);
+            jni_utils::throw_java_expception_msg(&mut env, &msg);
+            ScreenType::Compact
+        }
+    }
 }
 
 pub fn get_enum_value_name(screen_type: &ScreenType) -> &'static str {
@@ -38,7 +84,12 @@ pub fn get_enum_value_name(screen_type: &ScreenType) -> &'static str {
     }
 }
 
-pub fn get_enum_value<'local>(env: &'local mut JNIEnv, enumValue: &'local str) -> JValueOwned<'local> {
+pub fn get_enum_value(enumValue: &str) -> JObject {
+    let mut env = jni_utils::JVM
+        .get()
+        .unwrap()
+        .attach_current_thread()
+        .unwrap();
     let class = env
         .find_class(JAVA_CLASS_NAME_SCREEN_TYPE)
         .expect("ScreenType class not found!");
@@ -51,6 +102,6 @@ pub fn get_enum_value<'local>(env: &'local mut JNIEnv, enumValue: &'local str) -
         "Unable to get ScreenType enum value {}!",
         enumValue
     ))
-    // .l()
-    // .expect("Failed to convert ScreenType enum value to jobject!")
+    .l()
+    .expect("Failed to convert ScreenType enum value to jobject!")
 }

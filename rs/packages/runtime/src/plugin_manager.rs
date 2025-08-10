@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core::data::plugin::Plugin;
+use core::data::{plugin::Plugin, screen_type::ScreenType};
 use std::{
     fs,
     path::Path,
@@ -29,6 +29,9 @@ use crate::{
 #[derive(Debug, Clone)]
 pub struct PluginManagerConfig {
     pub database_path: String,
+
+    /// The screen type in current device.
+    pub screen_type: ScreenType,
 }
 
 pub enum PluginSource {
@@ -83,10 +86,25 @@ impl PluginManager {
         Ok(())
     }
 
-    pub fn database_path(&self) -> Option<String> {
-        self.config
-            .as_ref()
-            .map(|config| config.database_path.clone())
+    pub fn set_screen_type(&mut self, screen_type: ScreenType) -> Result<(), String> {
+        self.ensure_initialized()?;
+        match self.config.as_mut() {
+            Some(config) => {
+                config.screen_type = screen_type;
+            }
+            None => {
+                return Err("PluginManager is not initialized".to_string());
+            }
+        }
+        Ok(())
+    }
+
+    pub fn screen_type(&self) -> Result<&ScreenType, String> {
+        self.ensure_initialized()?;
+        match self.config.as_ref() {
+            Some(config) => Ok(&config.screen_type),
+            None => Err("PluginManager is not initialized".to_string()),
+        }
     }
 
     pub fn install_plugin(&self, source: &PluginSource) -> Result<(), String> {
@@ -157,6 +175,20 @@ impl PluginManager {
         Ok(())
     }
 
+    pub fn request_dataset(&self, plugin_id: &str, dataset_id: &str) -> Result<String, String> {
+        self.ensure_initialized()?;
+        let dataset = match self.dataset_repository.as_ref() {
+            Some(repo) => repo.get_dataset_in_plugin(plugin_id, dataset_id)?,
+            None => return Err("DatasetRepository is not initialized".to_string()),
+        };
+        let dataset = match dataset {
+            Some(dataset) => dataset,
+            None => return Err(format!("Dataset {}.{} not found", plugin_id, dataset_id)),
+        };
+
+        Ok("".to_string())
+    }
+
     fn ensure_initialized(&self) -> Result<(), String> {
         if self.config.is_none() {
             return Err("Not initialized".to_string());
@@ -175,6 +207,7 @@ mod test {
         let mut plugin_manager = plugin_manager.lock().unwrap();
         let config = PluginManagerConfig {
             database_path: "target/runtime.db".to_string(),
+            screen_type: ScreenType::Compact,
         };
         let result = plugin_manager.init(config.clone());
         assert!(result.is_ok());

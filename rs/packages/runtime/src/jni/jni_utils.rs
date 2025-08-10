@@ -29,14 +29,14 @@ pub fn throw_java_expception_msg(env: &mut JNIEnv, msg: &str) {
     env.throw_new("java/lang/Exception", msg).unwrap();
 }
 
-pub struct JavaObject<'a> {
+pub struct JObjectOwned<'a> {
     env: JNIEnv<'a>,
     object: JObject<'a>,
 }
 
-impl<'a> JavaObject<'a> {
+impl<'a> JObjectOwned<'a> {
     pub fn new(env: &JNIEnv<'a>, object: &JObject<'a>) -> Self {
-        JavaObject {
+        JObjectOwned {
             env: unsafe { env.unsafe_clone() },
             object: unsafe { JObject::from_raw(**object) },
         }
@@ -46,7 +46,7 @@ impl<'a> JavaObject<'a> {
     }
 }
 
-impl Clone for JavaObject<'_> {
+impl Clone for JObjectOwned<'_> {
     fn clone(&self) -> Self {
         Self {
             env: unsafe { self.env.unsafe_clone() },

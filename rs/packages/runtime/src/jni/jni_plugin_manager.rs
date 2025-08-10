@@ -30,6 +30,7 @@ use crate::jni::jni_constants::JAVA_CLASS_NAME_ARRAY_LIST;
 use crate::jni::jni_constants::JAVA_METHOD_NAME_LIST_ADD;
 use crate::jni::jni_constants::JAVA_METHOD_SIG_LIST_ADD;
 use crate::jni::jni_obj_plugin;
+use crate::jni::jni_obj_screen_type;
 use crate::jni::jni_utils;
 use crate::jni::jni_webview::JNI_WV_JAVA_FIELD_NAME_PTR;
 use crate::jni::jni_webview::JniWebView;
@@ -193,6 +194,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     mut env: JNIEnv,
     _this: JObject,
     databasePath: JString,
+    screenType: JObject,
     webviewClass: JClass<'static>,
 ) {
     let database_path: String = env
@@ -200,7 +202,12 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
         .expect("get database path failed")
         .into();
 
-    let config = PluginManagerConfig { database_path };
+    let screen_type = jni_obj_screen_type::java_object_to_screen_type(screenType);
+
+    let config = PluginManagerConfig {
+        database_path,
+        screen_type,
+    };
     let plugin_manager = PluginManager::get_instance();
     let mut plugin_manager = plugin_manager.lock().unwrap();
 
@@ -213,6 +220,23 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     jni_utils::throw_java_expception_if_error(
         &mut env,
         jni_plugin_manager.init(java_vm, webviewClass),
+    );
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeSetScreenType(
+    mut env: JNIEnv,
+    _this: JObject,
+    screenType: JObject,
+) {
+    let screen_type = jni_obj_screen_type::java_object_to_screen_type(screenType);
+
+    let plugin_manager = PluginManager::get_instance();
+    let mut plugin_manager = plugin_manager.lock().unwrap();
+
+    jni_utils::throw_java_expception_if_error(
+        &mut env,
+        plugin_manager.set_screen_type(screen_type),
     );
 }
 

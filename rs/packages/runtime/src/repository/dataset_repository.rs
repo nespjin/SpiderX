@@ -24,11 +24,11 @@ pub(crate) struct DatasetRepository {
 }
 
 impl DatasetRepository {
-    pub(crate) fn new(database_path: String) -> DatasetRepository {
+    pub fn new(database_path: String) -> DatasetRepository {
         DatasetRepository { database_path }
     }
 
-    pub(crate) fn save_dataset(&self, plugin_id: &str, dataset: Dataset) -> Result<(), String> {
+    pub fn save_dataset(&self, plugin_id: &str, dataset: Dataset) -> Result<(), String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
         let entity = dataset::dataset_to_entity(plugin_id.to_string(), dataset)?;
@@ -36,11 +36,7 @@ impl DatasetRepository {
         Ok(())
     }
 
-    pub(crate) fn save_datasets(
-        &self,
-        plugin_id: &str,
-        datasets: Vec<Dataset>,
-    ) -> Result<(), String> {
+    pub fn save_datasets(&self, plugin_id: &str, datasets: Vec<Dataset>) -> Result<(), String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
         let entities = dataset::datasets_to_entities(plugin_id.to_string(), datasets)?;
@@ -48,7 +44,7 @@ impl DatasetRepository {
         Ok(())
     }
 
-    pub(crate) fn get_datasets(&self, plugin_id: &str) -> Result<Vec<Dataset>, String> {
+    pub fn get_datasets(&self, plugin_id: &str) -> Result<Vec<Dataset>, String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
         let entities = dataset_dao::find_by_plugin_id(&mut sqlite_connection, plugin_id)
@@ -56,7 +52,7 @@ impl DatasetRepository {
         Ok(dataset::datasets_entities_to_external_models(entities)?)
     }
 
-    pub(crate) fn get_dataset(&self, id: &str) -> Result<Option<Dataset>, String> {
+    pub fn get_dataset(&self, id: &str) -> Result<Option<Dataset>, String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
 
@@ -66,14 +62,29 @@ impl DatasetRepository {
         }
     }
 
-    pub(crate) fn delete_dataset(&self, id: &str) -> Result<(), String> {
+    pub fn get_dataset_in_plugin(
+        &self,
+        plugin_id: &str,
+        id: &str,
+    ) -> Result<Option<Dataset>, String> {
+        let mut sqlite_connection =
+            database::open(&self.database_path).map_err(|e| e.to_string())?;
+        match dataset_dao::find_by_id_in_plugin(&mut sqlite_connection, plugin_id, id)
+            .map_err(|e| e.to_string())?
+        {
+            Some(entity) => Ok(Some(dataset::dataset_entity_to_external_model(entity)?)),
+            None => Ok(None),
+        }
+    }
+
+    pub fn delete_dataset(&self, id: &str) -> Result<(), String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
         dataset_dao::delete_by_id(&mut sqlite_connection, id).map_err(|e| e.to_string())?;
         Ok(())
     }
 
-    pub(crate) fn delete_datasets(&self, plugin_id: &str) -> Result<(), String> {
+    pub fn delete_datasets(&self, plugin_id: &str) -> Result<(), String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
         dataset_dao::delete_by_plugin_id(&mut sqlite_connection, plugin_id)

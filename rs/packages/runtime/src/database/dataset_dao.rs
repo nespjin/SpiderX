@@ -19,10 +19,7 @@ use diesel::{
 
 use crate::database::{entities::dataset::DatasetEntity, schema::dataset};
 
-pub(crate) fn upsert(
-    conn: &mut SqliteConnection,
-    entity: &DatasetEntity,
-) -> QueryResult<DatasetEntity> {
+pub fn upsert(conn: &mut SqliteConnection, entity: &DatasetEntity) -> QueryResult<DatasetEntity> {
     diesel::insert_or_ignore_into(dataset::table)
         .values(entity)
         .on_conflict(dataset::id)
@@ -32,10 +29,7 @@ pub(crate) fn upsert(
         .get_result(conn)
 }
 
-pub(crate) fn upsert_all(
-    conn: &mut SqliteConnection,
-    entities: &[DatasetEntity],
-) -> QueryResult<usize> {
+pub fn upsert_all(conn: &mut SqliteConnection, entities: &[DatasetEntity]) -> QueryResult<usize> {
     conn.transaction(|conn: &mut SqliteConnection| {
         let mut count: usize = 0;
         for entity in entities {
@@ -52,19 +46,13 @@ pub(crate) fn upsert_all(
     })
 }
 
-pub(crate) fn insert_all(
-    conn: &mut SqliteConnection,
-    entities: &[DatasetEntity],
-) -> QueryResult<usize> {
+pub fn insert_all(conn: &mut SqliteConnection, entities: &[DatasetEntity]) -> QueryResult<usize> {
     diesel::insert_or_ignore_into(dataset::table)
         .values(entities)
         .execute(conn)
 }
 
-pub(crate) fn update_all(
-    conn: &mut SqliteConnection,
-    entities: &[DatasetEntity],
-) -> QueryResult<usize> {
+pub fn update_all(conn: &mut SqliteConnection, entities: &[DatasetEntity]) -> QueryResult<usize> {
     conn.transaction(|conn: &mut SqliteConnection| {
         let mut count: usize = 0;
         for entity in entities {
@@ -77,7 +65,7 @@ pub(crate) fn update_all(
     })
 }
 
-pub(crate) fn update_by_id(
+pub fn update_by_id(
     conn: &mut SqliteConnection,
     id: &str,
     entity: &DatasetEntity,
@@ -87,10 +75,7 @@ pub(crate) fn update_by_id(
         .execute(conn)
 }
 
-pub(crate) fn find_by_id(
-    conn: &mut SqliteConnection,
-    id: &str,
-) -> QueryResult<Option<DatasetEntity>> {
+pub fn find_by_id(conn: &mut SqliteConnection, id: &str) -> QueryResult<Option<DatasetEntity>> {
     match dataset::table.filter(dataset::id.eq(id)).first(conn) {
         Ok(dataset) => Ok(Some(dataset)),
         Err(diesel::NotFound) => Ok(None),
@@ -98,7 +83,7 @@ pub(crate) fn find_by_id(
     }
 }
 
-pub(crate) fn find_by_plugin_id(
+pub fn find_by_plugin_id(
     conn: &mut SqliteConnection,
     plugin_id: &str,
 ) -> QueryResult<Vec<DatasetEntity>> {
@@ -107,7 +92,23 @@ pub(crate) fn find_by_plugin_id(
         .load(conn)
 }
 
-pub(crate) fn is_dataset_exists(conn: &mut SqliteConnection, id: &str) -> QueryResult<bool> {
+pub fn find_by_id_in_plugin(
+    conn: &mut SqliteConnection,
+    plugin_id: &str,
+    id: &str,
+) -> QueryResult<Option<DatasetEntity>> {
+    match dataset::table
+        .filter(dataset::plugin_id.eq(plugin_id))
+        .filter(dataset::id.eq(id))
+        .first(conn)
+    {
+        Ok(dataset) => Ok(Some(dataset)),
+        Err(diesel::NotFound) => Ok(None),
+        Err(err) => Err(err),
+    }
+}
+
+pub fn is_dataset_exists(conn: &mut SqliteConnection, id: &str) -> QueryResult<bool> {
     dataset::table
         .filter(dataset::id.eq(id))
         .select(dataset::id)
@@ -116,21 +117,18 @@ pub(crate) fn is_dataset_exists(conn: &mut SqliteConnection, id: &str) -> QueryR
         .or_else(|_| Ok(false))
 }
 
-pub(crate) fn find_all(conn: &mut SqliteConnection) -> QueryResult<Vec<DatasetEntity>> {
+pub fn find_all(conn: &mut SqliteConnection) -> QueryResult<Vec<DatasetEntity>> {
     dataset::table.load(conn)
 }
 
-pub(crate) fn delete_by_plugin_id(
-    conn: &mut SqliteConnection,
-    plugin_id: &str,
-) -> QueryResult<usize> {
+pub fn delete_by_plugin_id(conn: &mut SqliteConnection, plugin_id: &str) -> QueryResult<usize> {
     diesel::delete(dataset::table.filter(dataset::plugin_id.eq(plugin_id))).execute(conn)
 }
 
-pub(crate) fn delete_by_id(conn: &mut SqliteConnection, id: &str) -> QueryResult<usize> {
+pub fn delete_by_id(conn: &mut SqliteConnection, id: &str) -> QueryResult<usize> {
     diesel::delete(dataset::table.filter(dataset::id.eq(id))).execute(conn)
 }
 
-pub(crate) fn delete_all(conn: &mut SqliteConnection) -> QueryResult<usize> {
+pub fn delete_all(conn: &mut SqliteConnection) -> QueryResult<usize> {
     diesel::delete(dataset::table).execute(conn)
 }
