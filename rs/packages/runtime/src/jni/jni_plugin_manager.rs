@@ -26,6 +26,9 @@ use std::sync::Mutex;
 use std::sync::OnceLock;
 use std::sync::RwLock;
 
+use crate::jni::jni_constants::JAVA_CLASS_NAME_ARRAY_LIST;
+use crate::jni::jni_constants::JAVA_METHOD_NAME_LIST_ADD;
+use crate::jni::jni_constants::JAVA_METHOD_SIG_LIST_ADD;
 use crate::jni::jni_obj_plugin;
 use crate::jni::jni_utils;
 use crate::jni::jni_webview::JNI_WV_JAVA_FIELD_NAME_PTR;
@@ -312,6 +315,59 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
         &plugin.datasets,
     )
     .unwrap()
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeGetInstalledPlugins(
+    mut env: JNIEnv,
+    _this: JObject,
+) -> jobject {
+    let plugin_manager = PluginManager::get_instance();
+    let plugin_manager = plugin_manager.lock().unwrap();
+
+    let plugins = match jni_utils::throw_java_expception_if_error(
+        &mut env,
+        plugin_manager.get_installed_plugins(),
+    ) {
+        Some(p) => p,
+        None => return JObject::null().into_raw(),
+    };
+
+    let arr_list = env
+        .new_object(JAVA_CLASS_NAME_ARRAY_LIST, "()V", &[])
+        .expect("unable to new array list");
+
+    let mut plugin_objs = vec![];
+    for plugin in plugins {
+        plugin_objs.push(
+            jni_obj_plugin::new(
+                &mut env,
+                &plugin.id,
+                &plugin.name,
+                &plugin.author,
+                &plugin.version,
+                &plugin.runtime_version,
+                &plugin.description,
+                &plugin.tags,
+                &plugin.supported_screen_types,
+                &plugin.datasets,
+            )
+            .unwrap(),
+        );
+    }
+
+    for plugin_obj_ptr in plugin_objs {
+        let plugin_obj = unsafe { JObject::from_raw(plugin_obj_ptr) };
+        env.call_method(
+            &arr_list,
+            JAVA_METHOD_NAME_LIST_ADD,
+            JAVA_METHOD_SIG_LIST_ADD,
+            &[JValueGen::Object(&plugin_obj)],
+        )
+        .unwrap();
+    }
+
+    arr_list.into_raw()
 }
 
 #[unsafe(no_mangle)]
