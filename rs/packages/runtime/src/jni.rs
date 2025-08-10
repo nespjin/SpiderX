@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::jni::jni_utils::JVM;
+
 pub(crate) mod jni_constants;
 pub(crate) mod jni_obj_dataset;
 pub(crate) mod jni_obj_list;
@@ -20,3 +22,12 @@ pub(crate) mod jni_obj_screen_type;
 pub(crate) mod jni_plugin_manager;
 pub(crate) mod jni_utils;
 pub(crate) mod jni_webview;
+
+#[unsafe(no_mangle)]
+pub extern "system" fn JNI_OnLoad(
+    vm: jni::JavaVM,
+    _reserved: *mut std::ffi::c_void,
+) -> jni::sys::jint {
+    JVM.set(vm).expect("Failed to set global JavaVM");
+    jni::sys::JNI_VERSION_1_8
+}

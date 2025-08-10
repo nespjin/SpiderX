@@ -13,11 +13,11 @@
 // limitations under the License.
 
 use jni::{JNIEnv, objects::JObject};
+use once_cell::sync::OnceCell;
 
-pub(crate) fn throw_java_expception_if_error<T>(
-    env: &mut JNIEnv,
-    error: Result<T, String>,
-) -> Option<T> {
+pub static JVM: OnceCell<jni::JavaVM> = OnceCell::new();
+
+pub fn throw_java_expception_if_error<T>(env: &mut JNIEnv, error: Result<T, String>) -> Option<T> {
     if let Err(e) = &error {
         env.throw_new("java/lang/Exception", e.as_str()).unwrap();
         return None;
@@ -25,7 +25,7 @@ pub(crate) fn throw_java_expception_if_error<T>(
     Some(error.unwrap())
 }
 
-pub(crate) fn throw_java_expception_msg(env: &mut JNIEnv, msg: &str) {
+pub fn throw_java_expception_msg(env: &mut JNIEnv, msg: &str) {
     env.throw_new("java/lang/Exception", msg).unwrap();
 }
 
