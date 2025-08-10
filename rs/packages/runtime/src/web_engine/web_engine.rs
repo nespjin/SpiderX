@@ -14,8 +14,10 @@
 
 use std::sync::Arc;
 
-pub trait WebEngine {
+pub trait WebEngine: Send + Sync {
     fn init(&mut self) -> Result<(), String>;
+
+    fn id(&self) -> i64;
 
     fn load_url(&self, url: &str) -> Result<(), String>;
 

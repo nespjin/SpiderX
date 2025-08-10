@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::sync::{Arc, MutexGuard};
+use std::sync::{Arc, MutexGuard, RwLock};
 
 use jni::{
     JNIEnv,
@@ -21,7 +21,8 @@ use jni::{
 };
 
 use crate::{
-    jni::jni_plugin_manager::JniPluginManager,
+    jni::jni_plugin_manager::{self, JniPluginManager},
+    plugin_manager::{self, PluginManager},
     web_engine::web_engine::{WebEngine, WebEngineListener},
 };
 
@@ -37,6 +38,30 @@ const JAVA_METHOD_INFO_RELOAD: &'static [&'static str; 2] = &["reload", "()V"];
 const JAVA_METHOD_INFO_EVALUATE: &'static [&'static str; 2] =
     &["evaluate", "(Ljava/lang/String;)Ljava/lang/String;"];
 const JAVA_METHOD_INFO_DESTROY: &'static [&'static str; 2] = &["destroy", "()V"];
+
+pub fn new_jni_wv(id: i64) -> Result<JniWebView, String> {
+    let jni_plugin_manager = JniPluginManager::get_instance();
+    let jni_plugin_manager = jni_plugin_manager.lock().unwrap();
+
+    let wv_java_obj = jni_plugin_manager
+        .java_env()
+        .map_err(|e| e.to_string())?
+        .new_global_ref(jni_plugin_manager.new_wv_obj().map_err(|e| e.to_string())?)
+        .map_err(|e| e.to_string())?;
+
+    jni_plugin_manager
+        .java_env()
+        .map_err(|e| e.to_string())?
+        .set_field(
+            wv_java_obj.clone(),
+            JNI_WV_JAVA_FIELD_NAME_PTR,
+            "J",
+            JValueGen::Long(id),
+        )
+        .map_err(|e| e.to_string())?;
+
+    Ok(JniWebView::new(id, wv_java_obj))
+}
 
 pub struct JniWebView {
     wv_java_obj: GlobalRef,
@@ -71,6 +96,10 @@ impl WebEngine for JniWebView {
             .map_err(|e| e.to_string())?;
 
         Ok(())
+    }
+
+    fn id(&self) -> i64 {
+        self.id
     }
 
     fn load_url(&self, url: &str) -> Result<(), String> {
@@ -289,7 +318,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
 
     jni_wv
         .listener()
-        .map(|l| l.on_load_progress(jni_wv.clone(), progress));
+        .map(|l| l.on_load_progress(jni_wv, progress));
 }
 
 #[unsafe(no_mangle)]
@@ -334,7 +363,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
         .unwrap_or(JObject::null().into_raw())
 }
 
-fn get_jni_wv_from_java_obj<'other_local, O>(env: &mut JNIEnv, obj: O) -> Arc<JniWebView>
+fn get_jni_wv_from_java_obj<'other_local, O>(env: &mut JNIEnv, obj: O) -> Arc<dyn WebEngine>
 where
     O: AsRef<JObject<'other_local>>,
 {
@@ -346,11 +375,10 @@ where
     }
     .expect("wv_id is none in java object");
 
-    let jni_plg_mgr = JniPluginManager::get_instance();
-    let jni_plg_mgr: MutexGuard<'_, JniPluginManager> = jni_plg_mgr.lock().unwrap();
+    let plugin_manager = PluginManager::get_instance();
+    let plugin_manager = plugin_manager.lock().unwrap();
 
-    jni_plg_mgr
-        .get_jni_wv(wv_id)
-        .expect("jni_wv is none in jni_plg_mgr")
-        .expect("jni_wv is none in jni_plg_mgr")
+    plugin_manager
+        .get_webengine(wv_id)
+        .expect("webengine is none in plugin manager")
 }

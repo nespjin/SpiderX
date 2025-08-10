@@ -14,17 +14,22 @@
 
 use core::data::{plugin::Plugin, screen_type::ScreenType};
 use std::{
+    collections::HashMap,
     fs,
     path::Path,
-    sync::{Arc, Mutex, OnceLock},
+    sync::{Arc, Mutex, OnceLock, RwLock},
 };
 
 use compiler::{json_plugin_compiler::JsonPluginCompiler, plugin_compiler::PluginCompiler};
 
 use crate::{
     database::database,
+    jni::{jni_plugin_manager::JniPluginManager, jni_webview},
     repository::{dataset_repository::DatasetRepository, plugin_repository::PluginRepository},
+    web_engine::web_engine::WebEngine,
 };
+
+const MAX_WV_POOL_SIZE: usize = 10;
 
 #[derive(Debug, Clone)]
 pub struct PluginManagerConfig {
@@ -43,6 +48,9 @@ pub struct PluginManager {
     config: Option<PluginManagerConfig>,
     dataset_repository: Option<DatasetRepository>,
     plugin_repository: Option<PluginRepository>,
+    webengine_id: i64,
+    webengines: Arc<RwLock<HashMap<i64, Arc<dyn WebEngine>>>>,
+    webengine_pool: Arc<RwLock<Vec<Arc<dyn WebEngine>>>>,
 }
 
 impl PluginManager {
@@ -54,6 +62,9 @@ impl PluginManager {
                     config: None,
                     dataset_repository: None,
                     plugin_repository: None,
+                    webengine_id: 0,
+                    webengines: Arc::new(RwLock::new(HashMap::new())),
+                    webengine_pool: Arc::new(RwLock::new(Vec::new())),
                 }))
             })
             .clone()
@@ -187,6 +198,70 @@ impl PluginManager {
         };
 
         Ok("".to_string())
+    }
+
+    pub fn new_webengine(&mut self) -> Result<Arc<dyn WebEngine>, String> {
+        let id: i64 = self.webengine_id;
+        let next_id = self.webengine_id + 1;
+
+        let engine = if !self
+            .webengine_pool
+            .read()
+            .map_err(|e| e.to_string())?
+            .is_empty()
+        {
+            self.webengine_pool
+                .write()
+                .map_err(|e| e.to_string())?
+                .remove(0)
+        } else {
+            // TODO: Add other platform impl
+            Arc::new(jni_webview::new_jni_wv(id)?)
+        };
+        self.webengine_id = next_id;
+        Ok(engine)
+    }
+
+    pub fn is_webengine_exists(&self, id: i64) -> bool {
+        self.webengine_pool
+            .read()
+            .unwrap()
+            .iter()
+            .any(|e| e.id() == id)
+    }
+
+    pub fn get_webengine(&self, id: i64) -> Option<Arc<dyn WebEngine>> {
+        self.webengine_pool
+            .read()
+            .unwrap()
+            .iter()
+            .find(|e| e.id() == id)
+            .cloned()
+    }
+
+    pub fn remove_webengine(&mut self, id: i64) -> Result<(), String> {
+        let engine = self
+            .webengines
+            .write()
+            .map_err(|e| e.to_string())?
+            .remove(&id);
+
+        if let Some(engine) = engine {
+            if self
+                .webengine_pool
+                .write()
+                .map_err(|e| e.to_string())?
+                .len()
+                < MAX_WV_POOL_SIZE
+            {
+                self.webengine_pool
+                    .write()
+                    .map_err(|e| e.to_string())?
+                    .push(engine);
+            }
+        }
+
+        Ok(())
     }
 
     fn ensure_initialized(&self) -> Result<(), String> {

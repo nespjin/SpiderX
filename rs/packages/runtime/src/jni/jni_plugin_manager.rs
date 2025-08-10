@@ -21,11 +21,9 @@ use jni::sys::jboolean;
 use jni::sys::jint;
 use jni::sys::jobject;
 use jni::sys::jstring;
-use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::OnceLock;
-use std::sync::RwLock;
 
 use crate::jni::jni_constants::JAVA_CLASS_NAME_ARRAY_LIST;
 use crate::jni::jni_constants::JAVA_METHOD_NAME_LIST_ADD;
@@ -33,8 +31,6 @@ use crate::jni::jni_constants::JAVA_METHOD_SIG_LIST_ADD;
 use crate::jni::jni_obj_plugin;
 use crate::jni::jni_obj_screen_type;
 use crate::jni::jni_utils;
-use crate::jni::jni_webview::JNI_WV_JAVA_FIELD_NAME_PTR;
-use crate::jni::jni_webview::JniWebView;
 use crate::plugin_manager::PluginManager;
 use crate::plugin_manager::PluginManagerConfig;
 use crate::plugin_manager::PluginSource;
@@ -47,9 +43,6 @@ pub(crate) const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON_FILE: jint = 1;
 pub(crate) struct JniPluginManager {
     wv_java_class: Option<JClass<'static>>,
     java_vm: Option<JavaVM>,
-    wv_id: i64,
-    webviews: Arc<RwLock<HashMap<i64, Arc<JniWebView>>>>,
-    wv_pool: Arc<RwLock<Vec<Arc<JniWebView>>>>,
 }
 
 impl JniPluginManager {
@@ -60,9 +53,6 @@ impl JniPluginManager {
                 Arc::new(Mutex::new(JniPluginManager {
                     wv_java_class: None,
                     java_vm: None,
-                    wv_id: 0,
-                    webviews: Arc::new(RwLock::new(HashMap::new())),
-                    wv_pool: Arc::new(RwLock::new(Vec::new())),
                 }))
             })
             .clone()
@@ -119,74 +109,6 @@ impl JniPluginManager {
             .map_err(|e| e.to_string())?;
 
         Ok(wv_obj)
-    }
-
-    pub fn new_jni_wv(&mut self) -> Result<i64, String> {
-        let id: i64 = self.wv_id;
-        let next_id = id + 1;
-        self.wv_id = next_id;
-
-        let wv = if !self.wv_pool.read().map_err(|e| e.to_string())?.is_empty() {
-            self.wv_pool.write().map_err(|e| e.to_string())?.remove(0)
-        } else {
-            let wv_java_obj = self
-                .java_env()
-                .map_err(|e| e.to_string())?
-                .new_global_ref(self.new_wv_obj().map_err(|e| e.to_string())?)
-                .map_err(|e| e.to_string())?;
-
-            self.java_env()
-                .map_err(|e| e.to_string())?
-                .set_field(
-                    wv_java_obj.clone(),
-                    JNI_WV_JAVA_FIELD_NAME_PTR,
-                    "J",
-                    JValueGen::Long(id),
-                )
-                .map_err(|e| e.to_string())?;
-
-            Arc::new(JniWebView::new(id, wv_java_obj))
-        };
-
-        self.webviews
-            .write()
-            .map_err(|e| e.to_string())?
-            .insert(id, wv);
-
-        Ok(id)
-    }
-
-    pub fn is_jni_wv_exist(&self, id: i64) -> bool {
-        self.webviews
-            .read()
-            .map(|e| e.contains_key(&id))
-            .unwrap_or(false)
-    }
-
-    pub fn get_jni_wv(&self, id: i64) -> Result<Option<Arc<JniWebView>>, String> {
-        Ok(self
-            .webviews
-            .read()
-            .map_err(|e| e.to_string())?
-            .get(&id)
-            .map(|e| e.clone())
-            .clone())
-    }
-
-    pub fn remove_jni_wv(&mut self, id: i64) -> Result<(), String> {
-        let wv = self
-            .webviews
-            .write()
-            .map_err(|e| e.to_string())?
-            .remove(&id);
-
-        if let Some(wv) = wv {
-            if self.wv_pool.write().map_err(|e| e.to_string())?.len() < MAX_WV_POOL_SIZE {
-                self.wv_pool.write().map_err(|e| e.to_string())?.push(wv);
-            }
-        }
-
-        Ok(())
     }
 }
 
