@@ -23,8 +23,8 @@ use jni::{
 use crate::jni::{
     jni_constants::{
         JAVA_CLASS_NAME_ARRAY_LIST, JAVA_CLASS_NAME_HASH_MAP, JAVA_CLASS_NAME_LIST,
-        JAVA_METHOD_NAME_LIST_ADD, JAVA_METHOD_NAME_MAP_PUT, JAVA_METHOD_SIG_LIST_ADD,
-        JAVA_METHOD_SIG_MAP_PUT,
+        JAVA_CLASS_NAME_MAP, JAVA_METHOD_NAME_LIST_ADD, JAVA_METHOD_NAME_MAP_PUT,
+        JAVA_METHOD_SIG_LIST_ADD, JAVA_METHOD_SIG_MAP_PUT,
     },
     jni_obj_dataset::JAVA_CLASS_NAME_DATASET,
     jni_obj_screen_type::{self, JAVA_CLASS_NAME_SCREEN_TYPE},
@@ -298,7 +298,7 @@ pub fn new(
         env.set_field(
             &dataset_obj,
             "dsl",
-            format!("L{};", JAVA_CLASS_NAME_DATASET),
+            format!("L{};", JAVA_CLASS_NAME_MAP),
             JValueGen::Object(&dsl_obj),
         )
         .unwrap();
@@ -312,7 +312,7 @@ pub fn new(
         env.set_field(
             &dataset_obj,
             "dslCompact",
-            format!("L{};", JAVA_CLASS_NAME_DATASET),
+            format!("L{};", JAVA_CLASS_NAME_MAP),
             JValueGen::Object(&dsl_compact),
         )
         .unwrap();
@@ -326,7 +326,7 @@ pub fn new(
         env.set_field(
             &dataset_obj,
             "dslMedium",
-            format!("L{};", JAVA_CLASS_NAME_DATASET),
+            format!("L{};", JAVA_CLASS_NAME_MAP),
             JValueGen::Object(&dsl_medium),
         )
         .unwrap();
@@ -340,7 +340,7 @@ pub fn new(
         env.set_field(
             &dataset_obj,
             "dslExpanded",
-            format!("L{};", JAVA_CLASS_NAME_DATASET),
+            format!("L{};", JAVA_CLASS_NAME_MAP),
             JValueGen::Object(&dsl_expanded),
         )
         .unwrap();
