@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub(crate) mod jni_constants;
-pub(crate) mod jni_obj_dataset;
-pub(crate) mod jni_obj_list;
-pub(crate) mod jni_obj_plugin;
-pub(crate) mod jni_obj_screen_type;
-pub(crate) mod jni_plugin_manager;
-pub(crate) mod jni_utils;
-pub(crate) mod jni_webview;
+use jni::{JNIEnv, errors::Error, objects::JObject};
+
+use crate::jni::jni_constants::JAVA_CLASS_NAME_ARRAY_LIST;
+
+pub fn new_array_list<'local>(env: &'local mut JNIEnv<'local>) -> Result<JObject<'local>, Error> {
+    let arr_list_cls = env
+        .find_class(JAVA_CLASS_NAME_ARRAY_LIST)
+        .expect("Cant find class ArrayList!");
+
+    env.alloc_object(arr_list_cls)
+}

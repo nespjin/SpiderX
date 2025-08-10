@@ -19,12 +19,14 @@ use jni::objects::*;
 use jni::sys::JNI_FALSE;
 use jni::sys::jboolean;
 use jni::sys::jint;
+use jni::sys::jobject;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::OnceLock;
 use std::sync::RwLock;
 
+use crate::jni::jni_obj_plugin;
 use crate::jni::jni_utils;
 use crate::jni::jni_webview::JNI_WV_JAVA_FIELD_NAME_PTR;
 use crate::jni::jni_webview::JniWebView;
@@ -270,6 +272,46 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
         Some(is_installed) => is_installed.into(),
         None => return JNI_FALSE,
     }
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeGetInstalledPlugin(
+    mut env: JNIEnv,
+    _this: JObject,
+    id: JString,
+) -> jobject {
+    let id: String = env.get_string(&id).expect("get id failed").into();
+
+    let plugin_manager = PluginManager::get_instance();
+    let plugin_manager = plugin_manager.lock().unwrap();
+
+    let plugin = match jni_utils::throw_java_expception_if_error(
+        &mut env,
+        plugin_manager.get_installed_plugin(&id),
+    ) {
+        Some(p) => {
+            if let Some(plugin) = p {
+                plugin
+            } else {
+                return JObject::null().into_raw();
+            }
+        }
+        None => return JObject::null().into_raw(),
+    };
+
+    jni_obj_plugin::new(
+        &mut env,
+        &plugin.id,
+        &plugin.name,
+        &plugin.author,
+        &plugin.version,
+        &plugin.runtime_version,
+        &plugin.description,
+        &plugin.tags,
+        &plugin.supported_screen_types,
+        &plugin.datasets,
+    )
+    .unwrap()
 }
 
 #[unsafe(no_mangle)]

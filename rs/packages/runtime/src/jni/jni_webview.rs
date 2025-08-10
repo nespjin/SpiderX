@@ -25,7 +25,7 @@ use crate::{
     web_engine::web_engine::{WebEngine, WebEngineListener},
 };
 
-const JAVA_CLASS_NAME_WV: &'static str = "com.nesp.spiderx.runtime.JniWebView";
+const JAVA_CLASS_NAME_WV: &'static str = "com/nesp/spiderx/runtime/JniWebView";
 
 pub const JNI_WV_JAVA_FIELD_NAME_PTR: &'static str = "mPtr";
 

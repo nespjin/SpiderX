@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub(crate) mod jni_constants;
-pub(crate) mod jni_obj_dataset;
-pub(crate) mod jni_obj_list;
-pub(crate) mod jni_obj_plugin;
-pub(crate) mod jni_obj_screen_type;
-pub(crate) mod jni_plugin_manager;
-pub(crate) mod jni_utils;
-pub(crate) mod jni_webview;
+pub const JAVA_CLASS_NAME_LIST: &'static str = "java/util/List";
+pub const JAVA_CLASS_NAME_ARRAY_LIST: &'static str = "java/util/ArrayList";
+pub const JAVA_METHOD_NAME_LIST_ADD: &'static str = "add";
+pub const JAVA_METHOD_SIG_LIST_ADD: &'static str = "(Ljava/lang/Object;)Z";
+
+pub const JAVA_CLASS_NAME_MAP: &'static str = "java/util/Map";
+pub const JAVA_CLASS_NAME_HASH_MAP: &'static str = "java/util/HashMap";
+pub const JAVA_METHOD_NAME_MAP_PUT: &'static str = "put";
+pub const JAVA_METHOD_SIG_MAP_PUT: &'static str =
+    "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;";

@@ -12,11 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub(crate) mod jni_constants;
-pub(crate) mod jni_obj_dataset;
-pub(crate) mod jni_obj_list;
-pub(crate) mod jni_obj_plugin;
-pub(crate) mod jni_obj_screen_type;
-pub(crate) mod jni_plugin_manager;
-pub(crate) mod jni_utils;
-pub(crate) mod jni_webview;
+pub const JAVA_CLASS_NAME_DATASET: &'static str = "com/nesp/spiderx/runtime/data/Dataset";
