@@ -20,6 +20,7 @@ use jni::sys::JNI_FALSE;
 use jni::sys::jboolean;
 use jni::sys::jint;
 use jni::sys::jobject;
+use jni::sys::jstring;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -405,4 +406,35 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     let plugin_manager = PluginManager::get_instance();
     let mut plugin_manager = plugin_manager.lock().unwrap();
     jni_utils::throw_java_expception_if_error(&mut env, plugin_manager.uninstall_plugin(&id));
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeRequestDataset(
+    mut env: JNIEnv,
+    _this: JObject,
+    pluginId: JString,
+    datasetId: JString,
+) -> jstring {
+    let plugin_id: String = env
+        .get_string(&pluginId)
+        .expect("get plugin id failed")
+        .into();
+    let dataset_id: String = env
+        .get_string(&datasetId)
+        .expect("get dataset id failed")
+        .into();
+
+    let plugin_manager = PluginManager::get_instance();
+    let plugin_manager = plugin_manager.lock().unwrap();
+
+    let data = plugin_manager.request_dataset(&plugin_id, &dataset_id);
+    let data = jni_utils::throw_java_expception_if_error(&mut env, data);
+
+    match data {
+        Some(data) => {
+            let data = env.new_string(&data).expect("create java string failed");
+            data.into_raw()
+        }
+        None => JObject::null().into_raw(),
+    }
 }
