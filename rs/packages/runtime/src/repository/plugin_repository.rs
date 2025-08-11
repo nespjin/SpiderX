@@ -24,11 +24,11 @@ pub(crate) struct PluginRepository {
 }
 
 impl PluginRepository {
-    pub(crate) fn new(database_path: String) -> PluginRepository {
+    pub fn new(database_path: String) -> PluginRepository {
         PluginRepository { database_path }
     }
 
-    pub(crate) fn save_plugin(&self, plugin: Plugin) -> Result<(), String> {
+    pub fn save_plugin(&self, plugin: Plugin) -> Result<(), String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
         let entities = plugin::plugins_to_entities(vec![plugin])?;
@@ -40,7 +40,7 @@ impl PluginRepository {
         Ok(())
     }
 
-    pub(crate) fn save_plugins(&self, plugins: Vec<Plugin>) -> Result<(), String> {
+    pub fn save_plugins(&self, plugins: Vec<Plugin>) -> Result<(), String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
         let entities = plugin::plugins_to_entities(plugins)?;
@@ -52,7 +52,7 @@ impl PluginRepository {
         Ok(())
     }
 
-    pub(crate) fn get_plugins(&self) -> Result<Vec<Plugin>, String> {
+    pub fn get_plugins(&self) -> Result<Vec<Plugin>, String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
         let entities = plugin_dao::find_all(&mut sqlite_connection).map_err(|e| e.to_string())?;
@@ -67,7 +67,7 @@ impl PluginRepository {
         Ok(plugins)
     }
 
-    pub(crate) fn get_plugin(&self, id: &str) -> Result<Option<Plugin>, String> {
+    pub fn get_plugin(&self, id: &str) -> Result<Option<Plugin>, String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
         let entity =
@@ -83,20 +83,20 @@ impl PluginRepository {
         }
     }
 
-    pub(crate) fn is_plugin_exists(&self, id: &str) -> Result<bool, String> {
+    pub fn is_plugin_exists(&self, id: &str) -> Result<bool, String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
         plugin_dao::is_plugin_exists(&mut sqlite_connection, id).map_err(|e| e.to_string())
     }
 
-    pub(crate) fn delete_plugin(&self, id: &str) -> Result<(), String> {
+    pub fn delete_plugin(&self, id: &str) -> Result<(), String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
         let _ = plugin_dao::delete_by_id(&mut sqlite_connection, id).map_err(|e| e.to_string())?;
         Ok(())
     }
 
-    pub(crate) fn delete_plugins(&self) -> Result<(), String> {
+    pub fn delete_plugins(&self) -> Result<(), String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
         let _ = plugin_dao::delete_all(&mut sqlite_connection).map_err(|e| e.to_string())?;

@@ -19,7 +19,7 @@ use crate::{
     repository::model::dataset,
 };
 
-pub(crate) struct DatasetRepository {
+pub struct DatasetRepository {
     database_path: String,
 }
 
