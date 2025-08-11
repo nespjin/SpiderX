@@ -136,10 +136,16 @@ impl DatasetRepository {
             .with_option_expanded(dataset.dsl_expanded.clone());
         let dsl_value = dsl.value(screen_type);
 
-        let dsl_map: HashMap<String, String> = HashMap::new();
+        let dsl = if let Some(dsl) = dsl_value {
+            let dsl_map: HashMap<String, serde_json::Value> =
+                serde_json::from_value(dsl.clone()).map_err(|e| e.to_string())?;
+            dsl_map
+        } else {
+            HashMap::new()
+        };
 
-        let dataset_ds: Box<dyn DatasetDataSource> = if let Some(dsl) = dsl_value {
-            Box::new(DslDatasetDataSource::new(dataset_id, url_value, &dsl_map))
+        let dataset_ds: Box<dyn DatasetDataSource> = if let Some(_) = dsl_value {
+            Box::new(DslDatasetDataSource::new(dataset_id, url_value, &dsl))
         } else if let Some(js) = js_value {
             Box::new(JavaScriptDatasetDataSource::new(dataset_id, url_value, js))
         } else {

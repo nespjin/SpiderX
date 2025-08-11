@@ -19,11 +19,15 @@ use crate::data_source::dataset_data_source::DatasetDataSource;
 pub struct DslDatasetDataSource<'local> {
     id: &'local str,
     url: &'local str,
-    dsl:&'local HashMap<String, String>,
+    dsl: &'local HashMap<String, serde_json::Value>,
 }
 
 impl<'local> DslDatasetDataSource<'local> {
-    pub fn new(id:&'local str, url:&'local str, dsl: &'local HashMap<String, String>) -> Self {
+    pub fn new(
+        id: &'local str,
+        url: &'local str,
+        dsl: &'local HashMap<String, serde_json::Value>,
+    ) -> Self {
         Self { id, url, dsl }
     }
 }
