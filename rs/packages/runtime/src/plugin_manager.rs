@@ -249,7 +249,7 @@ impl PluginManager {
             .remove(&id);
 
         if let Some(engine) = engine {
-            engine.write().unwrap().destroy();
+            engine.write().unwrap().destroy()?;
 
             if self
                 .webengine_pool
