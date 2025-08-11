@@ -218,6 +218,9 @@ impl PluginManager {
             // TODO: Add other platform impl
             Arc::new(RwLock::new(jni_webview::new_jni_wv(id)?))
         };
+        
+        engine.write().unwrap().init()?;
+
         self.webengine_id = next_id;
         self.webengines
             .write()
@@ -246,6 +249,8 @@ impl PluginManager {
             .remove(&id);
 
         if let Some(engine) = engine {
+            engine.write().unwrap().destroy();
+
             if self
                 .webengine_pool
                 .write()

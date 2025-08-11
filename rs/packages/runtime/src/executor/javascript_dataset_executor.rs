@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::executor::dataset_executor::DatasetExecutor;
+use crate::{executor::dataset_executor::DatasetExecutor, plugin_manager::PluginManager};
 
 pub struct JavaScriptDatasetExecutor<'local> {
     id: &'local str,
@@ -28,6 +28,14 @@ impl<'local> JavaScriptDatasetExecutor<'local> {
 
 impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
     fn request(&self) -> Result<String, String> {
-        todo!()
+        let plugin_manager = PluginManager::get_instance();
+        let mut plugin_manager = plugin_manager.lock().map_err(|e| e.to_string())?;
+
+        let webengine = plugin_manager.new_webengine()?;
+        let webengine = webengine.read().unwrap();
+
+        webengine.load_url(self.url)?;
+
+        Ok("".to_string())
     }
 }
