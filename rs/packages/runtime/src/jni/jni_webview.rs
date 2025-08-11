@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::sync::{Arc, MutexGuard, RwLock};
+use std::sync::{Arc, MutexGuard};
 
 use jni::{
     JNIEnv,
@@ -21,12 +21,12 @@ use jni::{
 };
 
 use crate::{
-    jni::jni_plugin_manager::{self, JniPluginManager},
-    plugin_manager::{self, PluginManager},
-    web_engine::web_engine::{WebEngine, WebEngineListener},
+    jni::jni_plugin_manager::JniPluginManager,
+    plugin_manager::PluginManager,
+    web_engine::web_engine::{WebEngine, WebEngineListener, WebEngineMut},
 };
 
-const JAVA_CLASS_NAME_WV: &'static str = "com/nesp/spiderx/runtime/JniWebView";
+// const JAVA_CLASS_NAME_WV: &'static str = "com/nesp/spiderx/runtime/JniWebView";
 
 pub const JNI_WV_JAVA_FIELD_NAME_PTR: &'static str = "mPtr";
 
@@ -96,6 +96,10 @@ impl WebEngine for JniWebView {
             .map_err(|e| e.to_string())?;
 
         Ok(())
+    }
+
+    fn set_id(&mut self, id: i64) {
+        self.id = id;
     }
 
     fn id(&self) -> i64 {
@@ -269,6 +273,8 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
     //     listener.on_page_started(jni_wv.clone(), &url);
     // });
     jni_wv
+        .read()
+        .unwrap()
         .listener()
         .map(|l| l.on_page_started(jni_wv.clone(), &url));
 }
@@ -285,6 +291,8 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
 
     let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
     jni_wv
+        .read()
+        .unwrap()
         .listener()
         .map(|l| l.on_page_finished(jni_wv.clone(), &url));
 }
@@ -302,6 +310,8 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
     let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
 
     jni_wv
+        .read()
+        .unwrap()
         .listener()
         .map(|l| l.on_page_error(jni_wv.clone(), &url));
 }
@@ -317,8 +327,10 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
     let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
 
     jni_wv
+        .read()
+        .unwrap()
         .listener()
-        .map(|l| l.on_load_progress(jni_wv, progress));
+        .map(|l| l.on_load_progress(jni_wv.clone(), progress));
 }
 
 #[unsafe(no_mangle)]
@@ -334,6 +346,8 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
     let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
 
     jni_wv
+        .read()
+        .unwrap()
         .listener()
         .map(|l| l.should_override_url_loading(jni_wv.clone(), &url))
         .map(|b| b.into())
@@ -353,6 +367,8 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
     let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
 
     jni_wv
+        .read()
+        .unwrap()
         .listener()
         .map(|l| l.should_intercept_request(jni_wv.clone(), &url))
         .map(|s| {
@@ -363,7 +379,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
         .unwrap_or(JObject::null().into_raw())
 }
 
-fn get_jni_wv_from_java_obj<'other_local, O>(env: &mut JNIEnv, obj: O) -> Arc<dyn WebEngine>
+fn get_jni_wv_from_java_obj<'other_local, O>(env: &mut JNIEnv, obj: O) -> WebEngineMut
 where
     O: AsRef<JObject<'other_local>>,
 {

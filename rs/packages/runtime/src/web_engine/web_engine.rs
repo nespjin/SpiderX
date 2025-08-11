@@ -12,10 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
+
+pub type RwLockWebEngine = RwLock<dyn WebEngine>;
+pub type WebEngineMut = Arc<RwLockWebEngine>;
 
 pub trait WebEngine: Send + Sync {
     fn init(&mut self) -> Result<(), String>;
+
+    fn set_id(&mut self, id: i64);
 
     fn id(&self) -> i64;
 
@@ -46,15 +51,15 @@ pub trait WebEngine: Send + Sync {
 }
 
 pub trait WebEngineListener: Send + Sync {
-    fn on_page_started(&self, engine: Arc<dyn WebEngine>, url: &str);
+    fn on_page_started(&self, engine: WebEngineMut, url: &str);
 
-    fn on_page_finished(&self, engine: Arc<dyn WebEngine>, url: &str);
+    fn on_page_finished(&self, engine: WebEngineMut, url: &str);
 
-    fn on_page_error(&self, engine: Arc<dyn WebEngine>, url: &str);
+    fn on_page_error(&self, engine: WebEngineMut, url: &str);
 
-    fn on_load_progress(&self, engine: Arc<dyn WebEngine>, progress: i32);
+    fn on_load_progress(&self, engine: WebEngineMut, progress: i32);
 
-    fn should_override_url_loading(&self, engine: Arc<dyn WebEngine>, url: &str) -> bool;
+    fn should_override_url_loading(&self, engine: WebEngineMut, url: &str) -> bool;
 
-    fn should_intercept_request(&self, engine: Arc<dyn WebEngine>, url: &str) -> String;
+    fn should_intercept_request(&self, engine: WebEngineMut, url: &str) -> String;
 }

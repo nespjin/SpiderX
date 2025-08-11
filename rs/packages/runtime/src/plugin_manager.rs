@@ -24,9 +24,9 @@ use compiler::{json_plugin_compiler::JsonPluginCompiler, plugin_compiler::Plugin
 
 use crate::{
     database::database,
-    jni::{jni_plugin_manager::JniPluginManager, jni_webview},
+    jni::jni_webview,
     repository::{dataset_repository::DatasetRepository, plugin_repository::PluginRepository},
-    web_engine::web_engine::WebEngine,
+    web_engine::web_engine::WebEngineMut,
 };
 
 const MAX_WV_POOL_SIZE: usize = 10;
@@ -49,8 +49,8 @@ pub struct PluginManager {
     dataset_repository: Option<DatasetRepository>,
     plugin_repository: Option<PluginRepository>,
     webengine_id: i64,
-    webengines: Arc<RwLock<HashMap<i64, Arc<dyn WebEngine>>>>,
-    webengine_pool: Arc<RwLock<Vec<Arc<dyn WebEngine>>>>,
+    webengines: Arc<RwLock<HashMap<i64, WebEngineMut>>>,
+    webengine_pool: Arc<RwLock<Vec<WebEngineMut>>>,
 }
 
 impl PluginManager {
@@ -200,7 +200,7 @@ impl PluginManager {
         Ok("".to_string())
     }
 
-    pub fn new_webengine(&mut self) -> Result<Arc<dyn WebEngine>, String> {
+    pub fn new_webengine(&mut self) -> Result<WebEngineMut, String> {
         let id: i64 = self.webengine_id;
         let next_id = self.webengine_id + 1;
 
@@ -210,13 +210,16 @@ impl PluginManager {
             .map_err(|e| e.to_string())?
             .is_empty()
         {
-            self.webengine_pool
+            let engine = self
+                .webengine_pool
                 .write()
                 .map_err(|e| e.to_string())?
-                .remove(0)
+                .remove(0);
+            engine.write().unwrap().set_id(id);
+            engine
         } else {
             // TODO: Add other platform impl
-            Arc::new(jni_webview::new_jni_wv(id)?)
+            Arc::new(RwLock::new(jni_webview::new_jni_wv(id)?))
         };
         self.webengine_id = next_id;
         Ok(engine)
@@ -227,15 +230,15 @@ impl PluginManager {
             .read()
             .unwrap()
             .iter()
-            .any(|e| e.id() == id)
+            .any(|e| e.read().unwrap().id() == id)
     }
 
-    pub fn get_webengine(&self, id: i64) -> Option<Arc<dyn WebEngine>> {
+    pub fn get_webengine(&self, id: i64) -> Option<WebEngineMut> {
         self.webengine_pool
             .read()
             .unwrap()
             .iter()
-            .find(|e| e.id() == id)
+            .find(|e| e.read().unwrap().id() == id)
             .cloned()
     }
 
