@@ -271,7 +271,7 @@ impl PluginManager {
 
     fn ensure_initialized(&self) -> Result<(), String> {
         if self.config.is_none() {
-            return Err("Not initialized".to_string());
+            return Err("The plugin manager is not initialized".to_string());
         }
         Ok(())
     }
