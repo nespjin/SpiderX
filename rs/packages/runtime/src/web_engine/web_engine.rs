@@ -17,6 +17,10 @@ use std::sync::{Arc, RwLock};
 pub type RwLockWebEngine = RwLock<dyn WebEngine>;
 pub type WebEngineMut = Arc<RwLockWebEngine>;
 
+pub type RwLockWebEngineListener = RwLock<dyn WebEngineListener>;
+pub type WebEngineListenerMut = Arc<RwLockWebEngineListener>;
+
+
 pub trait WebEngine: Send + Sync {
     fn init(&mut self) -> Result<(), String>;
 
@@ -32,20 +36,20 @@ pub trait WebEngine: Send + Sync {
 
     fn evaluate(&self, script: &str) -> Result<String, String>;
 
-    // fn add_listener(&mut self, listener: Arc<dyn WebEngineListener>) -> i64;
+    // fn add_listener(&mut self, listener: WebEngineListenerMut) -> i64;
 
     // fn remove_listener(&mut self, id: i64);
 
     // fn notify_listeners<F>(&self, callback: F)
     // where
     //     Self: Sized,
-    //     F: FnMut(Arc<dyn WebEngineListener>);
+    //     F: FnMut(WebEngineListenerMut);
 
-    // fn listeners(&self) -> Vec<Arc<dyn WebEngineListener>>;
+    // fn listeners(&self) -> Vec<WebEngineListenerMut>;
 
-    fn set_listener(&mut self, listener: Arc<dyn WebEngineListener>);
+    fn set_listener(&mut self, listener: WebEngineListenerMut);
 
-    fn listener(&self) -> Option<Arc<dyn WebEngineListener>>;
+    fn listener(&self) -> Option<WebEngineListenerMut>;
 
     fn destroy(&mut self) -> Result<(), String>;
 }

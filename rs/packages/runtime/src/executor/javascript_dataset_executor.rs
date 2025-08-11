@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{fmt::Display, sync::Arc};
+use std::{
+    fmt::Display,
+    sync::{Arc, RwLock},
+};
 
 use crate::{
     executor::dataset_executor::DatasetExecutor, plugin_manager::PluginManager,
@@ -63,7 +66,10 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
             println!("WebEngineCallback {} ", e);
         });
 
-        let listener = Arc::new(WebEngineListenerImpl::new(self.url.to_string(), callback));
+        let listener = Arc::new(RwLock::new(WebEngineListenerImpl::new(
+            self.url.to_string(),
+            callback,
+        )));
         webengine.write().unwrap().set_listener(listener);
         webengine.read().unwrap().load_url(self.url)?;
 
