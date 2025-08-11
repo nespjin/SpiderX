@@ -47,7 +47,9 @@ pub fn new(
     let class = env
         .find_class(JAVA_CLASS_NAME_PLUGIN)
         .expect("Plugin class not found!");
-    let obj = env.alloc_object(class).expect("Cant new Plugin instance!");
+    let obj = env
+        .new_object(class, "()V", &[])
+        .expect("Cant new Plugin instance!");
 
     let id = env.new_string(id).expect("Cant new id String!");
     env.set_field(&obj, "id", "Ljava/lang/String;", JValueGen::Object(&id))
@@ -110,8 +112,8 @@ pub fn new(
         .expect("Cant find class ArrayList!");
 
     let tags_arr_list = env
-        .alloc_object(arr_list_cls)
-        .expect("Cant alloc array list object!");
+        .new_object(arr_list_cls, "()V", &[])
+        .expect("Cant new array list object!");
 
     for tag in tags {
         let tag_str = env.new_string(tag).expect("Cant create string object!");
@@ -139,8 +141,8 @@ pub fn new(
         .expect("Cant find class ArrayList!");
 
     let screen_type_arr_list = env
-        .alloc_object(arr_list_cls)
-        .expect("Cant alloc array list object!");
+        .new_object(arr_list_cls, "()V", &[])
+        .expect("Cant new array list object!");
 
     for screen_type in supported_screen_types {
         let screen_type_cls = env
@@ -180,15 +182,15 @@ pub fn new(
         .expect("Cant find class ArrayList!");
 
     let dataset_arr_list = env
-        .alloc_object(arr_list_cls)
-        .expect("Cant alloc array list object!");
+        .new_object(arr_list_cls, "()V", &[])
+        .expect("Cant new array list object!");
 
     for dataset in datasets {
         let dataset_cls = env
             .find_class(JAVA_CLASS_NAME_DATASET)
             .expect("Dataset class not found!");
         let dataset_obj = env
-            .alloc_object(dataset_cls)
+            .new_object(dataset_cls, "()V", &[])
             .expect("Dataset object alloc failed!");
 
         let id = env.new_string(&dataset.id).expect("Cant new id String!");
@@ -250,7 +252,7 @@ pub fn new(
         let js = env
             .new_string(&dataset.js.clone().unwrap_or("".to_string()))
             .expect("Cant new js String!");
-        env.set_field(&js, "js", "Ljava/lang/String;", JValueGen::Object(&js))
+        env.set_field(&dataset_obj, "js", "Ljava/lang/String;", JValueGen::Object(&js))
             .unwrap();
         env.delete_local_ref(js).unwrap();
 
@@ -374,8 +376,8 @@ fn json_value_to_hash_map(env: &mut JNIEnv, value: &serde_json::Value) -> jobjec
                 .find_class(JAVA_CLASS_NAME_HASH_MAP)
                 .expect("Cant find HashMap class!");
             let hash_map = env
-                .alloc_object(hash_map_cls)
-                .expect("Cant alloc HashMap object!");
+                .new_object(hash_map_cls, "()V", &[])
+                .expect("Cant new HashMap object!");
             for (key, value) in map {
                 let key = env.new_string(key).expect("Can new key string");
                 let value = json_value_to_obj(env, value);

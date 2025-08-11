@@ -21,5 +21,5 @@ pub fn new_array_list<'local>(env: &'local mut JNIEnv<'local>) -> Result<JObject
         .find_class(JAVA_CLASS_NAME_ARRAY_LIST)
         .expect("Cant find class ArrayList!");
 
-    env.alloc_object(arr_list_cls)
+    env.new_object(arr_list_cls, "()V", &[])
 }
