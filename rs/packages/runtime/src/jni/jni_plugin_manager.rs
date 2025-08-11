@@ -42,7 +42,7 @@ pub const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON: jint = 0;
 pub const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON_FILE: jint = 1;
 
 pub struct JniPluginManager {
-    wv_java_class: Option<JClass<'static>>,
+    wv_java_class: Option<GlobalRef>,
     java_vm: Option<JavaVM>,
 }
 
@@ -59,7 +59,7 @@ impl JniPluginManager {
             .clone()
     }
 
-    pub fn init(&mut self, java_vm: JavaVM, wv_java_class: JClass<'static>) -> Result<(), String> {
+    pub fn init(&mut self, java_vm: JavaVM, wv_java_class: GlobalRef) -> Result<(), String> {
         if self.wv_java_class.is_some() {
             return Err("The jni plugin manager is already init.".to_string());
         }
@@ -68,7 +68,7 @@ impl JniPluginManager {
         Ok(())
     }
 
-    pub fn wv_java_class(&self) -> Result<&JClass<'static>, String> {
+    pub fn wv_java_class(&self) -> Result<&GlobalRef, String> {
         if self.wv_java_class.is_none() {
             return Err(
                 "The webview java class is null. Please call PluginManger.init() first."
@@ -173,9 +173,10 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     let mut jni_plugin_manager = jni_plugin_manager.lock().unwrap();
 
     let java_vm = env.get_java_vm().expect("get java vm failed");
+    let wv_java_class_global = env.new_global_ref(&webviewClass).unwrap();
     jni_utils::throw_java_expception_if_error(
         &mut env,
-        jni_plugin_manager.init(java_vm, webviewClass),
+        jni_plugin_manager.init(java_vm, wv_java_class_global),
     );
 
     let wv_obj = jni_plugin_manager.new_wv_obj().unwrap();
