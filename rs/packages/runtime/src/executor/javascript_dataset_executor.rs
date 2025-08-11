@@ -12,6 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub trait DatasetDataSource: Send + Sync {
-    fn request(&self) -> Result<String, String>;
+use crate::executor::dataset_executor::DatasetExecutor;
+
+pub struct JavaScriptDatasetExecutor<'local> {
+    id: &'local str,
+    url: &'local str,
+    js: &'local str,
+}
+
+impl<'local> JavaScriptDatasetExecutor<'local> {
+    pub fn new(id: &'local str, url: &'local str, js: &'local str) -> Self {
+        Self { id, url, js }
+    }
+}
+
+impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
+    fn request(&self) -> Result<String, String> {
+        todo!()
+    }
 }

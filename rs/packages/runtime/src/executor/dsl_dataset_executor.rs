@@ -12,6 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod dataset_data_source;
-pub mod dsl_dataset_data_source;
-pub mod javascript_dataset_data_source;
+use std::collections::HashMap;
+
+use crate::executor::dataset_executor::DatasetExecutor;
+
+pub struct DslDatasetExecutor<'local> {
+    id: &'local str,
+    url: &'local str,
+    dsl: &'local HashMap<String, serde_json::Value>,
+}
+
+impl<'local> DslDatasetExecutor<'local> {
+    pub fn new(
+        id: &'local str,
+        url: &'local str,
+        dsl: &'local HashMap<String, serde_json::Value>,
+    ) -> Self {
+        Self { id, url, dsl }
+    }
+}
+
+impl<'local> DatasetExecutor for DslDatasetExecutor<'local> {
+    fn request(&self) -> Result<String, String> {
+        todo!()
+    }
+}

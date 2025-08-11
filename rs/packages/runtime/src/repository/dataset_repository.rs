@@ -16,12 +16,12 @@ use core::data::plugin::Dataset;
 use std::collections::HashMap;
 
 use crate::{
-    data_source::{
-        dataset_data_source::DatasetDataSource, dsl_dataset_data_source::DslDatasetDataSource,
-        javascript_dataset_data_source::JavaScriptDatasetDataSource,
-    },
     database::{database, dataset_dao},
-    plugin_manager::{self, PluginManager},
+    executor::{
+        dataset_executor::DatasetExecutor, dsl_dataset_executor::DslDatasetExecutor,
+        javascript_dataset_executor::JavaScriptDatasetExecutor,
+    },
+    plugin_manager::PluginManager,
     repository::model::dataset,
     utils::screen_typed_value::ScreenTypedValue,
 };
@@ -144,10 +144,10 @@ impl DatasetRepository {
             HashMap::new()
         };
 
-        let dataset_ds: Box<dyn DatasetDataSource> = if let Some(_) = dsl_value {
-            Box::new(DslDatasetDataSource::new(dataset_id, url_value, &dsl))
+        let dataset_ds: Box<dyn DatasetExecutor> = if let Some(_) = dsl_value {
+            Box::new(DslDatasetExecutor::new(dataset_id, url_value, &dsl))
         } else if let Some(js) = js_value {
-            Box::new(JavaScriptDatasetDataSource::new(dataset_id, url_value, js))
+            Box::new(JavaScriptDatasetExecutor::new(dataset_id, url_value, js))
         } else {
             return Err("The dsl and js is both empty".to_string());
         };

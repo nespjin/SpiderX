@@ -12,22 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::data_source::dataset_data_source::DatasetDataSource;
-
-pub struct JavaScriptDatasetDataSource<'local> {
-    id: &'local str,
-    url: &'local str,
-    js: &'local str,
-}
-
-impl<'local> JavaScriptDatasetDataSource<'local> {
-    pub fn new(id: &'local str, url: &'local str, js: &'local str) -> Self {
-        Self { id, url, js }
-    }
-}
-
-impl<'local> DatasetDataSource for JavaScriptDatasetDataSource<'local> {
-    fn request(&self) -> Result<String, String> {
-        todo!()
-    }
+pub trait DatasetExecutor: Send + Sync {
+    fn request(&self) -> Result<String, String>;
 }
