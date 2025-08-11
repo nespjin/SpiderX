@@ -16,17 +16,19 @@ use std::collections::HashMap;
 
 use crate::data_source::dataset_data_source::DatasetDataSource;
 
-pub struct DslDatasetDataSource {
-    dsl: HashMap<String, String>,
+pub struct DslDatasetDataSource<'local> {
+    id: &'local str,
+    url: &'local str,
+    dsl:&'local HashMap<String, String>,
 }
 
-impl DslDatasetDataSource {
-    pub fn new(dsl: HashMap<String, String>) -> Self {
-        Self { dsl }
+impl<'local> DslDatasetDataSource<'local> {
+    pub fn new(id:&'local str, url:&'local str, dsl: &'local HashMap<String, String>) -> Self {
+        Self { id, url, dsl }
     }
 }
 
-impl DatasetDataSource for DslDatasetDataSource {
+impl<'local> DatasetDataSource for DslDatasetDataSource<'local> {
     fn request(&self) -> Result<String, String> {
         todo!()
     }

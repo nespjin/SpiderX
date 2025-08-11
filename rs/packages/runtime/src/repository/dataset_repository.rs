@@ -13,10 +13,17 @@
 // limitations under the License.
 
 use core::data::plugin::Dataset;
+use std::collections::HashMap;
 
 use crate::{
+    data_source::{
+        dataset_data_source::DatasetDataSource, dsl_dataset_data_source::DslDatasetDataSource,
+        javascript_dataset_data_source::JavaScriptDatasetDataSource,
+    },
     database::{database, dataset_dao},
+    plugin_manager::{self, PluginManager},
     repository::model::dataset,
+    utils::screen_typed_value::ScreenTypedValue,
 };
 
 pub struct DatasetRepository {
@@ -99,6 +106,48 @@ impl DatasetRepository {
             None => return Err(format!("Dataset {}.{} not found", plugin_id, dataset_id)),
         };
 
-        Ok("".to_string())
+        let plugin_manager = PluginManager::get_instance();
+        let plugin_manager = plugin_manager.lock().map_err(|e| e.to_string())?;
+
+        let screen_type = plugin_manager.screen_type()?;
+
+        let url = ScreenTypedValue::new()
+            .with_value(dataset.url.clone())
+            .with_option_compact(dataset.url_compact.clone())
+            .with_option_medium(dataset.url_medium.clone())
+            .with_option_expanded(dataset.url_expanded.clone());
+        let url_value = if let Some(url) = url.value(screen_type) {
+            url
+        } else {
+            return Err("The url is empty".to_string());
+        };
+
+        let js = ScreenTypedValue::new()
+            .with_option_value(dataset.js.clone())
+            .with_option_compact(dataset.js_compact.clone())
+            .with_option_medium(dataset.js_medium.clone())
+            .with_option_expanded(dataset.js_expanded.clone());
+        let js_value = js.value(screen_type);
+
+        let dsl = ScreenTypedValue::new()
+            .with_option_value(dataset.dsl.clone())
+            .with_option_compact(dataset.dsl_compact.clone())
+            .with_option_medium(dataset.dsl_medium.clone())
+            .with_option_expanded(dataset.dsl_expanded.clone());
+        let dsl_value = dsl.value(screen_type);
+
+        let dsl_map: HashMap<String, String> = HashMap::new();
+
+        let dataset_ds: Box<dyn DatasetDataSource> = if let Some(dsl) = dsl_value {
+            Box::new(DslDatasetDataSource::new(dataset_id, url_value, &dsl_map))
+        } else if let Some(js) = js_value {
+            Box::new(JavaScriptDatasetDataSource::new(dataset_id, url_value, js))
+        } else {
+            return Err("The dsl and js is both empty".to_string());
+        };
+
+        let result = dataset_ds.request();
+
+        Ok(result?)
     }
 }

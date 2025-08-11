@@ -14,17 +14,19 @@
 
 use crate::data_source::dataset_data_source::DatasetDataSource;
 
-pub struct JavaScriptDatasetDataSource {
-    js: String,
+pub struct JavaScriptDatasetDataSource<'local> {
+    id: &'local str,
+    url: &'local str,
+    js: &'local str,
 }
 
-impl JavaScriptDatasetDataSource {
-    pub fn new(js: String) -> Self {
-        Self { js }
+impl<'local> JavaScriptDatasetDataSource<'local> {
+    pub fn new(id: &'local str, url: &'local str, js: &'local str) -> Self {
+        Self { id, url, js }
     }
 }
 
-impl DatasetDataSource for JavaScriptDatasetDataSource {
+impl<'local> DatasetDataSource for JavaScriptDatasetDataSource<'local> {
     fn request(&self) -> Result<String, String> {
         todo!()
     }
