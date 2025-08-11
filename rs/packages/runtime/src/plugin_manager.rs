@@ -251,13 +251,14 @@ impl PluginManager {
         if let Some(engine) = engine {
             engine.write().unwrap().destroy()?;
 
-            if self
+            let cache_engine = self.config.clone().map(|e| e.cache_engine).unwrap_or(false);
+            let is_pool_not_full = self
                 .webengine_pool
                 .write()
                 .map_err(|e| e.to_string())?
                 .len()
-                < MAX_WV_POOL_SIZE
-            {
+                < MAX_WV_POOL_SIZE;
+            if cache_engine && is_pool_not_full {
                 self.webengine_pool
                     .write()
                     .map_err(|e| e.to_string())?
