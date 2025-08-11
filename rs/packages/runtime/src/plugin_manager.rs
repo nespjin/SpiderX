@@ -37,6 +37,8 @@ pub struct PluginManagerConfig {
 
     /// The screen type in current device.
     pub screen_type: ScreenType,
+
+    pub cache_engine: bool,
 }
 
 pub enum PluginSource {
@@ -215,31 +217,30 @@ impl PluginManager {
                 .write()
                 .map_err(|e| e.to_string())?
                 .remove(0);
-            engine.write().unwrap().set_id(id);
+            engine.write().map_err(|e| e.to_string())?.set_id(id);
             engine
         } else {
             // TODO: Add other platform impl
             Arc::new(RwLock::new(jni_webview::new_jni_wv(id)?))
         };
         self.webengine_id = next_id;
+        self.webengines
+            .write()
+            .map_err(|e| e.to_string())?
+            .insert(id, engine.clone());
         Ok(engine)
     }
 
     pub fn is_webengine_exists(&self, id: i64) -> bool {
-        self.webengine_pool
-            .read()
-            .unwrap()
-            .iter()
-            .any(|e| e.read().unwrap().id() == id)
+        self.webengines.read().unwrap().contains_key(&id)
     }
 
     pub fn get_webengine(&self, id: i64) -> Option<WebEngineMut> {
-        self.webengine_pool
+        self.webengines
             .read()
             .unwrap()
-            .iter()
-            .find(|e| e.read().unwrap().id() == id)
-            .cloned()
+            .get(&id)
+            .map(|wv| wv.clone())
     }
 
     pub fn remove_webengine(&mut self, id: i64) -> Result<(), String> {
@@ -286,6 +287,7 @@ mod test {
         let config = PluginManagerConfig {
             database_path: "target/runtime.db".to_string(),
             screen_type: ScreenType::Compact,
+            cache_engine: true,
         };
         let result = plugin_manager.init(config.clone());
         assert!(result.is_ok());

@@ -17,6 +17,7 @@ use jni::JNIEnv;
 use jni::JavaVM;
 use jni::objects::*;
 use jni::sys::JNI_FALSE;
+use jni::sys::JNI_TRUE;
 use jni::sys::jboolean;
 use jni::sys::jint;
 use jni::sys::jobject;
@@ -118,6 +119,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     _this: JObject,
     databasePath: JString,
     screenType: JObject,
+    cacheEngine: jboolean,
     webviewClass: JClass<'static>,
 ) {
     let database_path: String = env
@@ -130,6 +132,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     let config = PluginManagerConfig {
         database_path,
         screen_type,
+        cache_engine: cacheEngine == JNI_TRUE,
     };
     let plugin_manager = PluginManager::get_instance();
     let mut plugin_manager = plugin_manager.lock().unwrap();
