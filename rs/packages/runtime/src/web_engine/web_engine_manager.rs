@@ -74,6 +74,7 @@ impl WebEngineManager {
             Arc::new(RwLock::new(jni_webview::new_jni_wv(id)?))
         };
 
+        println!("Create WebEngine {}", id);
         engine.write().unwrap().init()?;
 
         self.webengine_id = next_id;

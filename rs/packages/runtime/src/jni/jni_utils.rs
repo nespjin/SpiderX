@@ -63,6 +63,18 @@ pub fn check_jni_exception() -> Option<String> {
     }
 }
 
+pub fn get_class_name(object: &JObject) -> jni::errors::Result<String> {
+    let mut env = JVM.get().unwrap().attach_current_thread()?;
+    let c = env
+        .call_method(&object, "getClass", "()Ljava/lang/Class;", &[])?
+        .l()?;
+    let n = env
+        .call_method(&c, "getName", "()Ljava/lang/String;", &[])?
+        .l()?;
+    let n: String = env.get_string(&n.into())?.into();
+    Ok(n)
+}
+
 pub struct JObjectOwned<'a> {
     env: JNIEnv<'a>,
     object: JObject<'a>,

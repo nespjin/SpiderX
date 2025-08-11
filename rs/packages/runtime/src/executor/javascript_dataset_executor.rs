@@ -60,21 +60,23 @@ impl<'local> JavaScriptDatasetExecutor<'local> {
 
 impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
     fn request(&self) -> Result<String, String> {
+        println!("JavaScriptDatasetExecutor::request {} {}", self.id, self.url);
         let wm = WebEngineManager::get_instance();
         let mut wm = wm.lock().map_err(|e| e.to_string())?;
 
         let webengine = wm.new_webengine()?;
+        println!("JavaScriptDatasetExecutor::webengine {} {}", self.id, self.url);
+        
+        // let callback: WebEngineCallback = Box::new(|e| {
+        //     println!("WebEngineCallback {} ", e);
+        // });
 
-        let callback: WebEngineCallback = Box::new(|e| {
-            println!("WebEngineCallback {} ", e);
-        });
-
-        let listener = Arc::new(RwLock::new(WebEngineListenerImpl::new(
-            self.url.to_string(),
-            callback,
-        )));
-        webengine.write().unwrap().set_listener(listener);
-        webengine.read().unwrap().load_url(self.url)?;
+        // let listener = Arc::new(RwLock::new(WebEngineListenerImpl::new(
+        //     self.url.to_string(),
+        //     callback,
+        // )));
+        // webengine.write().unwrap().set_listener(listener);
+        // webengine.read().unwrap().load_url(self.url)?;
 
         Ok("".to_string())
     }
