@@ -36,8 +36,6 @@ use crate::plugin_manager::PluginManager;
 use crate::plugin_manager::PluginManagerConfig;
 use crate::plugin_manager::PluginSource;
 
-const MAX_WV_POOL_SIZE: usize = 10;
-
 pub(crate) const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON: jint = 0;
 pub(crate) const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON_FILE: jint = 1;
 

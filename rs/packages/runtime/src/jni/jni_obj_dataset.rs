@@ -12,4 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub const JAVA_CLASS_NAME_DATASET: &'static str = "com/nesp/spiderx/runtime/data/Dataset";
+pub const JAVA_CLASS_NAME_DATASET: &'static str = "com/nesp/spiderx/runtime/model/Dataset";

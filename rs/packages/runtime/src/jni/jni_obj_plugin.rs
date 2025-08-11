@@ -30,7 +30,7 @@ use crate::jni::{
     jni_obj_screen_type::{self, JAVA_CLASS_NAME_SCREEN_TYPE},
 };
 
-const JAVA_CLASS_NAME_PLUGIN: &'static str = "com/nesp/spiderx/runtime/data/Plugin";
+const JAVA_CLASS_NAME_PLUGIN: &'static str = "com/nesp/spiderx/runtime/model/Plugin";
 
 pub fn new(
     env: &mut JNIEnv,

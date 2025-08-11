@@ -18,7 +18,7 @@ use jni::objects::{JObject, JString, JValueGen};
 
 use crate::jni::jni_utils;
 
-pub const JAVA_CLASS_NAME_SCREEN_TYPE: &'static str = "com/nesp/spiderx/runtime/data/ScreenType";
+pub const JAVA_CLASS_NAME_SCREEN_TYPE: &'static str = "com/nesp/spiderx/runtime/model/ScreenType";
 
 pub const JAVA_FILED_SCREEN_TYPE_COMPACT: &'static str = "COMPACT";
 pub const JAVA_FILED_SCREEN_TYPE_MEDIUM: &'static str = "MEDIUM";
