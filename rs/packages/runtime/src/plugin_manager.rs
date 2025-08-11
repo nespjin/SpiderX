@@ -190,16 +190,11 @@ impl PluginManager {
 
     pub fn request_dataset(&self, plugin_id: &str, dataset_id: &str) -> Result<String, String> {
         self.ensure_initialized()?;
-        let dataset = match self.dataset_repository.as_ref() {
-            Some(repo) => repo.get_dataset_in_plugin(plugin_id, dataset_id)?,
+        let result = match self.dataset_repository.as_ref() {
+            Some(repo) => repo.request_dataset(plugin_id, dataset_id)?,
             None => return Err("DatasetRepository is not initialized".to_string()),
         };
-        let dataset = match dataset {
-            Some(dataset) => dataset,
-            None => return Err(format!("Dataset {}.{} not found", plugin_id, dataset_id)),
-        };
-
-        Ok("".to_string())
+        Ok(result)
     }
 
     pub fn new_webengine(&mut self) -> Result<WebEngineMut, String> {

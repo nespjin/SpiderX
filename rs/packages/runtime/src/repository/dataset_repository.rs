@@ -91,4 +91,14 @@ impl DatasetRepository {
             .map_err(|e| e.to_string())?;
         Ok(())
     }
+
+    pub fn request_dataset(&self, plugin_id: &str, dataset_id: &str) -> Result<String, String> {
+        let dataset = self.get_dataset_in_plugin(plugin_id, dataset_id)?;
+        let dataset = match dataset {
+            Some(dataset) => dataset,
+            None => return Err(format!("Dataset {}.{} not found", plugin_id, dataset_id)),
+        };
+
+        Ok("".to_string())
+    }
 }
