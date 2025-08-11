@@ -148,7 +148,6 @@ class PluginManagerTest {
     @Test
     fun testGetInstalledPlugins() {
         initPluginManager()
-        Dataset()
         val installedPlugins = pluginManager.getInstalledPlugins()
         println("testGetInstalledPlugins $installedPlugins")
     }
