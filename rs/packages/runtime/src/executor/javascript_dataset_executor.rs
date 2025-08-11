@@ -18,8 +18,9 @@ use std::{
 };
 
 use crate::{
-    executor::dataset_executor::DatasetExecutor, plugin_manager::PluginManager,
-    web_engine::web_engine::WebEngineListener,
+    executor::dataset_executor::DatasetExecutor,
+    plugin_manager::PluginManager,
+    web_engine::{WebEngineListener, WebEngineMut},
 };
 
 #[derive(Debug)]
@@ -89,51 +90,39 @@ impl WebEngineListenerImpl {
 }
 
 impl WebEngineListener for WebEngineListenerImpl {
-    fn on_page_started(&mut self, engine: crate::web_engine::web_engine::WebEngineMut, url: &str) {
+    fn on_page_started(&mut self, engine: WebEngineMut, url: &str) {
         let callback = &mut self.callback;
         callback(WebEngineEvent::PageStarted(url.to_string()));
 
         println!("on_page_started {}", url)
     }
 
-    fn on_page_finished(&mut self, engine: crate::web_engine::web_engine::WebEngineMut, url: &str) {
+    fn on_page_finished(&mut self, engine: WebEngineMut, url: &str) {
         let callback = &mut self.callback;
         callback(WebEngineEvent::PageFinished(url.to_string()));
 
         println!("on_page_finished {}", url)
     }
 
-    fn on_page_error(&mut self, engine: crate::web_engine::web_engine::WebEngineMut, url: &str) {
+    fn on_page_error(&mut self, engine: WebEngineMut, url: &str) {
         let callback = &mut self.callback;
         callback(WebEngineEvent::PageError(url.to_string()));
 
         println!("on_page_error {}", url)
     }
 
-    fn on_load_progress(
-        &mut self,
-        engine: crate::web_engine::web_engine::WebEngineMut,
-        progress: i32,
-    ) {
+    fn on_load_progress(&mut self, engine: WebEngineMut, progress: i32) {
         let callback = &mut self.callback;
         callback(WebEngineEvent::LoadProgress(progress));
 
         println!("on_load_progress {}", progress)
     }
 
-    fn should_override_url_loading(
-        &mut self,
-        engine: crate::web_engine::web_engine::WebEngineMut,
-        url: &str,
-    ) -> bool {
+    fn should_override_url_loading(&mut self, engine: WebEngineMut, url: &str) -> bool {
         false
     }
 
-    fn should_intercept_request(
-        &mut self,
-        engine: crate::web_engine::web_engine::WebEngineMut,
-        url: &str,
-    ) -> Option<String> {
+    fn should_intercept_request(&mut self, engine: WebEngineMut, url: &str) -> Option<String> {
         None
     }
 }

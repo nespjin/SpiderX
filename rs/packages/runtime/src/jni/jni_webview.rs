@@ -23,7 +23,7 @@ use jni::{
 use crate::{
     jni::jni_plugin_manager::JniPluginManager,
     plugin_manager::PluginManager,
-    web_engine::web_engine::{WebEngine, WebEngineListenerMut, WebEngineMut},
+    web_engine::{WebEngine, WebEngineListenerMut, WebEngineMut},
 };
 
 // const JAVA_CLASS_NAME_WV: &'static str = "com/nesp/spiderx/runtime/JniWebView";
