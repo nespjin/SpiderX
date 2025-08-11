@@ -19,7 +19,7 @@ use crate::{
     database::{database, dataset_dao},
     device::device_manager::DeviceManager,
     executor::{
-        dataset_executor::DatasetExecutor, dsl_dataset_executor::DslDatasetExecutor,
+        dataset_executor::DatasetExecutor,
         javascript_dataset_executor::JavaScriptDatasetExecutor,
     },
     repository::model::dataset,

@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::{
-    fmt::Display,
-    sync::{Arc, RwLock},
-};
+use std::fmt::Display;
 
 use crate::{
     executor::dataset_executor::DatasetExecutor,

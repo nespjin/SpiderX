@@ -22,7 +22,6 @@ use jni::{
 
 use crate::{
     jni::jni_plugin_manager::JniPluginManager,
-    plugin_manager::PluginManager,
     web_engine::{
         web_engine::{WebEngine, WebEngineListenerMut, WebEngineMut},
         web_engine_manager::WebEngineManager,
