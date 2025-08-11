@@ -1,20 +1,20 @@
-package com.nesp.spiderx.runtime.data
+package com.nesp.spiderx.runtime.model
 
 /**
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
  **/
-class Dataset(
-    val id: String,
-    val url: String,
-    val urlCompact: String?,
-    val urlMedium: String?,
-    val urlExpanded: String?,
-    val js: String?,
-    val jsCompact: String?,
-    val jsMedium: String?,
-    val jsExpanded: String?,
-    val dsl: Map<String, Any>,
-    val dslCompact: Map<String, Any>,
-    val dslMedium: Map<String, Any>,
-    val dslExpanded: Map<String, Any>,
+data class Dataset @JvmOverloads constructor(
+    val id: String = "",
+    val url: String = "",
+    val urlCompact: String? = null,
+    val urlMedium: String? = null,
+    val urlExpanded: String? = null,
+    val js: String? = null,
+    val jsCompact: String? = null,
+    val jsMedium: String? = null,
+    val jsExpanded: String? = null,
+    val dsl: Map<String, Any> = mapOf(),
+    val dslCompact: Map<String, Any> = mapOf(),
+    val dslMedium: Map<String, Any> = mapOf(),
+    val dslExpanded: Map<String, Any> = mapOf(),
 )

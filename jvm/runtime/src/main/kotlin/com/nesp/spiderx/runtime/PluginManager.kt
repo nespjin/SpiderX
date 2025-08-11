@@ -16,14 +16,82 @@
 
 package com.nesp.spiderx.runtime
 
+import com.nesp.spiderx.runtime.model.Plugin
+import com.nesp.spiderx.runtime.model.ScreenType
+
 /**
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
  **/
+
+
 class PluginManager {
 
-    external fun nativeInit(databasePath: String)
+    fun init(
+        databasePath: String,
+        screenType: ScreenType,
+        isCacheEngine: Boolean,
+        webviewClass: Class<*>
+    ) {
+        nativeInit(databasePath, screenType, isCacheEngine, webviewClass)
+    }
 
-    external fun nativeInstallPlugin(type: Int, source: String)
+    fun setScreenType(screenType: ScreenType) {
+        nativeSetScreenType(screenType)
+    }
+
+    fun installPluginJson(json: String) {
+        nativeInstallPlugin(PLUGIN_SOURCE_TYPE_JSON, json.toByteArray())
+    }
+
+    fun installPluginJsonFile(jsonFilePath: String) {
+        nativeInstallPlugin(PLUGIN_SOURCE_TYPE_JSON_FILE, jsonFilePath.toByteArray())
+    }
+
+    private fun installPlugin(sourceType: Int, source: ByteArray) {
+        nativeInstallPlugin(sourceType, source)
+    }
+
+    fun isPluginInstalled(id: String): Boolean {
+        return nativeIsPluginInstalled(id)
+    }
+
+    fun getInstalledPlugin(id: String): Plugin? {
+        return nativeGetInstalledPlugin(id)
+    }
+
+    fun getInstalledPlugins(): List<Plugin>? {
+        return nativeGetInstalledPlugins()
+    }
+
+    fun uninstallPlugin(id: String): List<Plugin>? {
+        return nativeUninstallPlugin(id)
+    }
+
+    fun requestDataset(pluginId: String, datasetId: String): String? {
+        return nativeRequestDataset(pluginId, datasetId)
+    }
+
+
+    private external fun nativeInit(
+        databasePath: String,
+        screenType: ScreenType,
+        isCacheEngine: Boolean,
+        webviewClass: Class<*>
+    )
+
+    private external fun nativeSetScreenType(screenType: ScreenType)
+
+    private external fun nativeInstallPlugin(sourceType: Int, source: ByteArray)
+
+    private external fun nativeIsPluginInstalled(id: String): Boolean
+
+    private external fun nativeGetInstalledPlugin(id: String): Plugin?
+
+    private external fun nativeGetInstalledPlugins(): List<Plugin>?
+
+    private external fun nativeUninstallPlugin(id: String): List<Plugin>?
+
+    private external fun nativeRequestDataset(pluginId: String, datasetId: String): String?
 
     companion object {
         private const val TAG = "PluginManager"

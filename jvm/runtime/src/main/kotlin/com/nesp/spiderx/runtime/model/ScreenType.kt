@@ -1,4 +1,4 @@
-package com.nesp.spiderx.runtime.data
+package com.nesp.spiderx.runtime.model
 
 /**
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>

@@ -38,7 +38,10 @@ dependencies {
 test {
     useJUnitPlatform()
     java {
-        systemProperty("java.library.path", file("${rootProject.projectDir}/../rs/target/release"))
+//        systemProperty("java.library.path", file("${rootProject.projectDir}/../rs/target/release"))
+        systemProperty("java.library.path", file("${rootProject.projectDir}/../rs/target/debug"))
+        // Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+        setEnvironment(["RUST_BACKTRACE": "full"])
     }
 }
 java {
