@@ -23,7 +23,10 @@ use jni::{
 use crate::{
     jni::jni_plugin_manager::JniPluginManager,
     plugin_manager::PluginManager,
-    web_engine::{WebEngine, WebEngineListenerMut, WebEngineMut},
+    web_engine::{
+        web_engine::{WebEngine, WebEngineListenerMut, WebEngineMut},
+        web_engine_manager::WebEngineManager,
+    },
 };
 
 // const JAVA_CLASS_NAME_WV: &'static str = "com/nesp/spiderx/runtime/JniWebView";
@@ -406,10 +409,9 @@ where
     }
     .expect("wv_id is none in java object");
 
-    let plugin_manager = PluginManager::get_instance();
-    let plugin_manager = plugin_manager.lock().unwrap();
+    let wm = WebEngineManager::get_instance();
+    let wm = wm.lock().unwrap();
 
-    plugin_manager
-        .get_webengine(wv_id)
-        .expect("webengine is none in plugin manager")
+    wm.get_webengine(wv_id)
+        .expect("webengine is none in web engine manager")
 }

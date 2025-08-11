@@ -17,11 +17,11 @@ use std::collections::HashMap;
 
 use crate::{
     database::{database, dataset_dao},
+    device::device_manager::DeviceManager,
     executor::{
         dataset_executor::DatasetExecutor, dsl_dataset_executor::DslDatasetExecutor,
         javascript_dataset_executor::JavaScriptDatasetExecutor,
     },
-    plugin_manager::PluginManager,
     repository::model::dataset,
     utils::screen_typed_value::ScreenTypedValue,
 };
@@ -106,10 +106,10 @@ impl DatasetRepository {
             None => return Err(format!("Dataset {}.{} not found", plugin_id, dataset_id)),
         };
 
-        let plugin_manager = PluginManager::get_instance();
-        let plugin_manager = plugin_manager.lock().map_err(|e| e.to_string())?;
+        let dm = DeviceManager::get_instance();
+        let dm = dm.lock().map_err(|e| e.to_string())?;
 
-        let screen_type = plugin_manager.screen_type()?;
+        let screen_type = &dm.screen_type().ok_or("Screen type is not set")?;
 
         let url = ScreenTypedValue::new()
             .with_value(dataset.url.clone())
@@ -145,7 +145,13 @@ impl DatasetRepository {
         };
 
         let dataset_ds: Box<dyn DatasetExecutor> = if let Some(_) = dsl_value {
-            Box::new(DslDatasetExecutor::new(dataset_id, url_value, &dsl))
+            // Box::new(DslDatasetExecutor::new(dataset_id, url_value, &dsl))
+            // TODO: Remove this
+            Box::new(JavaScriptDatasetExecutor::new(
+                dataset_id,
+                url_value,
+                js_value.unwrap(),
+            ))
         } else if let Some(js) = js_value {
             Box::new(JavaScriptDatasetExecutor::new(dataset_id, url_value, js))
         } else {

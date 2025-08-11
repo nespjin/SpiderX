@@ -12,33 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core::data::{plugin::Plugin, screen_type::ScreenType};
+use core::data::plugin::Plugin;
 use std::{
-    collections::HashMap,
     fs,
     path::Path,
-    sync::{Arc, Mutex, OnceLock, RwLock},
+    sync::{Arc, Mutex, OnceLock},
 };
 
 use compiler::{json_plugin_compiler::JsonPluginCompiler, plugin_compiler::PluginCompiler};
 
 use crate::{
     database::database,
-    jni::jni_webview,
     repository::{dataset_repository::DatasetRepository, plugin_repository::PluginRepository},
-    web_engine::WebEngineMut,
 };
-
-const MAX_WV_POOL_SIZE: usize = 10;
 
 #[derive(Debug, Clone)]
 pub struct PluginManagerConfig {
     pub database_path: String,
-
-    /// The screen type in current device.
-    pub screen_type: ScreenType,
-
-    pub cache_engine: bool,
 }
 
 pub enum PluginSource {
@@ -50,9 +40,6 @@ pub struct PluginManager {
     config: Option<PluginManagerConfig>,
     dataset_repository: Option<DatasetRepository>,
     plugin_repository: Option<PluginRepository>,
-    webengine_id: i64,
-    webengines: Arc<RwLock<HashMap<i64, WebEngineMut>>>,
-    webengine_pool: Arc<RwLock<Vec<WebEngineMut>>>,
 }
 
 impl PluginManager {
@@ -64,9 +51,6 @@ impl PluginManager {
                     config: None,
                     dataset_repository: None,
                     plugin_repository: None,
-                    webengine_id: 0,
-                    webengines: Arc::new(RwLock::new(HashMap::new())),
-                    webengine_pool: Arc::new(RwLock::new(Vec::new())),
                 }))
             })
             .clone()
@@ -97,27 +81,6 @@ impl PluginManager {
         self.config = Some(config);
 
         Ok(())
-    }
-
-    pub fn set_screen_type(&mut self, screen_type: ScreenType) -> Result<(), String> {
-        self.ensure_initialized()?;
-        match self.config.as_mut() {
-            Some(config) => {
-                config.screen_type = screen_type;
-            }
-            None => {
-                return Err("PluginManager is not initialized".to_string());
-            }
-        }
-        Ok(())
-    }
-
-    pub fn screen_type(&self) -> Result<&ScreenType, String> {
-        self.ensure_initialized()?;
-        match self.config.as_ref() {
-            Some(config) => Ok(&config.screen_type),
-            None => Err("PluginManager is not initialized".to_string()),
-        }
     }
 
     pub fn install_plugin(&self, source: &PluginSource) -> Result<(), String> {
@@ -197,78 +160,6 @@ impl PluginManager {
         Ok(result)
     }
 
-    pub fn new_webengine(&mut self) -> Result<WebEngineMut, String> {
-        let id: i64 = self.webengine_id;
-        let next_id = self.webengine_id + 1;
-
-        let engine = if !self
-            .webengine_pool
-            .read()
-            .map_err(|e| e.to_string())?
-            .is_empty()
-        {
-            let engine = self
-                .webengine_pool
-                .write()
-                .map_err(|e| e.to_string())?
-                .remove(0);
-            engine.write().map_err(|e| e.to_string())?.set_id(id);
-            engine
-        } else {
-            // TODO: Add other platform impl
-            Arc::new(RwLock::new(jni_webview::new_jni_wv(id)?))
-        };
-
-        engine.write().unwrap().init()?;
-
-        self.webengine_id = next_id;
-        self.webengines
-            .write()
-            .map_err(|e| e.to_string())?
-            .insert(id, engine.clone());
-        Ok(engine)
-    }
-
-    pub fn is_webengine_exists(&self, id: i64) -> bool {
-        self.webengines.read().unwrap().contains_key(&id)
-    }
-
-    pub fn get_webengine(&self, id: i64) -> Option<WebEngineMut> {
-        self.webengines
-            .read()
-            .unwrap()
-            .get(&id)
-            .map(|wv| wv.clone())
-    }
-
-    pub fn remove_webengine(&mut self, id: i64) -> Result<(), String> {
-        let engine = self
-            .webengines
-            .write()
-            .map_err(|e| e.to_string())?
-            .remove(&id);
-
-        if let Some(engine) = engine {
-            engine.write().unwrap().destroy()?;
-
-            let cache_engine = self.config.clone().map(|e| e.cache_engine).unwrap_or(false);
-            let is_pool_not_full = self
-                .webengine_pool
-                .write()
-                .map_err(|e| e.to_string())?
-                .len()
-                < MAX_WV_POOL_SIZE;
-            if cache_engine && is_pool_not_full {
-                self.webengine_pool
-                    .write()
-                    .map_err(|e| e.to_string())?
-                    .push(engine);
-            }
-        }
-
-        Ok(())
-    }
-
     fn ensure_initialized(&self) -> Result<(), String> {
         if self.config.is_none() {
             return Err("The plugin manager is not initialized".to_string());
@@ -287,8 +178,6 @@ mod test {
         let mut plugin_manager = plugin_manager.lock().unwrap();
         let config = PluginManagerConfig {
             database_path: "target/runtime.db".to_string(),
-            screen_type: ScreenType::Compact,
-            cache_engine: true,
         };
         let result = plugin_manager.init(config.clone());
         assert!(result.is_ok());

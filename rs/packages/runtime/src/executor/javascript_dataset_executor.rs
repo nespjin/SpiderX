@@ -19,8 +19,10 @@ use std::{
 
 use crate::{
     executor::dataset_executor::DatasetExecutor,
-    plugin_manager::PluginManager,
-    web_engine::{WebEngineListener, WebEngineMut},
+    web_engine::{
+        web_engine::{WebEngineListener, WebEngineMut},
+        web_engine_manager::WebEngineManager,
+    },
 };
 
 #[derive(Debug)]
@@ -58,10 +60,10 @@ impl<'local> JavaScriptDatasetExecutor<'local> {
 
 impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
     fn request(&self) -> Result<String, String> {
-        let plugin_manager = PluginManager::get_instance();
-        let mut plugin_manager = plugin_manager.lock().map_err(|e| e.to_string())?;
+        let wm = WebEngineManager::get_instance();
+        let mut wm = wm.lock().map_err(|e| e.to_string())?;
 
-        let webengine = plugin_manager.new_webengine()?;
+        let webengine = wm.new_webengine()?;
 
         let callback: WebEngineCallback = Box::new(|e| {
             println!("WebEngineCallback {} ", e);

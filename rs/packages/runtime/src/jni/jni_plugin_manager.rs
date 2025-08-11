@@ -26,6 +26,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::OnceLock;
 
+use crate::device::device_manager::DeviceManager;
 use crate::jni::jni_constants::JAVA_CLASS_NAME_ARRAY_LIST;
 use crate::jni::jni_constants::JAVA_METHOD_NAME_LIST_ADD;
 use crate::jni::jni_constants::JAVA_METHOD_SIG_LIST_ADD;
@@ -35,17 +36,18 @@ use crate::jni::jni_utils;
 use crate::plugin_manager::PluginManager;
 use crate::plugin_manager::PluginManagerConfig;
 use crate::plugin_manager::PluginSource;
+use crate::web_engine::web_engine_manager::WebEngineManager;
 
-pub(crate) const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON: jint = 0;
-pub(crate) const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON_FILE: jint = 1;
+pub const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON: jint = 0;
+pub const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON_FILE: jint = 1;
 
-pub(crate) struct JniPluginManager {
+pub struct JniPluginManager {
     wv_java_class: Option<JClass<'static>>,
     java_vm: Option<JavaVM>,
 }
 
 impl JniPluginManager {
-    pub(crate) fn get_instance() -> Arc<Mutex<JniPluginManager>> {
+    pub fn get_instance() -> Arc<Mutex<JniPluginManager>> {
         static INSTANCE: OnceLock<Arc<Mutex<JniPluginManager>>> = OnceLock::new();
         INSTANCE
             .get_or_init(|| {
@@ -125,13 +127,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
         .expect("get database path failed")
         .into();
 
-    let screen_type = jni_obj_screen_type::java_object_to_screen_type(screenType);
-
-    let config = PluginManagerConfig {
-        database_path,
-        screen_type,
-        cache_engine: isCacheEngine == JNI_TRUE,
-    };
+    let config = PluginManagerConfig { database_path };
     let plugin_manager = PluginManager::get_instance();
     let mut plugin_manager = plugin_manager.lock().unwrap();
 
@@ -145,23 +141,28 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
         &mut env,
         jni_plugin_manager.init(java_vm, webviewClass),
     );
+
+    let wm = WebEngineManager::get_instance();
+    let mut wm = wm.lock().unwrap();
+    wm.init(isCacheEngine == JNI_TRUE).unwrap();
+
+    let screen_type = jni_obj_screen_type::java_object_to_screen_type(screenType);
+    let dm = DeviceManager::get_instance();
+    let mut dm = dm.lock().unwrap();
+    dm.set_screen_type(screen_type);
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeSetScreenType(
-    mut env: JNIEnv,
+    _env: JNIEnv,
     _this: JObject,
     screenType: JObject,
 ) {
     let screen_type = jni_obj_screen_type::java_object_to_screen_type(screenType);
 
-    let plugin_manager = PluginManager::get_instance();
-    let mut plugin_manager = plugin_manager.lock().unwrap();
-
-    jni_utils::throw_java_expception_if_error(
-        &mut env,
-        plugin_manager.set_screen_type(screen_type),
-    );
+    let dm = DeviceManager::get_instance();
+    let mut dm = dm.lock().unwrap();
+    dm.set_screen_type(screen_type);
 }
 
 #[unsafe(no_mangle)]
