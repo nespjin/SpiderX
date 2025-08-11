@@ -27,7 +27,7 @@ use crate::{
 enum WebEngineEvent {
     PageStarted(String),
     PageFinished(String),
-    PageError(String),
+    PageError(String, String),
     LoadProgress(i32),
 }
 
@@ -36,7 +36,7 @@ impl Display for WebEngineEvent {
         match self {
             WebEngineEvent::PageStarted(value) => write!(f, "PageStarted {}", value),
             WebEngineEvent::PageFinished(value) => write!(f, "PageFinished {}", value),
-            WebEngineEvent::PageError(value) => write!(f, "PageError {}", value),
+            WebEngineEvent::PageError(value, error) => write!(f, "PageError {} {}", value, error),
             WebEngineEvent::LoadProgress(value) => write!(f, "LoadProgress {}", value),
         }
     }
@@ -104,11 +104,14 @@ impl WebEngineListener for WebEngineListenerImpl {
         println!("on_page_finished {}", url)
     }
 
-    fn on_page_error(&mut self, engine: WebEngineMut, url: &str) {
+    fn on_page_error(&mut self, engine: WebEngineMut, url: &str, error: &str) {
         let callback = &mut self.callback;
-        callback(WebEngineEvent::PageError(url.to_string()));
+        callback(WebEngineEvent::PageError(
+            url.to_string(),
+            error.to_string(),
+        ));
 
-        println!("on_page_error {}", url)
+        println!("on_page_error {} {}", url, error)
     }
 
     fn on_load_progress(&mut self, engine: WebEngineMut, progress: i32) {
