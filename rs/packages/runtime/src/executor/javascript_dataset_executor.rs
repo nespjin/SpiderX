@@ -14,7 +14,7 @@
 
 use std::{
     fmt::Display,
-    sync::{Arc, Mutex, RwLock, mpsc},
+    sync::{Arc, RwLock, mpsc},
     thread,
 };
 
