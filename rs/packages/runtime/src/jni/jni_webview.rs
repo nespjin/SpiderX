@@ -408,8 +408,7 @@ where
     }
     .expect("wv_id is none in java object");
 
-    let wm = WebEngineManager::get_instance();
-    let wm = wm.lock().unwrap();
+    let wm = WebEngineManager::get_instance().lock().unwrap();
 
     wm.get_webengine(wv_id)
         .expect("webengine is none in web engine manager")

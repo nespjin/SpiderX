@@ -29,18 +29,16 @@ pub struct WebEngineManager {
 }
 
 impl WebEngineManager {
-    pub fn get_instance() -> Arc<Mutex<WebEngineManager>> {
-        static INSTANCE: OnceLock<Arc<Mutex<WebEngineManager>>> = OnceLock::new();
-        INSTANCE
-            .get_or_init(|| {
-                Arc::new(Mutex::new(WebEngineManager {
-                    webengine_id: 0,
-                    webengines: Arc::new(RwLock::new(HashMap::new())),
-                    webengine_pool: Arc::new(RwLock::new(Vec::new())),
-                    is_cache_engine: false,
-                }))
+    pub fn get_instance() -> &'static Mutex<WebEngineManager> {
+        static INSTANCE: OnceLock<Mutex<WebEngineManager>> = OnceLock::new();
+        INSTANCE.get_or_init(|| {
+            Mutex::new(WebEngineManager {
+                webengine_id: 0,
+                webengines: Arc::new(RwLock::new(HashMap::new())),
+                webengine_pool: Arc::new(RwLock::new(Vec::new())),
+                is_cache_engine: false,
             })
-            .clone()
+        })
     }
 
     pub fn init(&mut self, is_cache_engine: bool) -> Result<(), String> {
