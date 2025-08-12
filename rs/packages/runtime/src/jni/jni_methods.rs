@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::jni::jni_hander::JniMethodInfo;
+use crate::jni::jni_handler::JniMethodInfo;
 
 pub const LIST_ADD: JniMethodInfo = ("add", "(Ljava/lang/Object;)Z");
 pub const MAP_PUT: JniMethodInfo = (

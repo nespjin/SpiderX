@@ -22,7 +22,7 @@ use jni::{
 
 use crate::{
     jni::{
-        jni_hander::{JniFieldInfo, JniHandler, JniMethodInfo},
+        jni_handler::{JniFieldInfo, JniHandler, JniMethodInfo},
         jni_plugin_manager::JniPluginManager,
     },
     web_engine::{

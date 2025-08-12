@@ -22,10 +22,10 @@ use jni::objects::{JObject, JValueGen};
 use crate::jni::{
     jni_classes,
     jni_dataset::JniDataset,
-    jni_hander::JniHandler,
+    jni_handler::JniHandler,
     jni_methods,
     jni_screen_type::JniScreenType,
-    jni_hander::{JniConstructorInfo, JniFieldInfo},
+    jni_handler::{JniConstructorInfo, JniFieldInfo},
 };
 
 pub const CLASS_NAME: &'static str = "com/nesp/spiderx/runtime/model/Plugin";

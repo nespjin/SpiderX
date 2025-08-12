@@ -27,8 +27,8 @@ use std::sync::OnceLock;
 
 use crate::device::device_manager::DeviceManager;
 use crate::jni::jni_classes;
-use crate::jni::jni_hander;
-use crate::jni::jni_hander::JniHandler;
+use crate::jni::jni_handler;
+use crate::jni::jni_handler::JniHandler;
 use crate::jni::jni_methods;
 use crate::jni::jni_plugin::JniPlugin;
 use crate::jni::jni_screen_type::JniScreenType;
@@ -95,7 +95,7 @@ impl JniPluginManager {
 
     pub fn new_wv_obj(&self) -> Result<JObject, String> {
         let wv_class = self.wv_java_class()?;
-        let mut env = jni_hander::JVM
+        let mut env = jni_handler::JVM
             .get()
             .unwrap()
             .attach_current_thread()

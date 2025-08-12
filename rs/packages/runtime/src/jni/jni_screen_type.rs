@@ -16,7 +16,7 @@ use core::data::screen_type::ScreenType;
 
 use jni::objects::JObject;
 
-use crate::jni::{jni_hander::JniHandler, jni_hander::JniFieldInfo};
+use crate::jni::{jni_handler::JniHandler, jni_handler::JniFieldInfo};
 
 pub const CLASS_NAME: &'static str = "com/nesp/spiderx/runtime/model/ScreenType";
 

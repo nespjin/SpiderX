@@ -17,8 +17,8 @@ use core::data::plugin::Dataset;
 use jni::objects::{JObject, JValueGen};
 
 use crate::jni::{
-    jni_hander::JniHandler,
-    jni_hander::{JniConstructorInfo, JniFieldInfo},
+    jni_handler::JniHandler,
+    jni_handler::{JniConstructorInfo, JniFieldInfo},
     jni_json::JniJson,
 };
 

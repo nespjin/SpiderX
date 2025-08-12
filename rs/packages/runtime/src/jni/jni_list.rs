@@ -17,7 +17,7 @@ use jni::{
     sys::jboolean,
 };
 
-use crate::jni::{jni_classes, jni_hander::JniHandler, jni_methods};
+use crate::jni::{jni_classes, jni_handler::JniHandler, jni_methods};
 
 pub struct JniList<'local> {
     handler: JniHandler<'local>,

@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::jni::jni_hander::JVM;
+use crate::jni::jni_handler::JVM;
 
 pub(crate) mod jni_classes;
 pub(crate) mod jni_dataset;
-pub(crate) mod jni_hander;
+pub(crate) mod jni_handler;
 pub(crate) mod jni_json;
 pub(crate) mod jni_list;
 pub(crate) mod jni_map;

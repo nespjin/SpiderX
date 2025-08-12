@@ -17,7 +17,7 @@ use jni::{
     sys::{JNI_FALSE, JNI_TRUE},
 };
 
-use crate::jni::{jni_classes, jni_hander::JniHandler, jni_methods};
+use crate::jni::{jni_classes, jni_handler::JniHandler, jni_methods};
 
 #[derive(Clone)]
 pub struct JniJson<'local> {
