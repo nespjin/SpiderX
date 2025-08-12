@@ -27,5 +27,7 @@ out/
 /nbdist/
 /.nb-gradle/
 
+local.properties
+
 ### VS Code ###
 .vscode/
