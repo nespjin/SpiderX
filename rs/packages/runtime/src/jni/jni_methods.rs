@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use jni::{JNIEnv, errors::Error, objects::JObject};
+use crate::jni::jni_utils::JniMethodInfo;
 
-use crate::jni::jni_constants::JAVA_CLASS_NAME_ARRAY_LIST;
+pub const LIST_ADD: JniMethodInfo = ("add", "(Ljava/lang/Object;)Z");
+pub const MAP_PUT: JniMethodInfo = (
+    "put",
+    "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
+);
 
-pub fn new_array_list<'local>(env: &'local mut JNIEnv<'local>) -> Result<JObject<'local>, Error> {
-    let arr_list_cls = env
-        .find_class(JAVA_CLASS_NAME_ARRAY_LIST)
-        .expect("Cant find class ArrayList!");
-
-    env.new_object(arr_list_cls, "()V", &[])
-}
+pub const GET_CLASS: JniMethodInfo = ("getClass", "()Ljava/lang/Class;");
+pub const GET_NAME: JniMethodInfo = ("getName", "()Ljava/lang/String;");

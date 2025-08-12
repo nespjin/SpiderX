@@ -12,4 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub const JAVA_CLASS_NAME_DATASET: &'static str = "com/nesp/spiderx/runtime/model/Dataset";
+use jni::objects::JObject;
+
+pub struct CloneableJObject<'local> {
+    object: JObject<'local>,
+}
+
+impl<'local> CloneableJObject<'local> {
+    pub fn new(object: &JObject<'local>) -> Self {
+        CloneableJObject {
+            object: unsafe { JObject::from_raw(**object) },
+        }
+    }
+}
+
+impl Clone for CloneableJObject<'_> {
+    fn clone(&self) -> Self {
+        Self {
+            object: unsafe { JObject::from_raw(*self.object) },
+        }
+    }
+}

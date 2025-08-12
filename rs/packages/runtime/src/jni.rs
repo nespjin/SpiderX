@@ -14,12 +14,18 @@
 
 use crate::jni::jni_utils::JVM;
 
+pub(crate) mod jni_classes;
 pub(crate) mod jni_constants;
-pub(crate) mod jni_obj_dataset;
-pub(crate) mod jni_obj_list;
-pub(crate) mod jni_obj_plugin;
-pub(crate) mod jni_obj_screen_type;
+pub(crate) mod jni_dataset;
+pub(crate) mod jni_hander;
+pub(crate) mod jni_json;
+pub(crate) mod jni_list;
+pub(crate) mod jni_map;
+pub(crate) mod jni_methods;
+pub(crate) mod jni_object;
+pub(crate) mod jni_plugin;
 pub(crate) mod jni_plugin_manager;
+pub(crate) mod jni_screen_type;
 pub(crate) mod jni_utils;
 pub(crate) mod jni_webview;
 

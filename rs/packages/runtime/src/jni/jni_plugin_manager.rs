@@ -22,16 +22,15 @@ use jni::sys::jboolean;
 use jni::sys::jint;
 use jni::sys::jobject;
 use jni::sys::jstring;
-use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::OnceLock;
 
 use crate::device::device_manager::DeviceManager;
-use crate::jni::jni_constants::JAVA_CLASS_NAME_ARRAY_LIST;
-use crate::jni::jni_constants::JAVA_METHOD_NAME_LIST_ADD;
-use crate::jni::jni_constants::JAVA_METHOD_SIG_LIST_ADD;
-use crate::jni::jni_obj_plugin;
-use crate::jni::jni_obj_screen_type;
+use crate::jni::jni_classes;
+use crate::jni::jni_hander::JniHandler;
+use crate::jni::jni_methods;
+use crate::jni::jni_plugin::JniPlugin;
+use crate::jni::jni_screen_type;
 use crate::jni::jni_utils;
 use crate::plugin_manager::PluginManager;
 use crate::plugin_manager::PluginManagerConfig;
@@ -143,7 +142,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     let mut wm = wm.lock().unwrap();
     wm.init(isCacheEngine == JNI_TRUE).unwrap();
 
-    let screen_type = jni_obj_screen_type::java_object_to_screen_type(screenType);
+    let screen_type = jni_screen_type::java_object_to_screen_type(screenType);
     let dm = DeviceManager::get_instance();
     let mut dm = dm.lock().unwrap();
     dm.set_screen_type(screen_type);
@@ -155,7 +154,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     _this: JObject,
     screenType: JObject,
 ) {
-    let screen_type = jni_obj_screen_type::java_object_to_screen_type(screenType);
+    let screen_type = jni_screen_type::java_object_to_screen_type(screenType);
 
     let dm = DeviceManager::get_instance();
     let mut dm = dm.lock().unwrap();
@@ -231,8 +230,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
 ) -> jobject {
     let id: String = env.get_string(&id).expect("get id failed").into();
 
-    let plugin_manager = PluginManager::get_instance();
-    let plugin_manager = plugin_manager.lock().unwrap();
+    let plugin_manager = PluginManager::get_instance().lock().unwrap();
 
     let plugin = match jni_utils::throw_java_expception_if_error(
         &mut env,
@@ -248,19 +246,9 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
         None => return JObject::null().into_raw(),
     };
 
-    jni_obj_plugin::new(
-        &mut env,
-        &plugin.id,
-        &plugin.name,
-        &plugin.author,
-        &plugin.version,
-        &plugin.runtime_version,
-        &plugin.description,
-        &plugin.tags,
-        &plugin.supported_screen_types,
-        &plugin.datasets,
-    )
-    .unwrap()
+    let mut handler = JniHandler::new_with_env(env);
+    let jni_plugin = JniPlugin::clone_from_plugin(&mut handler, &plugin);
+    jni_plugin.unsafe_jobject().into_raw()
 }
 
 #[unsafe(no_mangle)]
@@ -268,49 +256,33 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     mut env: JNIEnv,
     _this: JObject,
 ) -> jobject {
-    let plugin_manager = PluginManager::get_instance();
-    let plugin_manager = plugin_manager.lock().unwrap();
-
-    let plugins = match jni_utils::throw_java_expception_if_error(
-        &mut env,
-        plugin_manager.get_installed_plugins(),
-    ) {
-        Some(p) => p,
-        None => return JObject::null().into_raw(),
+    let plugins = {
+        let plugin_manager = PluginManager::get_instance().lock().unwrap();
+        match jni_utils::throw_java_expception_if_error(
+            &mut env,
+            plugin_manager.get_installed_plugins(),
+        ) {
+            Some(p) => p,
+            None => return JObject::null().into_raw(),
+        }
     };
 
-    let arr_list = env
-        .new_object(JAVA_CLASS_NAME_ARRAY_LIST, "()V", &[])
-        .expect("unable to new array list");
+    let mut handler = JniHandler::new_with_env(env);
+
+    let arr_list = handler.new_object(jni_classes::ARRAY_LIST_CONSTOR, &[]);
 
     let mut plugin_objs = vec![];
     for plugin in plugins {
-        plugin_objs.push(
-            jni_obj_plugin::new(
-                &mut env,
-                &plugin.id,
-                &plugin.name,
-                &plugin.author,
-                &plugin.version,
-                &plugin.runtime_version,
-                &plugin.description,
-                &plugin.tags,
-                &plugin.supported_screen_types,
-                &plugin.datasets,
-            )
-            .unwrap(),
-        );
+        let jni_plugin = JniPlugin::clone_from_plugin(&mut handler, &plugin);
+        plugin_objs.push(jni_plugin.unsafe_jobject());
     }
 
-    for plugin_obj_ptr in plugin_objs {
-        let plugin_obj = unsafe { JObject::from_raw(plugin_obj_ptr) };
-        env.call_method(
+    for plugin_obj in plugin_objs {
+        handler.call_method(
             &arr_list,
-            JAVA_METHOD_NAME_LIST_ADD,
-            JAVA_METHOD_SIG_LIST_ADD,
+            jni_methods::LIST_ADD,
             &[JValueGen::Object(&plugin_obj)],
-        )
-        .unwrap();
+        );
     }
 
     arr_list.into_raw()
@@ -324,8 +296,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
 ) {
     let id: String = env.get_string(&id).expect("get id failed").into();
 
-    let plugin_manager = PluginManager::get_instance();
-    let mut plugin_manager = plugin_manager.lock().unwrap();
+    let mut plugin_manager = PluginManager::get_instance().lock().unwrap();
     jni_utils::throw_java_expception_if_error(&mut env, plugin_manager.uninstall_plugin(&id));
 }
 
