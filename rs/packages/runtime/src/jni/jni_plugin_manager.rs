@@ -95,14 +95,7 @@ impl JniPluginManager {
     }
 
     pub fn new_wv_obj(&self) -> Result<JObject, String> {
-        let ctor_sig = if cfg!(target_os = "android") {
-            "(Landroid/content/Context;)V"
-        } else {
-            "()V"
-        };
-
         let wv_class = self.wv_java_class()?;
-        println!("wv_class: {:?}", wv_class);
         let mut env = jni_utils::JVM
             .get()
             .unwrap()
@@ -111,22 +104,6 @@ impl JniPluginManager {
         let wv_obj = env
             .new_object(wv_class, "()V", &[])
             .map_err(|e| e.to_string())?;
-        println!("wv_obj: {:?}", wv_obj);
-
-        let class_name = jni_utils::get_class_name(&wv_obj);
-        match class_name {
-            Ok(n) => {
-                println!("wv_obj class name: {:?}", n);
-            }
-            Err(_) => {
-                if let Some(err) = jni_utils::check_jni_exception() {
-                    println!("wv_obj class name: None {:?}", err);
-                    jni_utils::throw_java_expception_msg(&mut env, &err);
-                }
-            }
-        }
-
-        println!("wv_obj: {:?}", wv_obj);
 
         Ok(wv_obj)
     }
@@ -368,8 +345,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
         .expect("get dataset id failed")
         .into();
 
-    let plugin_manager = PluginManager::get_instance();
-    let plugin_manager = plugin_manager.lock().unwrap();
+    let plugin_manager = PluginManager::get_instance().lock().unwrap();
 
     let data = plugin_manager.request_dataset(&plugin_id, &dataset_id);
     let data = jni_utils::throw_java_expception_if_error(&mut env, data);

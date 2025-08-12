@@ -32,24 +32,11 @@ pub fn java_object_to_screen_type(java_object: JObject) -> ScreenType {
         .unwrap();
     let enum_value = env
         .call_method(&java_object, "name", "()Ljava/lang/String;", &[])
-        .expect("Unable to get ScreenType enum value!");
-    let enum_value: String = match enum_value {
-        JValueGen::Object(obj) => {
-            let jstr: JString = obj.into();
-            let str: String = env.get_string(&jstr).unwrap().into();
-            str
-        }
-        _ => {
-            let mut env = jni_utils::JVM
-                .get()
-                .unwrap()
-                .attach_current_thread()
-                .unwrap();
-            let msg = format!("Invalid screen type: {:?}", enum_value);
-            jni_utils::throw_java_expception_msg(&mut env, &msg);
-            "".to_string()
-        }
-    };
+        .unwrap()
+        .l()
+        .unwrap();
+
+    let enum_value: String = env.get_string(&enum_value.into()).unwrap().into();
     enum_value_to_screen_type(&enum_value)
 }
 

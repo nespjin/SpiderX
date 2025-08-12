@@ -22,6 +22,7 @@ pub static JVM: OnceCell<jni::JavaVM> = OnceCell::new();
 
 pub fn throw_java_expception_if_error<T>(env: &mut JNIEnv, error: Result<T, String>) -> Option<T> {
     if let Err(e) = &error {
+        println!("throw java expception {}", e.as_str());
         env.throw_new("java/lang/Exception", e.as_str()).unwrap();
         return None;
     }

@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::fmt::Display;
+use std::{
+    fmt::Display,
+    sync::{Arc, RwLock},
+};
 
 use crate::{
     executor::dataset_executor::DatasetExecutor,
@@ -57,23 +60,24 @@ impl<'local> JavaScriptDatasetExecutor<'local> {
 
 impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
     fn request(&self) -> Result<String, String> {
-        println!("JavaScriptDatasetExecutor::request {} {}", self.id, self.url);
-        let wm = WebEngineManager::get_instance();
-        let mut wm = wm.lock().map_err(|e| e.to_string())?;
+        let webengine = {
+            println!("JavaScriptDatasetExecutor::request");
+            let mut wm = WebEngineManager::get_instance()
+                .lock()
+                .map_err(|e| e.to_string())?;
+            wm.new_webengine()?
+        };
 
-        let webengine = wm.new_webengine()?;
-        println!("JavaScriptDatasetExecutor::webengine {} {}", self.id, self.url);
-        
-        // let callback: WebEngineCallback = Box::new(|e| {
-        //     println!("WebEngineCallback {} ", e);
-        // });
+        let callback: WebEngineCallback = Box::new(|e| {
+            println!("WebEngineCallback {} ", e);
+        });
 
-        // let listener = Arc::new(RwLock::new(WebEngineListenerImpl::new(
-        //     self.url.to_string(),
-        //     callback,
-        // )));
-        // webengine.write().unwrap().set_listener(listener);
-        // webengine.read().unwrap().load_url(self.url)?;
+        let listener = Arc::new(RwLock::new(WebEngineListenerImpl::new(
+            self.url.to_string(),
+            callback,
+        )));
+        webengine.write().unwrap().set_listener(listener);
+        webengine.read().unwrap().load_url(self.url)?;
 
         Ok("".to_string())
     }
@@ -123,10 +127,10 @@ impl WebEngineListener for WebEngineListenerImpl {
     }
 
     fn should_override_url_loading(&mut self, engine: WebEngineMut, url: &str) -> bool {
-        false
+        true
     }
 
     fn should_intercept_request(&mut self, engine: WebEngineMut, url: &str) -> Option<String> {
-        None
+        Some("ShouldInterceptRequest in Rust".to_string())
     }
 }

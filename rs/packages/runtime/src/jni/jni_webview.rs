@@ -47,20 +47,20 @@ pub fn new_jni_wv(id: i64) -> Result<JniWebView, String> {
 
     let wv_java_obj = jni_plugin_manager
         .java_env()
-        .map_err(|e| e.to_string())?
-        .new_global_ref(jni_plugin_manager.new_wv_obj().map_err(|e| e.to_string())?)
-        .map_err(|e| e.to_string())?;
+        .unwrap()
+        .new_global_ref(jni_plugin_manager.new_wv_obj().unwrap())
+        .unwrap();
 
     jni_plugin_manager
         .java_env()
-        .map_err(|e| e.to_string())?
+        .unwrap()
         .set_field(
             wv_java_obj.clone(),
             JNI_WV_JAVA_FIELD_NAME_PTR,
             "J",
             JValueGen::Long(id),
         )
-        .map_err(|e| e.to_string())?;
+        .unwrap();
 
     Ok(JniWebView::new(id, wv_java_obj))
 }

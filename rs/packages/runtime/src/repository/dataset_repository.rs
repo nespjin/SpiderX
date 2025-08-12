@@ -19,8 +19,7 @@ use crate::{
     database::{database, dataset_dao},
     device::device_manager::DeviceManager,
     executor::{
-        dataset_executor::DatasetExecutor,
-        javascript_dataset_executor::JavaScriptDatasetExecutor,
+        dataset_executor::DatasetExecutor, javascript_dataset_executor::JavaScriptDatasetExecutor,
     },
     repository::model::dataset,
     utils::screen_typed_value::ScreenTypedValue,
@@ -106,8 +105,9 @@ impl DatasetRepository {
             None => return Err(format!("Dataset {}.{} not found", plugin_id, dataset_id)),
         };
 
-        let dm = DeviceManager::get_instance();
-        let dm = dm.lock().map_err(|e| e.to_string())?;
+        let dm = DeviceManager::get_instance()
+            .lock()
+            .map_err(|e| e.to_string())?;
 
         let screen_type = &dm.screen_type().ok_or("Screen type is not set")?;
 
