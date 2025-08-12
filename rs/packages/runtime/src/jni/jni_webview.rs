@@ -42,11 +42,8 @@ const JAVA_METHOD_INFO_EVALUATE: &'static [&'static str; 2] =
 const JAVA_METHOD_INFO_DESTROY: &'static [&'static str; 2] = &["destroy", "()V"];
 
 pub fn new_jni_wv(id: i64) -> Result<JniWebView, String> {
-    println!("new_jni_wv {}", id);
     let jni_plugin_manager = JniPluginManager::get_instance();
     let jni_plugin_manager = jni_plugin_manager.lock().unwrap();
-    jni_plugin_manager.new_wv_obj().map_err(|e| e.to_string())?;
-    println!("new_jni_wv ++++++{}", id);
 
     let wv_java_obj = jni_plugin_manager
         .java_env()

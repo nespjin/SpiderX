@@ -105,7 +105,11 @@ impl JniPluginManager {
 
         let wv_class = self.wv_java_class()?;
         println!("wv_class: {:?}", wv_class);
-        let mut env = jni_utils::JVM.get().unwrap().attach_current_thread().unwrap();
+        let mut env = jni_utils::JVM
+            .get()
+            .unwrap()
+            .attach_current_thread()
+            .unwrap();
         let wv_obj = env
             .new_object(wv_class, "()V", &[])
             .map_err(|e| e.to_string())?;
@@ -139,25 +143,6 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     isCacheEngine: jboolean,
     webviewClass: JClass<'static>,
 ) {
-    println!("webviewClass: {:?}", webviewClass);
-    let wv_obj = env
-        .new_object(&webviewClass, "()V", &[])
-        .map_err(|e| e.to_string())
-        .unwrap();
-
-    let class_name = jni_utils::get_class_name(&wv_obj);
-    match class_name {
-        Ok(n) => {
-            println!("wv_obj class name: {:?}", n);
-        }
-        Err(_) => {
-            if let Some(err) = jni_utils::check_jni_exception() {
-                println!("wv_obj class name: None {:?}", err);
-                jni_utils::throw_java_expception_msg(&mut env, &err);
-            }
-        }
-    }
-
     let database_path: String = env
         .get_string(&databasePath)
         .expect("get database path failed")
@@ -178,9 +163,6 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
         &mut env,
         jni_plugin_manager.init(java_vm, wv_java_class_global),
     );
-
-    let wv_obj = jni_plugin_manager.new_wv_obj().unwrap();
-    println!("wv_obj: {:?}", jni_utils::get_class_name(&wv_obj));
 
     let wm = WebEngineManager::get_instance();
     let mut wm = wm.lock().unwrap();
