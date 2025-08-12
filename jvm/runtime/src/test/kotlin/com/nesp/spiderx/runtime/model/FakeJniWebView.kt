@@ -1,6 +1,7 @@
 package com.nesp.spiderx.runtime.model
 
 import com.nesp.spiderx.runtime.JniWebView
+import kotlin.concurrent.thread
 
 /**
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
@@ -19,12 +20,12 @@ class FakeJniWebView : JniWebView() {
             notifyOnLoadProgress(i)
             Thread.sleep(10)
         }
-        notifyOnPageFinished(url)
         notifyOnPageError(url, "Error on Finished")
         val shouldInterceptRequest = notifyOnShouldInterceptRequest(url)
         println("shouldInterceptRequest: $shouldInterceptRequest")
         val shouldOverrideUrlLoading = notifyOnShouldOverrideUrlLoading(url)
         println("shouldOverrideUrlLoading: $shouldOverrideUrlLoading")
+        notifyOnPageFinished(url)
     }
 
     override fun loadData(data: String) {
