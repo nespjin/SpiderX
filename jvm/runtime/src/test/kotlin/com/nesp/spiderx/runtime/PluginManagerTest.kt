@@ -78,7 +78,7 @@ const val PLUGIN_JSON = """
     {
       "id": "product_data",
       "url": "https://api.example.com/products",
-      "url@compact": null,
+      "url@compact": "https://api.example.com/products",
       "url@medium": null,
       "url@expanded": null,
       "js": null,
