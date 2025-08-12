@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS "plugin" (
 CREATE INDEX IF NOT EXISTS "plugin_index_0"
 ON "plugin" ("id");
 CREATE TABLE IF NOT EXISTS "dataset" (
-	"id" VARCHAR NOT NULL UNIQUE,
+	"id" VARCHAR NOT NULL,
 	"plugin_id" VARCHAR NOT NULL,
 	"url" VARCHAR NOT NULL,
 	"url_compact" VARCHAR,
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS "dataset" (
 	"dsl_compact" TEXT,
 	"dsl_medium" TEXT,
 	"dsl_expanded" TEXT,
-	PRIMARY KEY("id")
+	PRIMARY KEY (id, plugin_id)
 );
 
 CREATE INDEX IF NOT EXISTS "dataset_index_0"
