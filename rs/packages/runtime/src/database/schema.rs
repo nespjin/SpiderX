@@ -1,7 +1,7 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    dataset (id) {
+    dataset (id, plugin_id) {
         id -> Text,
         plugin_id -> Text,
         url -> Text,

@@ -19,6 +19,8 @@ use diesel_migrations::{EmbeddedMigrations, MigrationHarness, embed_migrations};
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
+// diesel print-schema > src/database/schema.rs 
+
 pub(crate) fn open(path: &str) -> ConnectionResult<SqliteConnection> {
     // sqlite://path/to/db.sqlite?mode=rwc;
     let path = format!("sqlite://{}?mode=rwc", path);

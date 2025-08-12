@@ -22,7 +22,7 @@ use crate::database::{entities::dataset::DatasetEntity, schema::dataset};
 pub fn upsert(conn: &mut SqliteConnection, entity: &DatasetEntity) -> QueryResult<DatasetEntity> {
     diesel::insert_or_ignore_into(dataset::table)
         .values(entity)
-        .on_conflict(dataset::id)
+        .on_conflict((dataset::id, dataset::plugin_id))
         .do_update()
         .set(entity)
         .returning(DatasetEntity::as_returning())
@@ -35,7 +35,7 @@ pub fn upsert_all(conn: &mut SqliteConnection, entities: &[DatasetEntity]) -> Qu
         for entity in entities {
             diesel::insert_or_ignore_into(dataset::table)
                 .values(entity)
-                .on_conflict(dataset::id)
+                .on_conflict((dataset::id, dataset::plugin_id))
                 .do_update()
                 .set(entity)
                 .returning(DatasetEntity::as_returning())
@@ -56,9 +56,13 @@ pub fn update_all(conn: &mut SqliteConnection, entities: &[DatasetEntity]) -> Qu
     conn.transaction(|conn: &mut SqliteConnection| {
         let mut count: usize = 0;
         for entity in entities {
-            diesel::update(dataset::table.filter(dataset::id.eq(&entity.id)))
-                .set(entity)
-                .execute(conn)?;
+            diesel::update(
+                dataset::table
+                    .filter(dataset::id.eq(&entity.id))
+                    .filter(dataset::plugin_id.eq(&entity.plugin_id)),
+            )
+            .set(entity)
+            .execute(conn)?;
             count += 1;
         }
         Ok(count)
@@ -111,6 +115,20 @@ pub fn find_by_id_in_plugin(
 pub fn is_dataset_exists(conn: &mut SqliteConnection, id: &str) -> QueryResult<bool> {
     dataset::table
         .filter(dataset::id.eq(id))
+        .select(dataset::id)
+        .first::<String>(conn)
+        .map(|_| true)
+        .or_else(|_| Ok(false))
+}
+
+pub fn is_dataset_exists_in_plugin(
+    conn: &mut SqliteConnection,
+    plugin_id: &str,
+    id: &str,
+) -> QueryResult<bool> {
+    dataset::table
+        .filter(dataset::id.eq(id))
+        .filter(dataset::plugin_id.eq(plugin_id))
         .select(dataset::id)
         .first::<String>(conn)
         .map(|_| true)
