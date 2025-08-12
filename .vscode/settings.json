@@ -2,5 +2,14 @@
     "java.configuration.updateBuildConfiguration": "interactive",
     "rust-analyzer.linkedProjects": [
         "rs/Cargo.toml"
-    ]
+    ],
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "RuntimeDatabase",
+            "database": "${workspaceFolder:SpiderX}/jvm/runtime/build/plugin.db"
+        }
+    ],
+    "sqltools.useNodeRuntime": true
 }
