@@ -66,6 +66,7 @@ impl<'local> JniDataset<'local> {
         let id_obj = self.handler.new_string(id);
         self.handler
             .set_field(&self.dataset, FIELD_ID, JValueGen::Object(&id_obj));
+        self.handler.delete_local_ref(id_obj);
         self
     }
 
@@ -73,6 +74,7 @@ impl<'local> JniDataset<'local> {
         let url_obj = self.handler.new_string(url);
         self.handler
             .set_field(&self.dataset, FIELD_URL, JValueGen::Object(&url_obj));
+        self.handler.delete_local_ref(url_obj);
         self
     }
 
@@ -83,6 +85,7 @@ impl<'local> JniDataset<'local> {
             FIELD_URL_COMPACT,
             JValueGen::Object(&url_obj),
         );
+        self.handler.delete_local_ref(url_obj);
         self
     }
 
@@ -90,6 +93,7 @@ impl<'local> JniDataset<'local> {
         let url_obj = self.handler.new_string(url);
         self.handler
             .set_field(&self.dataset, FIELD_URL_MEDIUM, JValueGen::Object(&url_obj));
+        self.handler.delete_local_ref(url_obj);
         self
     }
 
@@ -100,6 +104,7 @@ impl<'local> JniDataset<'local> {
             FIELD_URL_EXPANDED,
             JValueGen::Object(&url_obj),
         );
+        self.handler.delete_local_ref(url_obj);
         self
     }
 
@@ -107,6 +112,7 @@ impl<'local> JniDataset<'local> {
         let js_obj = self.handler.new_string(js);
         self.handler
             .set_field(&self.dataset, FIELD_JS, JValueGen::Object(&js_obj));
+        self.handler.delete_local_ref(js_obj);
         self
     }
 
@@ -114,6 +120,7 @@ impl<'local> JniDataset<'local> {
         let js_obj = self.handler.new_string(js);
         self.handler
             .set_field(&self.dataset, FIELD_JS_COMPACT, JValueGen::Object(&js_obj));
+        self.handler.delete_local_ref(js_obj);
         self
     }
 
@@ -121,6 +128,7 @@ impl<'local> JniDataset<'local> {
         let js_obj = self.handler.new_string(js);
         self.handler
             .set_field(&self.dataset, FIELD_JS_MEDIUM, JValueGen::Object(&js_obj));
+        self.handler.delete_local_ref(js_obj);
         self
     }
 
@@ -128,6 +136,7 @@ impl<'local> JniDataset<'local> {
         let js_obj = self.handler.new_string(js);
         self.handler
             .set_field(&self.dataset, FIELD_JS_EXPANDED, JValueGen::Object(&js_obj));
+        self.handler.delete_local_ref(js_obj);
         self
     }
 
@@ -135,6 +144,7 @@ impl<'local> JniDataset<'local> {
         let dsl_obj = self.jni_json.json_value_to_hash_map(dsl);
         self.handler
             .set_field(&self.dataset, FIELD_DSL, JValueGen::Object(&dsl_obj));
+        self.handler.delete_local_ref(dsl_obj);
         self
     }
 
@@ -145,6 +155,7 @@ impl<'local> JniDataset<'local> {
             FIELD_DSL_COMPACT,
             JValueGen::Object(&dsl_obj),
         );
+        self.handler.delete_local_ref(dsl_obj);
         self
     }
 
@@ -152,6 +163,7 @@ impl<'local> JniDataset<'local> {
         let dsl_obj = self.jni_json.json_value_to_hash_map(dsl);
         self.handler
             .set_field(&self.dataset, FIELD_DSL_MEDIUM, JValueGen::Object(&dsl_obj));
+        self.handler.delete_local_ref(dsl_obj);
         self
     }
 
@@ -162,6 +174,7 @@ impl<'local> JniDataset<'local> {
             FIELD_DSL_EXPANDED,
             JValueGen::Object(&dsl_obj),
         );
+        self.handler.delete_local_ref(dsl_obj);
         self
     }
 }

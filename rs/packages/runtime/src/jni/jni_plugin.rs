@@ -23,9 +23,9 @@ use crate::jni::{
     jni_classes,
     jni_dataset::JniDataset,
     jni_handler::JniHandler,
+    jni_handler::{JniConstructorInfo, JniFieldInfo},
     jni_methods,
     jni_screen_type::JniScreenType,
-    jni_handler::{JniConstructorInfo, JniFieldInfo},
 };
 
 pub const CLASS_NAME: &'static str = "com/nesp/spiderx/runtime/model/Plugin";
@@ -66,6 +66,7 @@ impl<'local> JniPlugin<'local> {
         let id_obj = self.handler.new_string(id);
         self.handler
             .set_field(&self.plugin, FIELD_ID, JValueGen::Object(&id_obj));
+        self.handler.delete_local_ref(id_obj);
         self
     }
 
@@ -73,6 +74,7 @@ impl<'local> JniPlugin<'local> {
         let name_obj = self.handler.new_string(name);
         self.handler
             .set_field(&self.plugin, FIELD_NAME, JValueGen::Object(&name_obj));
+        self.handler.delete_local_ref(name_obj);
         self
     }
 
@@ -80,6 +82,7 @@ impl<'local> JniPlugin<'local> {
         let author_obj = self.handler.new_string(author);
         self.handler
             .set_field(&self.plugin, FIELD_AUTHOR, JValueGen::Object(&author_obj));
+        self.handler.delete_local_ref(author_obj);
         self
     }
 
@@ -87,6 +90,7 @@ impl<'local> JniPlugin<'local> {
         let version_obj = self.handler.new_string(version);
         self.handler
             .set_field(&self.plugin, FIELD_VERSION, JValueGen::Object(&version_obj));
+        self.handler.delete_local_ref(version_obj);
         self
     }
 
@@ -97,6 +101,7 @@ impl<'local> JniPlugin<'local> {
             FIELD_RUNTIME_VERSION,
             JValueGen::Object(&runtime_version_obj),
         );
+        self.handler.delete_local_ref(runtime_version_obj);
         self
     }
 
@@ -107,6 +112,7 @@ impl<'local> JniPlugin<'local> {
             FIELD_DESCRIPTION,
             JValueGen::Object(&description_obj),
         );
+        self.handler.delete_local_ref(description_obj);
         self
     }
 
@@ -126,6 +132,7 @@ impl<'local> JniPlugin<'local> {
         }
         self.handler
             .set_field(&self.plugin, FIELD_TAGS, JValueGen::Object(&tags_arr_list));
+        self.handler.delete_local_ref(tags_arr_list);
         self
     }
 
@@ -148,6 +155,7 @@ impl<'local> JniPlugin<'local> {
             FIELD_SUPPORTED_SCREEN_TYPES,
             JValueGen::Object(&screen_types_arr_list),
         );
+        self.handler.delete_local_ref(screen_types_arr_list);
         self
     }
 
@@ -169,6 +177,7 @@ impl<'local> JniPlugin<'local> {
             FIELD_DATASETS,
             JValueGen::Object(&datasets_arr_list),
         );
+        self.handler.delete_local_ref(datasets_arr_list);
         self
     }
 }
