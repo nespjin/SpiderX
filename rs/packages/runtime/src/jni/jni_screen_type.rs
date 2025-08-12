@@ -14,18 +14,16 @@
 
 use core::data::screen_type::ScreenType;
 
-use jni::{
-    JNIEnv,
-    objects::{JObject, JString, JValueGen},
-};
+use jni::objects::JObject;
 
-use crate::jni::{jni_hander::JniHandler, jni_utils};
+use crate::jni::{jni_hander::JniHandler, jni_hander::JniFieldInfo};
 
-pub const JAVA_CLASS_NAME_SCREEN_TYPE: &'static str = "com/nesp/spiderx/runtime/model/ScreenType";
+pub const CLASS_NAME: &'static str = "com/nesp/spiderx/runtime/model/ScreenType";
 
-pub const JAVA_FILED_SCREEN_TYPE_COMPACT: &'static str = "COMPACT";
-pub const JAVA_FILED_SCREEN_TYPE_MEDIUM: &'static str = "MEDIUM";
-pub const JAVA_FILED_SCREEN_TYPE_EXPANDED: &'static str = "EXPANDED";
+pub const FILED_COMPACT: JniFieldInfo = ("COMPACT", "Lcom/nesp/spiderx/runtime/model/ScreenType;");
+pub const FILED_MEDIUM: JniFieldInfo = ("MEDIUM", "Lcom/nesp/spiderx/runtime/model/ScreenType;");
+pub const FILED_EXPANDED: JniFieldInfo =
+    ("EXPANDED", "Lcom/nesp/spiderx/runtime/model/ScreenType;");
 
 pub struct JniScreenType<'local> {
     handler: JniHandler<'local>,
@@ -47,40 +45,41 @@ impl<'local> JniScreenType<'local> {
     }
 
     pub fn screen_type_to_java_object(&mut self, screen_type: &ScreenType) -> JObject {
-        let enumValue = JniScreenType::get_enum_value_name(screen_type);
-        self.get_enum_value(enumValue)
+        let enum_value = JniScreenType::get_enum_value_name(screen_type);
+        let field_info = if enum_value == FILED_COMPACT.0 {
+            FILED_COMPACT
+        } else if enum_value == FILED_MEDIUM.0 {
+            FILED_MEDIUM
+        } else if enum_value == FILED_EXPANDED.0 {
+            FILED_EXPANDED
+        } else {
+            let msg = format!("Invalid screen type: {}", enum_value);
+            self.handler.throw_java_expception_msg(&msg);
+            FILED_COMPACT
+        };
+        let ret = self.handler.get_static_field(CLASS_NAME, field_info);
+        ret
     }
 
-    pub fn enum_value_to_screen_type(&mut self, enumValue: &str) -> ScreenType {
-        match enumValue {
-            JAVA_FILED_SCREEN_TYPE_COMPACT => ScreenType::Compact,
-            JAVA_FILED_SCREEN_TYPE_MEDIUM => ScreenType::Medium,
-            JAVA_FILED_SCREEN_TYPE_EXPANDED => ScreenType::Expanded,
-            _ => {
-                let mut env = jni_utils::JVM
-                    .get()
-                    .unwrap()
-                    .attach_current_thread()
-                    .unwrap();
-                let msg = format!("Invalid screen type: {}", enumValue);
-                jni_utils::throw_java_expception_msg(&mut env, &msg);
-                ScreenType::Compact
-            }
+    pub fn enum_value_to_screen_type(&mut self, enum_value: &str) -> ScreenType {
+        if enum_value == FILED_COMPACT.0 {
+            ScreenType::Compact
+        } else if enum_value == FILED_MEDIUM.0 {
+            ScreenType::Medium
+        } else if enum_value == FILED_EXPANDED.0 {
+            ScreenType::Expanded
+        } else {
+            let msg = format!("Invalid screen type: {}", enum_value);
+            self.handler.throw_java_expception_msg(&msg);
+            ScreenType::Compact
         }
     }
 
     pub fn get_enum_value_name(screen_type: &ScreenType) -> &'static str {
         match screen_type {
-            ScreenType::Compact => JAVA_FILED_SCREEN_TYPE_COMPACT,
-            ScreenType::Medium => JAVA_FILED_SCREEN_TYPE_MEDIUM,
-            ScreenType::Expanded => JAVA_FILED_SCREEN_TYPE_EXPANDED,
+            ScreenType::Compact => FILED_COMPACT.0,
+            ScreenType::Medium => FILED_MEDIUM.0,
+            ScreenType::Expanded => FILED_EXPANDED.0,
         }
-    }
-
-    pub fn get_enum_value(&mut self, enumValue: &str) -> JObject {
-        self.handler.get_static_field(
-            JAVA_CLASS_NAME_SCREEN_TYPE,
-            (enumValue, &format!("L{};", JAVA_CLASS_NAME_SCREEN_TYPE)),
-        );
     }
 }

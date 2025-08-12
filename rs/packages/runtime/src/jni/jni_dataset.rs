@@ -18,11 +18,9 @@ use jni::objects::{JObject, JValueGen};
 
 use crate::jni::{
     jni_hander::JniHandler,
+    jni_hander::{JniConstructorInfo, JniFieldInfo},
     jni_json::JniJson,
-    jni_utils::{JniConstructorInfo, JniFieldInfo},
 };
-
-pub const JAVA_CLASS_NAME_DATASET: &'static str = "com/nesp/spiderx/runtime/model/Dataset";
 
 pub const DATASET: &str = "com/nesp/spiderx/runtime/model/Dataset";
 pub const DATASET_CONSTOR: JniConstructorInfo = (DATASET, "()V");

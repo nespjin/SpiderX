@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::jni::jni_utils::JniConstructorInfo;
+use crate::jni::jni_hander::JniConstructorInfo;
+
 
 pub const LIST: &str = "java/util/List";
 pub const ARRAY_LIST: &str = "java/util/ArrayList";

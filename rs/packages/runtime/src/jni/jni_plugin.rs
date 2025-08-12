@@ -23,11 +23,10 @@ use crate::jni::{
     jni_classes,
     jni_dataset::JniDataset,
     jni_hander::JniHandler,
-    jni_methods, jni_screen_type,
-    jni_utils::{JniConstructorInfo, JniFieldInfo},
+    jni_methods,
+    jni_screen_type::JniScreenType,
+    jni_hander::{JniConstructorInfo, JniFieldInfo},
 };
-
-const JAVA_CLASS_NAME_PLUGIN: &'static str = "com/nesp/spiderx/runtime/model/Plugin";
 
 pub const CLASS_NAME: &'static str = "com/nesp/spiderx/runtime/model/Plugin";
 pub const PLUGIN_CONSTOR: JniConstructorInfo = (CLASS_NAME, "()V");
@@ -135,7 +134,8 @@ impl<'local> JniPlugin<'local> {
             .handler
             .new_object(jni_classes::ARRAY_LIST_CONSTOR, &[]);
         for screen_type in screen_types {
-            let screen_type_obj = jni_screen_type::screen_type_to_java_object(screen_type);
+            let mut jni_screen_type = JniScreenType::new(&mut self.handler);
+            let screen_type_obj = jni_screen_type.screen_type_to_java_object(screen_type);
             self.handler.call_method(
                 &screen_types_arr_list,
                 jni_methods::LIST_ADD,

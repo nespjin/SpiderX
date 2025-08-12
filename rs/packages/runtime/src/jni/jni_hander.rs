@@ -13,27 +13,27 @@
 // limitations under the License.
 
 use jni::{
-    JNIEnv, errors,
-    objects::{JClass, JObject, JString, JValue, JValueGen},
+    JNIEnv, JavaVM, errors,
+    objects::{AsJArrayRaw, GlobalRef, JByteArray, JClass, JObject, JString, JValue, JValueGen},
     strings::JNIString,
-    sys::{JNI_FALSE, JNI_TRUE, jboolean},
+    sys::{JNI_FALSE, JNI_TRUE, jboolean, jbyte, jsize},
 };
+use once_cell::sync::OnceCell;
 
-use crate::jni::{
-    jni_methods,
-    jni_utils::{self, JniConstructorInfo, JniFieldInfo, JniMethodInfo},
-};
+use crate::jni::jni_methods;
+
+pub type JniConstructorInfo = (&'static str, &'static str);
+pub type JniMethodInfo = (&'static str, &'static str);
+pub type JniFieldInfo = (&'static str, &'static str);
+
+pub static JVM: OnceCell<jni::JavaVM> = OnceCell::new();
 
 pub struct JniHandler<'local> {
     env: JNIEnv<'local>,
 }
 impl<'local> JniHandler<'local> {
     pub fn new() -> Self {
-        let env = jni_utils::JVM
-            .get()
-            .unwrap()
-            .attach_current_thread()
-            .unwrap();
+        let env = JVM.get().unwrap().attach_current_thread().unwrap();
         Self {
             env: unsafe { env.unsafe_clone() },
         }
@@ -45,7 +45,7 @@ impl<'local> JniHandler<'local> {
 
     pub fn new_string<S: Into<JNIString>>(&mut self, from: S) -> JString<'local> {
         let ret = self.env.new_string(from);
-        let ret = jni_utils::throw_jni_exception_if_error(&mut self.env, ret).unwrap();
+        let ret = self.throw_jni_exception_if_error(ret).unwrap();
         ret.into()
     }
 
@@ -122,14 +122,6 @@ impl<'local> JniHandler<'local> {
         self.get_string(&name)
     }
 
-    pub fn delete_local_ref<'other_local, O>(&mut self, obj: O)
-    where
-        O: Into<JObject<'other_local>>,
-    {
-        let ret = self.env.delete_local_ref(obj);
-        self.throw_jni_exception_if_error(ret).unwrap();
-    }
-
     pub fn throw_java_expception_if_error<T>(&mut self, error: Result<T, String>) -> Option<T> {
         if let Err(e) = &error {
             println!("throw java expception {}", e.as_str());
@@ -144,6 +136,7 @@ impl<'local> JniHandler<'local> {
     pub fn throw_java_expception_msg(&mut self, msg: &str) {
         self.env.throw_new("java/lang/Exception", msg).unwrap();
     }
+
     pub fn throw_jni_exception_if_error<T>(&mut self, result: errors::Result<T>) -> Option<T> {
         if let Err(_) = result {
             if let Some(msg) = self.check_jni_exception() {
@@ -188,6 +181,59 @@ impl<'local> JniHandler<'local> {
         } else {
             None
         }
+    }
+
+    pub fn new_global_ref<'other_local, O>(&mut self, obj: O) -> GlobalRef
+    where
+        O: AsRef<JObject<'other_local>>,
+    {
+        self.throw_jni_exception_if_error(self.env.new_global_ref(obj))
+            .unwrap()
+    }
+
+    pub fn delete_local_ref<'other_local, O>(&mut self, obj: O)
+    where
+        O: Into<JObject<'other_local>>,
+    {
+        self.throw_jni_exception_if_error(self.env.delete_local_ref(obj))
+            .unwrap();
+    }
+
+    pub fn get_java_vm(&mut self) -> JavaVM {
+        self.throw_jni_exception_if_error(self.env.get_java_vm())
+            .unwrap()
+    }
+
+    pub fn get_array_length<'other_local, 'array>(
+        &mut self,
+        array: &'array impl AsJArrayRaw<'other_local>,
+    ) -> jsize {
+        self.throw_jni_exception_if_error(self.env.get_array_length(array))
+            .unwrap()
+    }
+
+    pub fn get_byte_array_region<'other_local>(
+        &mut self,
+        array: impl AsRef<JByteArray<'other_local>>,
+        start: jsize,
+        buf: &mut [jbyte],
+    ) {
+        self.throw_jni_exception_if_error(self.env.get_byte_array_region(array, start, buf))
+            .unwrap()
+    }
+
+    pub fn get_class<'other_local, O>(&mut self, obj: O) -> JObject<'local>
+    where
+        O: Into<JObject<'other_local>>,
+    {
+        self.call_method(&obj.into(), jni_methods::GET_CLASS, &[])
+    }
+
+    pub fn get_name<'other_local, O>(&mut self, obj: O) -> JObject<'local>
+    where
+        O: Into<JObject<'other_local>>,
+    {
+        self.call_method(&obj.into(), jni_methods::GET_NAME, &[])
     }
 }
 
