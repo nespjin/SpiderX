@@ -14,7 +14,8 @@
 
 use std::{
     fmt::Display,
-    sync::{Arc, RwLock},
+    sync::{Arc, Mutex, RwLock, mpsc},
+    thread,
 };
 
 use crate::{
@@ -25,7 +26,7 @@ use crate::{
     },
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum WebEngineEvent {
     PageStarted(String),
     PageFinished(String),
@@ -60,16 +61,25 @@ impl<'local> JavaScriptDatasetExecutor<'local> {
 
 impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
     fn request(&self) -> Result<String, String> {
+        let (tx, rx) = mpsc::channel::<WebEngineEvent>();
         let webengine = {
-            println!("JavaScriptDatasetExecutor::request");
+            println!(
+                "JavaScriptDatasetExecutor::request on thread {:?}",
+                thread::current().id()
+            );
             let mut wm = WebEngineManager::get_instance()
                 .lock()
                 .map_err(|e| e.to_string())?;
             wm.new_webengine()?
         };
 
-        let callback: WebEngineCallback = Box::new(|e| {
-            println!("WebEngineCallback {} ", e);
+        let callback: WebEngineCallback = Box::new(move |e| {
+            println!(
+                "WebEngineCallback {} on thread {:?}",
+                e.clone(),
+                thread::current().id()
+            );
+            tx.send(e).expect("发送失败");
         });
 
         let listener = Arc::new(RwLock::new(WebEngineListenerImpl::new(
@@ -78,6 +88,32 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
         )));
         webengine.write().unwrap().set_listener(listener);
         webengine.read().unwrap().load_url(self.url)?;
+
+        for received in rx {
+            if let WebEngineEvent::PageFinished(url) = received {
+                if url == self.url {
+                    break;
+                }
+                break;
+            }
+
+            if let WebEngineEvent::PageError(url, error) = received {
+                if url == self.url {
+                    break;
+                }
+                break;
+            }
+        }
+
+        {
+            let mut wm = WebEngineManager::get_instance()
+                .lock()
+                .map_err(|e| e.to_string())?;
+
+            // Release lock
+            let id = { webengine.read().unwrap().id() };
+            wm.remove_webengine(id)?;
+        }
 
         Ok("".to_string())
     }

@@ -21,7 +21,10 @@ use jni::{
 };
 
 use crate::{
-    jni::jni_plugin_manager::JniPluginManager,
+    jni::{
+        jni_hander::{JniFieldInfo, JniHandler, JniMethodInfo},
+        jni_plugin_manager::JniPluginManager,
+    },
     web_engine::{
         web_engine::{WebEngine, WebEngineListenerMut, WebEngineMut},
         web_engine_manager::WebEngineManager,
@@ -29,6 +32,15 @@ use crate::{
 };
 
 // const JAVA_CLASS_NAME_WV: &'static str = "com/nesp/spiderx/runtime/JniWebView";
+
+pub const FIELD_PTR: JniFieldInfo = ("mPtr", "J");
+
+const METHOD_INIT: JniMethodInfo = ("init", "()V");
+const METHOD_LOAD_URL: JniMethodInfo = ("loadUrl", "(Ljava/lang/String;)V");
+const METHOD_LOAD_DATA: JniMethodInfo = ("loadData", "(Ljava/lang/String;)V");
+const METHOD_RELOAD: JniMethodInfo = ("reload", "()V");
+const METHOD_EVALUATE: JniMethodInfo = ("evaluate", "(Ljava/lang/String;)Ljava/lang/String;");
+const METHOD_DESTROY: JniMethodInfo = ("destroy", "()V");
 
 pub const JNI_WV_JAVA_FIELD_NAME_PTR: &'static str = "mPtr";
 
@@ -240,15 +252,8 @@ impl WebEngine for JniWebView {
     }
 
     fn destroy(&mut self) -> Result<(), String> {
-        let jni_plg_mgr = JniPluginManager::get_instance();
-        let jni_plg_mgr: MutexGuard<'_, JniPluginManager> = jni_plg_mgr.lock().unwrap();
-
-        let [name, sig] = JAVA_METHOD_INFO_DESTROY;
-
-        jni_plg_mgr
-            .java_env()?
-            .call_method(&self.wv_java_obj, name, sig, &[])
-            .map_err(|e| e.to_string())?;
+        let mut jni_handler = JniHandler::new();
+        jni_handler.call_method(&self.wv_java_obj, METHOD_DESTROY, &[]);
 
         Ok(())
     }

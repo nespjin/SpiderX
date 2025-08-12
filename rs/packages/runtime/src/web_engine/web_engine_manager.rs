@@ -95,21 +95,20 @@ impl WebEngineManager {
     }
 
     pub fn remove_webengine(&mut self, id: i64) -> Result<(), String> {
-        let engine = self
-            .webengines
-            .write()
-            .map_err(|e| e.to_string())?
-            .remove(&id);
-
-        if let Some(engine) = engine {
-            engine.write().unwrap().destroy()?;
-
-            let is_pool_not_full = self
-                .webengine_pool
+        let engine = {
+            self.webengines
                 .write()
                 .map_err(|e| e.to_string())?
-                .len()
-                < MAX_WV_POOL_SIZE;
+                .remove(&id)
+        };
+
+        if let Some(engine) = engine {
+            {
+                engine.write().unwrap().destroy()?;
+            }
+
+            let is_pool_not_full =
+                self.webengine_pool.read().map_err(|e| e.to_string())?.len() < MAX_WV_POOL_SIZE;
             if self.is_cache_engine && is_pool_not_full {
                 self.webengine_pool
                     .write()

@@ -45,7 +45,9 @@ impl<'local> JniHandler<'local> {
 
     pub fn new_string<S: Into<JNIString>>(&mut self, from: S) -> JString<'local> {
         let ret = self.env.new_string(from);
-        let ret = self.throw_jni_exception_if_error(ret).unwrap();
+        let ret = self
+            .throw_jni_exception_if_error(ret)
+            .unwrap_or(JObject::null().into());
         ret.into()
     }
 
@@ -77,8 +79,11 @@ impl<'local> JniHandler<'local> {
     ) -> JObject<'local> {
         let (mth_name, mth_sig) = method_info;
         let ret = self.env.call_method(object, mth_name, mth_sig, args);
-        let jobj_ret = self.throw_jni_exception_if_error(ret).unwrap().l();
-        self.throw_jni_exception_if_error(jobj_ret).unwrap()
+        let jobj_ret = self
+            .throw_jni_exception_if_error(ret)
+            .unwrap_or(JValueGen::Object(JObject::null()));
+        let jobj_ret = jobj_ret.l().unwrap_or(JObject::null());
+        jobj_ret
     }
 
     pub fn set_field(&mut self, object: &JObject, field_info: JniFieldInfo, value: JValue) {
@@ -140,9 +145,11 @@ impl<'local> JniHandler<'local> {
     pub fn throw_jni_exception_if_error<T>(&mut self, result: errors::Result<T>) -> Option<T> {
         if let Err(_) = result {
             if let Some(msg) = self.check_jni_exception() {
+                println!("throw_jni_exception_if_error {}", msg);
                 self.throw_java_expception_msg(&msg);
                 return None;
             }
+            println!("throw_jni_exception_if_error {}", "Unknown JNI Exception");
             self.throw_java_expception_msg("Unknown JNI Exception");
             return None;
         }
