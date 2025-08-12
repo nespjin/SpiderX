@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use core::data::screen_type::ScreenType;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Mutex, OnceLock};
 
 pub struct DeviceManager {
     /// The screen type in current device.

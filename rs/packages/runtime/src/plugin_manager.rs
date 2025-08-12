@@ -16,7 +16,7 @@ use core::data::plugin::Plugin;
 use std::{
     fs,
     path::Path,
-    sync::{Arc, Mutex, OnceLock},
+    sync::{Mutex, OnceLock},
 };
 
 use compiler::{json_plugin_compiler::JsonPluginCompiler, plugin_compiler::PluginCompiler};
