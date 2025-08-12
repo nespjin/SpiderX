@@ -6,12 +6,25 @@ import com.nesp.spiderx.runtime.JniWebView
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
  **/
 class FakeJniWebView : JniWebView() {
+    private var mPtr = -1L
+
     override fun init() {
         println("FakeJniWebView >>> init")
     }
 
     override fun loadUrl(url: String) {
         println("FakeJniWebView >>> loadUrl $url")
+        notifyOnPageStarted(url)
+        for (i in 0..100) {
+            notifyOnLoadProgress(i)
+            Thread.sleep(10)
+        }
+        notifyOnPageFinished(url)
+        notifyOnPageError(url, "Error on Finished")
+        val shouldInterceptRequest = notifyOnShouldInterceptRequest(url)
+        println("shouldInterceptRequest: $shouldInterceptRequest")
+        val shouldOverrideUrlLoading = notifyOnShouldOverrideUrlLoading(url)
+        println("shouldOverrideUrlLoading: $shouldOverrideUrlLoading")
     }
 
     override fun loadData(data: String) {

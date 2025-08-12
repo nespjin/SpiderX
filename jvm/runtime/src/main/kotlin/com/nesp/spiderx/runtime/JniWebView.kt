@@ -40,14 +40,14 @@ abstract class JniWebView {
 
     private external fun nativeNotifyOnLoadProgress(progress: Int)
 
-    fun notifyOnShouldOverrideUrlLoading(url: String) {
-        nativeNotifyOnShouldOverrideUrlLoading(url)
+    fun notifyOnShouldOverrideUrlLoading(url: String): Boolean {
+        return nativeNotifyOnShouldOverrideUrlLoading(url)
     }
 
     private external fun nativeNotifyOnShouldOverrideUrlLoading(url: String): Boolean
 
-    fun notifyOnShouldInterceptRequest(url: String) {
-        nativeNotifyOnShouldInterceptRequest(url)
+    fun notifyOnShouldInterceptRequest(url: String): String? {
+        return nativeNotifyOnShouldInterceptRequest(url)
     }
 
     private external fun nativeNotifyOnShouldInterceptRequest(url: String): String?

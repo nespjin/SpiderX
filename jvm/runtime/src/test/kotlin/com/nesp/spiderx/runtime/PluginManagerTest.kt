@@ -20,6 +20,7 @@ import com.nesp.spiderx.runtime.model.FakeJniWebView
 import com.nesp.spiderx.runtime.model.ScreenType
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.io.File
 
 
 const val PLUGIN_JSON = """
@@ -112,13 +113,13 @@ class PluginManagerTest {
     }
 
     private fun initPluginManager() {
-        val databasePath = "/home/jinzhaolu/DevelopmentProjects/SpiderX/jvm/runtime/build/plugin.db"
+        val databasePath = File(".").absolutePath + "/runtime/build/plugin.db"
         pluginManager.init(databasePath, ScreenType.EXPANDED, false, FakeJniWebView::class.java)
     }
 
     @Test
     fun testInit() {
-        val databasePath = "/home/jinzhaolu/DevelopmentProjects/SpiderX/jvm/runtime/build/plugin.db"
+        val databasePath = File(".").absolutePath + "/runtime/build/plugin.db"
         pluginManager.init(databasePath, ScreenType.EXPANDED, false, FakeJniWebView::class.java)
     }
 
@@ -140,7 +141,6 @@ class PluginManagerTest {
     @Test
     fun testGetInstalledPlugin() {
         initPluginManager()
-        Dataset()
         val installedPlugin = pluginManager.getInstalledPlugin("com.example.plugin")
         println("testGetInstalledPlugin $installedPlugin")
     }
