@@ -113,13 +113,13 @@ class PluginManagerTest {
     }
 
     private fun initPluginManager() {
-        val databasePath = File(".").absolutePath + "/runtime/build/plugin.db"
+        val databasePath = File(".").absolutePath + "/build/plugin.db"
         pluginManager.init(databasePath, ScreenType.EXPANDED, false, FakeJniWebView::class.java)
     }
 
     @Test
     fun testInit() {
-        val databasePath = File(".").absolutePath + "/runtime/build/plugin.db"
+        val databasePath = File(".").absolutePath + "/build/plugin.db"
         pluginManager.init(databasePath, ScreenType.EXPANDED, false, FakeJniWebView::class.java)
     }
 
