@@ -43,17 +43,15 @@ pub struct PluginManager {
 }
 
 impl PluginManager {
-    pub fn get_instance() -> Arc<Mutex<PluginManager>> {
-        static INSTANCE: OnceLock<Arc<Mutex<PluginManager>>> = OnceLock::new();
-        INSTANCE
-            .get_or_init(|| {
-                Arc::new(Mutex::new(PluginManager {
-                    config: None,
-                    dataset_repository: None,
-                    plugin_repository: None,
-                }))
+    pub fn get_instance() -> &'static Mutex<PluginManager> {
+        static INSTANCE: OnceLock<Mutex<PluginManager>> = OnceLock::new();
+        INSTANCE.get_or_init(|| {
+            Mutex::new(PluginManager {
+                config: None,
+                dataset_repository: None,
+                plugin_repository: None,
             })
-            .clone()
+        })
     }
 
     pub fn init(&mut self, config: PluginManagerConfig) -> Result<(), String> {

@@ -21,11 +21,9 @@ pub struct DeviceManager {
 }
 
 impl DeviceManager {
-    pub fn get_instance() -> Arc<Mutex<DeviceManager>> {
-        static INSTANCE: OnceLock<Arc<Mutex<DeviceManager>>> = OnceLock::new();
-        INSTANCE
-            .get_or_init(|| Arc::new(Mutex::new(DeviceManager { screen_type: None })))
-            .clone()
+    pub fn get_instance() -> &'static Mutex<DeviceManager> {
+        static INSTANCE: OnceLock<Mutex<DeviceManager>> = OnceLock::new();
+        INSTANCE.get_or_init(|| Mutex::new(DeviceManager { screen_type: None }))
     }
 
     pub fn set_screen_type(&mut self, screen_type: ScreenType) {

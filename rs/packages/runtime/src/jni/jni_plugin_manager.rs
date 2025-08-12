@@ -47,16 +47,14 @@ pub struct JniPluginManager {
 }
 
 impl JniPluginManager {
-    pub fn get_instance() -> Arc<Mutex<JniPluginManager>> {
-        static INSTANCE: OnceLock<Arc<Mutex<JniPluginManager>>> = OnceLock::new();
-        INSTANCE
-            .get_or_init(|| {
-                Arc::new(Mutex::new(JniPluginManager {
-                    wv_java_class: None,
-                    java_vm: None,
-                }))
+    pub fn get_instance() -> &'static Mutex<JniPluginManager> {
+        static INSTANCE: OnceLock<Mutex<JniPluginManager>> = OnceLock::new();
+        INSTANCE.get_or_init(|| {
+            Mutex::new(JniPluginManager {
+                wv_java_class: None,
+                java_vm: None,
             })
-            .clone()
+        })
     }
 
     pub fn init(&mut self, java_vm: JavaVM, wv_java_class: GlobalRef) -> Result<(), String> {
