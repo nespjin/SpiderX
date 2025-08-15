@@ -103,10 +103,6 @@ impl WebEngineManager {
         };
 
         if let Some(engine) = engine {
-            {
-                engine.write().unwrap().destroy()?;
-            }
-
             let is_pool_not_full =
                 self.webengine_pool.read().map_err(|e| e.to_string())?.len() < MAX_WV_POOL_SIZE;
             if self.is_cache_engine && is_pool_not_full {
@@ -114,6 +110,9 @@ impl WebEngineManager {
                     .write()
                     .map_err(|e| e.to_string())?
                     .push(engine);
+            } else {
+                engine.write().unwrap().destroy()?;
+                drop(engine);
             }
         }
 
