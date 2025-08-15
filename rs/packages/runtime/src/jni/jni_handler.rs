@@ -13,7 +13,9 @@
 // limitations under the License.
 
 use jni::{
-    JNIEnv, JavaVM, errors,
+    JNIEnv, JavaVM,
+    descriptors::Desc,
+    errors,
     objects::{AsJArrayRaw, GlobalRef, JByteArray, JClass, JObject, JString, JValue, JValueGen},
     strings::JNIString,
     sys::{JNI_FALSE, JNI_TRUE, jboolean, jbyte, jsize},
@@ -54,6 +56,20 @@ impl<'local> JniHandler<'local> {
     pub fn find_class(&mut self, class: &str) -> JClass<'local> {
         let class_ret = self.env.find_class(class);
         self.throw_jni_exception_if_error(class_ret).unwrap()
+    }
+
+    pub fn new_object_with_class<'other_local, T, U>(
+        &mut self,
+        class: T,
+        ctor_sig: U,
+        ctor_args: &[JValue],
+    ) -> JObject<'local>
+    where
+        T: Desc<'local, JClass<'other_local>>,
+        U: Into<JNIString> + AsRef<str>,
+    {
+        let obj_ret = self.env.new_object(class, ctor_sig, ctor_args);
+        self.throw_jni_exception_if_error(obj_ret).unwrap()
     }
 
     pub fn new_object(

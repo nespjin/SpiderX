@@ -16,13 +16,14 @@ use std::sync::MutexGuard;
 
 use jni::{
     JNIEnv,
-    objects::{GlobalRef, JObject, JString, JValueGen},
+    objects::{GlobalRef, JClass, JObject, JString, JValueGen},
     sys::{JNI_FALSE, jboolean, jint, jstring},
 };
+use once_cell::sync::OnceCell;
 
 use crate::{
     jni::{
-        jni_handler::{JniFieldInfo, JniHandler, JniMethodInfo},
+        jni_handler::{self, JniFieldInfo, JniHandler, JniMethodInfo},
         jni_plugin_manager::JniPluginManager,
     },
     web_engine::{
@@ -42,6 +43,8 @@ const METHOD_RELOAD: JniMethodInfo = ("reload", "()V");
 const METHOD_EVALUATE: JniMethodInfo = ("evaluate", "(Ljava/lang/String;)Ljava/lang/String;");
 const METHOD_DESTROY: JniMethodInfo = ("destroy", "()V");
 
+const FIELD_INFO_PRT: JniFieldInfo = ("mPtr", "J");
+
 pub const JNI_WV_JAVA_FIELD_NAME_PTR: &'static str = "mPtr";
 
 const JAVA_METHOD_INFO_INIT: &'static [&'static str; 2] = &["init", "()V"];
@@ -53,32 +56,31 @@ const JAVA_METHOD_INFO_EVALUATE: &'static [&'static str; 2] =
     &["evaluate", "(Ljava/lang/String;)Ljava/lang/String;"];
 const JAVA_METHOD_INFO_DESTROY: &'static [&'static str; 2] = &["destroy", "()V"];
 
-pub fn new_jni_wv(id: i64) -> Result<JniWebView, String> {
-    let jni_plugin_manager = JniPluginManager::get_instance();
-    let jni_plugin_manager = jni_plugin_manager.lock().unwrap();
+pub static JAVA_WEBVIEW_CLASS: OnceCell<GlobalRef> = OnceCell::new();
+const JAVA_WV_CTOR_SIG: &'static str = "()V";
 
-    let wv_java_obj = jni_plugin_manager
-        .java_env()
-        .unwrap()
-        .new_global_ref(jni_plugin_manager.new_wv_obj().unwrap())
-        .unwrap();
+pub fn get_java_webview_class() -> Result<GlobalRef, String> {
+    JAVA_WEBVIEW_CLASS
+        .get()
+        .ok_or_else(|| "Java WebView class not initialized".to_string())
+        .cloned()
+}
 
-    jni_plugin_manager
-        .java_env()
-        .unwrap()
-        .set_field(
-            wv_java_obj.clone(),
-            JNI_WV_JAVA_FIELD_NAME_PTR,
-            "J",
-            JValueGen::Long(id),
-        )
-        .unwrap();
-
-    Ok(JniWebView::new(id, wv_java_obj))
+pub fn new_webview_obj<'local>() -> Result<JObject<'local>, String> {
+    let wv_class = &get_java_webview_class()?;
+    let mut handler = JniHandler::new();
+    let wv_obj = handler.new_object_with_class(wv_class, JAVA_WV_CTOR_SIG, &[]);
+    Ok(wv_obj)
+}
+pub fn new_jni_webview(id: i64) -> Result<JniWebView, String> {
+    let mut jni_handler = JniHandler::new();
+    let webview_obj = jni_handler.new_global_ref(new_webview_obj()?);
+    jni_handler.set_field(&webview_obj, FIELD_PTR, JValueGen::Long(id));
+    Ok(JniWebView::new(id, webview_obj))
 }
 
 pub struct JniWebView {
-    wv_java_obj: GlobalRef,
+    webview_java_obj: GlobalRef,
     id: i64,
     // listener_id: i64,
     // listeners: Arc<RwLock<HashMap<i64, WebEngineListenerMut>>>,
@@ -86,9 +88,9 @@ pub struct JniWebView {
 }
 
 impl JniWebView {
-    pub fn new(id: i64, wv_java_obj: GlobalRef) -> Self {
+    pub fn new(id: i64, webview_java_obj: GlobalRef) -> Self {
         JniWebView {
-            wv_java_obj,
+            webview_java_obj,
             id,
             // listener_id: 0,
             // listeners: Arc::new(RwLock::new(HashMap::new())),
@@ -99,16 +101,8 @@ impl JniWebView {
 
 impl WebEngine for JniWebView {
     fn init(&mut self) -> Result<(), String> {
-        let jni_plg_mgr = JniPluginManager::get_instance();
-        let jni_plg_mgr: MutexGuard<'_, JniPluginManager> = jni_plg_mgr.lock().unwrap();
-
-        let [name, sig] = JAVA_METHOD_INFO_INIT;
-
-        jni_plg_mgr
-            .java_env()?
-            .call_method(&self.wv_java_obj, name, sig, &[])
-            .map_err(|e| e.to_string())?;
-
+        let mut jni_handler = JniHandler::new();
+        jni_handler.call_method(&self.webview_java_obj, METHOD_INIT, &[]);
         Ok(())
     }
 
@@ -121,6 +115,7 @@ impl WebEngine for JniWebView {
     }
 
     fn load_url(&self, url: &str) -> Result<(), String> {
+
         let jni_plg_mgr = JniPluginManager::get_instance();
         let jni_plg_mgr: MutexGuard<'_, JniPluginManager> = jni_plg_mgr.lock().unwrap();
 
@@ -133,9 +128,17 @@ impl WebEngine for JniWebView {
 
         jni_plg_mgr
             .java_env()?
-            .call_method(&self.wv_java_obj, name, sig, &[JValueGen::Object(&j_url)])
+            .call_method(
+                &self.webview_java_obj,
+                name,
+                sig,
+                &[JValueGen::Object(&j_url)],
+            )
             .map_err(|e| e.to_string())?;
 
+        let mut jni_handler = JniHandler::new();
+        jni_handler.new_string(&url);
+        jni_handler.call_method(&self.webview_java_obj, METHOD_LOAD_URL,  &[JValueGen::Object(&j_url)]);
         Ok(())
     }
 
@@ -152,7 +155,12 @@ impl WebEngine for JniWebView {
 
         jni_plg_mgr
             .java_env()?
-            .call_method(&self.wv_java_obj, name, sig, &[JValueGen::Object(&j_data)])
+            .call_method(
+                &self.webview_java_obj,
+                name,
+                sig,
+                &[JValueGen::Object(&j_data)],
+            )
             .map_err(|e| e.to_string())?;
 
         Ok(())
@@ -166,7 +174,7 @@ impl WebEngine for JniWebView {
 
         jni_plg_mgr
             .java_env()?
-            .call_method(&self.wv_java_obj, name, sig, &[])
+            .call_method(&self.webview_java_obj, name, sig, &[])
             .map_err(|e| e.to_string())?;
 
         Ok(())
@@ -186,7 +194,7 @@ impl WebEngine for JniWebView {
         let ret = jni_plg_mgr
             .java_env()?
             .call_method(
-                &self.wv_java_obj,
+                &self.webview_java_obj,
                 name,
                 sig,
                 &[JValueGen::Object(&j_script)],
@@ -253,7 +261,7 @@ impl WebEngine for JniWebView {
 
     fn destroy(&mut self) -> Result<(), String> {
         let mut jni_handler = JniHandler::new();
-        jni_handler.call_method(&self.wv_java_obj, METHOD_DESTROY, &[]);
+        jni_handler.call_method(&self.webview_java_obj, METHOD_DESTROY, &[]);
 
         Ok(())
     }

@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use jni::AttachGuard;
-use jni::JNIEnv;
-use jni::JavaVM;
 use jni::objects::*;
 use jni::sys::JNI_FALSE;
 use jni::sys::JNI_TRUE;
@@ -22,16 +19,17 @@ use jni::sys::jboolean;
 use jni::sys::jint;
 use jni::sys::jobject;
 use jni::sys::jstring;
+use jni::JNIEnv;
 use std::sync::Mutex;
 use std::sync::OnceLock;
 
 use crate::device::device_manager::DeviceManager;
 use crate::jni::jni_classes;
-use crate::jni::jni_handler;
 use crate::jni::jni_handler::JniHandler;
 use crate::jni::jni_methods;
 use crate::jni::jni_plugin::JniPlugin;
 use crate::jni::jni_screen_type::JniScreenType;
+use crate::jni::jni_webview::JAVA_WEBVIEW_CLASS;
 use crate::plugin_manager::PluginManager;
 use crate::plugin_manager::PluginManagerConfig;
 use crate::plugin_manager::PluginSource;
@@ -41,8 +39,7 @@ pub const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON: jint = 0;
 pub const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON_FILE: jint = 1;
 
 pub struct JniPluginManager {
-    wv_java_class: Option<GlobalRef>,
-    java_vm: Option<JavaVM>,
+    is_initialized: bool,
 }
 
 impl JniPluginManager {
@@ -50,61 +47,22 @@ impl JniPluginManager {
         static INSTANCE: OnceLock<Mutex<JniPluginManager>> = OnceLock::new();
         INSTANCE.get_or_init(|| {
             Mutex::new(JniPluginManager {
-                wv_java_class: None,
-                java_vm: None,
+                is_initialized: false,
             })
         })
     }
 
-    pub fn init(&mut self, java_vm: JavaVM, wv_java_class: GlobalRef) -> Result<(), String> {
-        if self.wv_java_class.is_some() {
+    pub fn init(&mut self, wv_java_class: GlobalRef) -> Result<(), String> {
+        if self.is_initialized {
             return Err("The jni plugin manager is already init.".to_string());
         }
-        self.java_vm = Some(java_vm);
-        self.wv_java_class = Some(wv_java_class);
+
+        self.is_initialized = true;
+
+        if let Err(_) = JAVA_WEBVIEW_CLASS.set(wv_java_class) {
+            return Err("Failed to set global Java WebView class.".to_string());
+        }
         Ok(())
-    }
-
-    pub fn wv_java_class(&self) -> Result<&GlobalRef, String> {
-        if self.wv_java_class.is_none() {
-            return Err(
-                "The webview java class is null. Please call PluginManger.init() first."
-                    .to_string(),
-            );
-        }
-        Ok(self.wv_java_class.as_ref().unwrap())
-    }
-
-    pub fn java_vm(&self) -> Result<&JavaVM, String> {
-        if self.java_vm.is_none() {
-            return Err(
-                "The webview java vm is null. Please call PluginManger.init() first.".to_string(),
-            );
-        }
-        Ok(self.java_vm.as_ref().unwrap())
-    }
-
-    #[inline]
-    pub fn java_env(&self) -> Result<AttachGuard, String> {
-        Ok(self
-            .java_vm()
-            .map_err(|e| e.to_string())?
-            .attach_current_thread()
-            .map_err(|e| e.to_string())?)
-    }
-
-    pub fn new_wv_obj(&self) -> Result<JObject, String> {
-        let wv_class = self.wv_java_class()?;
-        let mut env = jni_handler::JVM
-            .get()
-            .unwrap()
-            .attach_current_thread()
-            .unwrap();
-        let wv_obj = env
-            .new_object(wv_class, "()V", &[])
-            .map_err(|e| e.to_string())?;
-
-        Ok(wv_obj)
     }
 }
 
@@ -127,11 +85,9 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     }
 
     {
-        let java_vm = handler.get_java_vm();
         let mut jni_plugin_manager = JniPluginManager::get_instance().lock().unwrap();
         let wv_java_class_global = handler.new_global_ref(&webviewClass);
-        handler
-            .throw_java_expception_if_error(jni_plugin_manager.init(java_vm, wv_java_class_global));
+        handler.throw_java_expception_if_error(jni_plugin_manager.init(wv_java_class_global));
     }
 
     {
