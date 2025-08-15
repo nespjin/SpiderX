@@ -12,20 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::sync::MutexGuard;
-
 use jni::{
     JNIEnv,
-    objects::{GlobalRef, JClass, JObject, JString, JValueGen},
+    objects::{GlobalRef, JObject, JString, JValueGen},
     sys::{JNI_FALSE, jboolean, jint, jstring},
 };
 use once_cell::sync::OnceCell;
 
 use crate::{
-    jni::{
-        jni_handler::{self, JniFieldInfo, JniHandler, JniMethodInfo},
-        jni_plugin_manager::JniPluginManager,
-    },
+    jni::jni_handler::{JniFieldInfo, JniHandler, JniMethodInfo},
     web_engine::{
         web_engine::{WebEngine, WebEngineListenerMut, WebEngineMut},
         web_engine_manager::WebEngineManager,
@@ -43,18 +38,7 @@ const METHOD_RELOAD: JniMethodInfo = ("reload", "()V");
 const METHOD_EVALUATE: JniMethodInfo = ("evaluate", "(Ljava/lang/String;)Ljava/lang/String;");
 const METHOD_DESTROY: JniMethodInfo = ("destroy", "()V");
 
-const FIELD_INFO_PRT: JniFieldInfo = ("mPtr", "J");
-
 pub const JNI_WV_JAVA_FIELD_NAME_PTR: &'static str = "mPtr";
-
-const JAVA_METHOD_INFO_INIT: &'static [&'static str; 2] = &["init", "()V"];
-const JAVA_METHOD_INFO_LOAD_URL: &'static [&'static str; 2] = &["loadUrl", "(Ljava/lang/String;)V"];
-const JAVA_METHOD_INFO_LOAD_DATA: &'static [&'static str; 2] =
-    &["loadData", "(Ljava/lang/String;)V"];
-const JAVA_METHOD_INFO_RELOAD: &'static [&'static str; 2] = &["reload", "()V"];
-const JAVA_METHOD_INFO_EVALUATE: &'static [&'static str; 2] =
-    &["evaluate", "(Ljava/lang/String;)Ljava/lang/String;"];
-const JAVA_METHOD_INFO_DESTROY: &'static [&'static str; 2] = &["destroy", "()V"];
 
 pub static JAVA_WEBVIEW_CLASS: OnceCell<GlobalRef> = OnceCell::new();
 const JAVA_WV_CTOR_SIG: &'static str = "()V";
@@ -115,101 +99,42 @@ impl WebEngine for JniWebView {
     }
 
     fn load_url(&self, url: &str) -> Result<(), String> {
-
-        let jni_plg_mgr = JniPluginManager::get_instance();
-        let jni_plg_mgr: MutexGuard<'_, JniPluginManager> = jni_plg_mgr.lock().unwrap();
-
-        let [name, sig] = JAVA_METHOD_INFO_LOAD_URL;
-
-        let j_url = jni_plg_mgr
-            .java_env()?
-            .new_string(url)
-            .map_err(|e| e.to_string())?;
-
-        jni_plg_mgr
-            .java_env()?
-            .call_method(
-                &self.webview_java_obj,
-                name,
-                sig,
-                &[JValueGen::Object(&j_url)],
-            )
-            .map_err(|e| e.to_string())?;
-
         let mut jni_handler = JniHandler::new();
-        jni_handler.new_string(&url);
-        jni_handler.call_method(&self.webview_java_obj, METHOD_LOAD_URL,  &[JValueGen::Object(&j_url)]);
+        let url_obj = jni_handler.new_string(&url);
+        jni_handler.call_method(
+            &self.webview_java_obj,
+            METHOD_LOAD_URL,
+            &[JValueGen::Object(&url_obj)],
+        );
         Ok(())
     }
 
     fn load_data(&self, data: &str) -> Result<(), String> {
-        let jni_plg_mgr = JniPluginManager::get_instance();
-        let jni_plg_mgr: MutexGuard<'_, JniPluginManager> = jni_plg_mgr.lock().unwrap();
-
-        let [name, sig] = JAVA_METHOD_INFO_LOAD_DATA;
-
-        let j_data = jni_plg_mgr
-            .java_env()?
-            .new_string(data)
-            .map_err(|e| e.to_string())?;
-
-        jni_plg_mgr
-            .java_env()?
-            .call_method(
-                &self.webview_java_obj,
-                name,
-                sig,
-                &[JValueGen::Object(&j_data)],
-            )
-            .map_err(|e| e.to_string())?;
-
+        let mut jni_handler = JniHandler::new();
+        let data_obj = jni_handler.new_string(&data);
+        jni_handler.call_method(
+            &self.webview_java_obj,
+            METHOD_LOAD_DATA,
+            &[JValueGen::Object(&data_obj)],
+        );
         Ok(())
     }
 
     fn reload(&self) -> Result<(), String> {
-        let jni_plg_mgr = JniPluginManager::get_instance();
-        let jni_plg_mgr: MutexGuard<'_, JniPluginManager> = jni_plg_mgr.lock().unwrap();
-
-        let [name, sig] = JAVA_METHOD_INFO_RELOAD;
-
-        jni_plg_mgr
-            .java_env()?
-            .call_method(&self.webview_java_obj, name, sig, &[])
-            .map_err(|e| e.to_string())?;
-
+        let mut jni_handler = JniHandler::new();
+        jni_handler.call_method(&self.webview_java_obj, METHOD_RELOAD, &[]);
         Ok(())
     }
 
     fn evaluate(&self, script: &str) -> Result<String, String> {
-        let jni_plg_mgr = JniPluginManager::get_instance();
-        let jni_plg_mgr: MutexGuard<'_, JniPluginManager> = jni_plg_mgr.lock().unwrap();
-
-        let [name, sig] = JAVA_METHOD_INFO_EVALUATE;
-
-        let j_script = jni_plg_mgr
-            .java_env()?
-            .new_string(script)
-            .map_err(|e| e.to_string())?;
-
-        let ret = jni_plg_mgr
-            .java_env()?
-            .call_method(
-                &self.webview_java_obj,
-                name,
-                sig,
-                &[JValueGen::Object(&j_script)],
-            )
-            .map_err(|e| e.to_string())?;
-
-        let ret = match ret {
-            JValueGen::Object(j_ret) => jni_plg_mgr
-                .java_env()?
-                .get_string(&JString::from(j_ret))
-                .map_err(|e| e.to_string())?
-                .into(),
-            _ => return Err("ret is not a string".to_string()),
-        };
-
+        let mut jni_handler = JniHandler::new();
+        let script_obj = jni_handler.new_string(&script);
+        let ret_obj = jni_handler.call_method(
+            &self.webview_java_obj,
+            METHOD_EVALUATE,
+            &[JValueGen::Object(&script_obj)],
+        );
+        let ret = jni_handler.get_string(&ret_obj);
         Ok(ret)
     }
 
