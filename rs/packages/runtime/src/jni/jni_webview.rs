@@ -184,6 +184,10 @@ impl WebEngine for JniWebView {
         self.listener.clone()
     }
 
+    fn remove_listener(&mut self) {
+        self.listener = None;
+    }
+
     fn destroy(&mut self) -> Result<(), String> {
         let mut jni_handler = JniHandler::new();
         jni_handler.call_method(&self.webview_java_obj, METHOD_DESTROY, &[]);
@@ -217,6 +221,24 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
         .unwrap()
         .listener()
         .map(|l| l.write().unwrap().on_page_started(jni_wv.clone(), &url));
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOnPageCancelled<
+    'local,
+>(
+    mut env: JNIEnv,
+    this: JObject<'local>,
+    url: JString,
+) {
+    let url: String = env.get_string(&url).expect("get url failed").into();
+
+    let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
+    jni_wv
+        .read()
+        .unwrap()
+        .listener()
+        .map(|l| l.write().unwrap().on_page_cancelled(jni_wv.clone(), &url));
 }
 
 #[unsafe(no_mangle)]

@@ -30,6 +30,7 @@ use crate::{
 enum WebEngineEvent {
     PageStarted(String),
     PageFinished(String),
+    PageCancelled(String),
     PageError(String, String),
     LoadProgress(i32),
 }
@@ -38,6 +39,7 @@ impl Display for WebEngineEvent {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             WebEngineEvent::PageStarted(value) => write!(f, "PageStarted {}", value),
+            WebEngineEvent::PageCancelled(value) => write!(f, "PageCancelled {}", value),
             WebEngineEvent::PageFinished(value) => write!(f, "PageFinished {}", value),
             WebEngineEvent::PageError(value, error) => write!(f, "PageError {} {}", value, error),
             WebEngineEvent::LoadProgress(value) => write!(f, "LoadProgress {}", value),
@@ -79,7 +81,7 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
                 e.clone(),
                 thread::current().id()
             );
-            tx.send(e).expect("发送失败");
+            tx.send(e).expect("Send message to channel failed.");
         });
 
         let listener = Arc::new(RwLock::new(WebEngineListenerImpl::new(
@@ -90,18 +92,19 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
         webengine.read().unwrap().load_url(self.url)?;
 
         for received in rx {
-            if let WebEngineEvent::PageFinished(url) = received {
-                if url == self.url {
-                    break;
+            match received {
+                WebEngineEvent::PageFinished(url) => {
+                    if url == self.url {
+                        let result = webengine.write().unwrap().evaluate(self.js)?;
+                        return Ok(result);
+                    }
                 }
-                break;
-            }
-
-            if let WebEngineEvent::PageError(url, error) = received {
-                if url == self.url {
-                    break;
+                WebEngineEvent::PageError(url, error) => {
+                    if url == self.url {
+                        return Err(error.to_string());
+                    }
                 }
-                break;
+                _ => (),
             }
         }
 
@@ -136,6 +139,13 @@ impl WebEngineListener for WebEngineListenerImpl {
         callback(WebEngineEvent::PageStarted(url.to_string()));
 
         println!("on_page_started {}", url)
+    }
+
+    fn on_page_cancelled(&mut self, engine: WebEngineMut, url: &str) {
+        let callback = &mut self.callback;
+        callback(WebEngineEvent::PageCancelled(url.to_string()));
+
+        println!("on_page_cancelled {}", url)
     }
 
     fn on_page_finished(&mut self, engine: WebEngineMut, url: &str) {

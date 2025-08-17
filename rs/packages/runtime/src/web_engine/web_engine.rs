@@ -20,7 +20,6 @@ pub type WebEngineMut = Arc<RwLockWebEngine>;
 pub type RwLockWebEngineListener = RwLock<dyn WebEngineListener>;
 pub type WebEngineListenerMut = Arc<RwLockWebEngineListener>;
 
-
 pub trait WebEngine: Send + Sync {
     fn init(&mut self) -> Result<(), String>;
 
@@ -51,6 +50,8 @@ pub trait WebEngine: Send + Sync {
 
     fn listener(&self) -> Option<WebEngineListenerMut>;
 
+    fn remove_listener(&mut self);
+
     fn destroy(&mut self) -> Result<(), String>;
 }
 
@@ -58,6 +59,8 @@ pub trait WebEngineListener: Send + Sync {
     fn on_page_started(&mut self, engine: WebEngineMut, url: &str);
 
     fn on_page_finished(&mut self, engine: WebEngineMut, url: &str);
+
+    fn on_page_cancelled(&mut self, engine: WebEngineMut, url: &str);
 
     fn on_page_error(&mut self, engine: WebEngineMut, url: &str, error: &str);
 
