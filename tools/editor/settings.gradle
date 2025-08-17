@@ -17,6 +17,8 @@
 pluginManagement {
     repositories {
         mavenLocal()
+        mavenCentral()
+        gradlePluginPortal()
         maven { url 'https://maven.aliyun.com/nexus/content/repositories/jcenter' }
         maven { url 'https://maven.aliyun.com/repository/google/' }
         maven { url 'https://maven.aliyun.com/repository/spring-plugin/' }
@@ -30,8 +32,6 @@ pluginManagement {
         google()
         maven { url "https://jitpack.io" }
         maven { url "https://plugins.gradle.org/m2/" }
-        mavenCentral()
-        gradlePluginPortal()
        /* maven {
             url '../local-plugin-repository'
         }*/
