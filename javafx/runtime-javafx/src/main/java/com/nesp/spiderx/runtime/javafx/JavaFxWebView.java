@@ -161,7 +161,7 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
 
     @Override
     public boolean isMainThread() {
-        return super.isMainThread();
+        return Platform.isFxApplicationThread();
     }
 
     @Override

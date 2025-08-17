@@ -5,6 +5,8 @@ import com.nesp.spiderx.runtime.javafx.JavaFxWebView;
 import com.nesp.spiderx.runtime.model.ScreenType;
 
 import java.io.File;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -12,6 +14,8 @@ import javafx.scene.control.Label;
 
 
 public class HelloController {
+
+    private final Executor backgroundExecutor = Executors.newSingleThreadExecutor();
 
     @FXML
     public Label tvResult;
@@ -35,7 +39,7 @@ public class HelloController {
 
     @FXML
     public void onRequestClick(ActionEvent actionEvent) {
-        pluginManager.requestDataset("com.example.plugin", "user_data");
+        backgroundExecutor.execute(() -> pluginManager.requestDataset("com.example.plugin", "user_data"));
     }
 
     private static final String PLUGIN_JSON = """
