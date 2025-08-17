@@ -57,4 +57,26 @@ abstract class JniWebView {
     }
 
     private external fun nativeNotifyOnShouldInterceptRequest(url: String): String?
+
+    fun notifyOnReceivedData(url: String, data: String) {
+        nativeNotifyOnReceivedData(url, data)
+    }
+
+    private external fun nativeNotifyOnReceivedData(url: String, data: String)
+
+    fun notifyOnReceivedError(url: String, error: String) {
+        nativeNotifyOnReceivedError(url, error)
+    }
+
+    private external fun nativeNotifyOnReceivedError(url: String, error: String)
+
+    interface SpiderXRuntimeJavaScriptObject {
+        fun sendData(data: String)
+
+        fun sendError(error: String)
+    }
+
+    companion object {
+        const val SPIDERX_RUNTIME_JAVASCRIPT_OBJECT_NAME = "spiderxRT"
+    }
 }
