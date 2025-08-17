@@ -42,6 +42,7 @@ import javafx.event.EventHandler;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebErrorEvent;
 import javafx.scene.web.WebView;
+import netscape.javascript.JSObject;
 
 /**
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
@@ -131,7 +132,13 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
     @Override
     @Nullable
     public String evaluate(@NotNull String javascript) {
-        final Object ret = webView.getEngine().executeScript(javascript);
+        final WebEngine engine = webView.getEngine();
+        JSObject window = (JSObject) engine.executeScript("window");
+        if (window != null) {
+            window.setMember(JniWebView.SPIDERX_RUNTIME_JAVASCRIPT_OBJECT_NAME, new JavaFxSpiderXRuntimeJavaScriptObject(this));
+        }
+
+        final Object ret = engine.executeScript(javascript);
         if (ret == null) return null;
         if (ret instanceof String) return (String) ret;
         return gson.toJson(ret);
@@ -145,6 +152,28 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
             webView.getEngine().getLoadWorker().stateProperty().removeListener(this);
             webView.getEngine().getLoadWorker().progressProperty().removeListener(progressListener);
             webView = null;
+        }
+    }
+
+    private static class JavaFxSpiderXRuntimeJavaScriptObject implements SpiderXRuntimeJavaScriptObject {
+        private final JavaFxWebView webView;
+
+        private JavaFxSpiderXRuntimeJavaScriptObject(JavaFxWebView webView) {
+            this.webView = webView;
+        }
+
+        @Override
+        public void sendData(@NotNull String data) {
+            String url = webView.webView.getEngine().getLocation();
+            url = url == null ? "" : url;
+            webView.notifyOnReceivedData(url, data);
+        }
+
+        @Override
+        public void sendError(@NotNull String error) {
+            String url = webView.webView.getEngine().getLocation();
+            url = url == null ? "" : url;
+            webView.notifyOnReceivedError(url, error);
         }
     }
 
