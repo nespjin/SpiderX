@@ -95,7 +95,7 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
         System.out.println("newValue = " + newValue);
         String url = webView.getEngine().getLocation();
         url = url == null ? "" : url;
-
+        System.out.println("changed Thread " + Thread.currentThread().getName());
         switch (newValue) {
             case READY:
                 break;

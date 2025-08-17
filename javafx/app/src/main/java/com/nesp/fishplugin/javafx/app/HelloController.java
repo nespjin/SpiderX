@@ -39,7 +39,10 @@ public class HelloController {
 
     @FXML
     public void onRequestClick(ActionEvent actionEvent) {
-        backgroundExecutor.execute(() -> pluginManager.requestDataset("com.example.plugin", "user_data"));
+        backgroundExecutor.execute(() -> {
+            System.out.println("Request Thread " + Thread.currentThread().getName());
+            pluginManager.requestDataset("com.example.plugin", "user_data");
+        });
     }
 
     private static final String PLUGIN_JSON = """
