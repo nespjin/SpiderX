@@ -33,6 +33,8 @@ enum WebEngineEvent {
     PageCancelled(String),
     PageError(String, String),
     LoadProgress(i32),
+    ReceivedError(String, String),
+    ReceivedData(String, String),
 }
 
 impl Display for WebEngineEvent {
@@ -43,6 +45,12 @@ impl Display for WebEngineEvent {
             WebEngineEvent::PageFinished(value) => write!(f, "PageFinished {}", value),
             WebEngineEvent::PageError(value, error) => write!(f, "PageError {} {}", value, error),
             WebEngineEvent::LoadProgress(value) => write!(f, "LoadProgress {}", value),
+            WebEngineEvent::ReceivedError(value, error) => {
+                write!(f, "ReceivedError {} {}", value, error)
+            }
+            WebEngineEvent::ReceivedData(value, data) => {
+                write!(f, "ReceivedData {} {}", value, data)
+            }
         }
     }
 }
@@ -178,5 +186,25 @@ impl WebEngineListener for WebEngineListenerImpl {
 
     fn should_intercept_request(&mut self, engine: WebEngineMut, url: &str) -> Option<String> {
         Some("ShouldInterceptRequest in Rust".to_string())
+    }
+
+    fn on_received_data(&mut self, engine: WebEngineMut, url: &str, data: &str) {
+        let callback = &mut self.callback;
+        callback(WebEngineEvent::ReceivedData(
+            url.to_string(),
+            data.to_string(),
+        ));
+
+        println!("on_receive_data {} {}", url, data)
+    }
+
+    fn on_received_error(&mut self, engine: WebEngineMut, url: &str, error: &str) {
+        let callback = &mut self.callback;
+        callback(WebEngineEvent::ReceivedError(
+            url.to_string(),
+            error.to_string(),
+        ));
+
+        println!("on_receive_error {} {}", url, error)
     }
 }

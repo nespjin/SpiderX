@@ -58,9 +58,9 @@ pub trait WebEngine: Send + Sync {
 pub trait WebEngineListener: Send + Sync {
     fn on_page_started(&mut self, engine: WebEngineMut, url: &str);
 
-    fn on_page_finished(&mut self, engine: WebEngineMut, url: &str);
-
     fn on_page_cancelled(&mut self, engine: WebEngineMut, url: &str);
+
+    fn on_page_finished(&mut self, engine: WebEngineMut, url: &str);
 
     fn on_page_error(&mut self, engine: WebEngineMut, url: &str, error: &str);
 
@@ -69,4 +69,8 @@ pub trait WebEngineListener: Send + Sync {
     fn should_override_url_loading(&mut self, engine: WebEngineMut, url: &str) -> bool;
 
     fn should_intercept_request(&mut self, engine: WebEngineMut, url: &str) -> Option<String>;
+
+    fn on_received_data(&mut self, engine: WebEngineMut, url: &str, data: &str);
+
+    fn on_received_error(&mut self, engine: WebEngineMut, url: &str, error: &str);
 }

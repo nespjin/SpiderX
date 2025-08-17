@@ -356,6 +356,48 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
         .unwrap_or(JObject::null().into_raw())
 }
 
+#[unsafe(no_mangle)]
+pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOnReceivedData<
+    'local,
+>(
+    mut env: JNIEnv,
+    this: JObject<'local>,
+    url: JString,
+    data: JString,
+) {
+    let url: String = env.get_string(&url).expect("get url failed").into();
+    let data: String = env.get_string(&data).expect("get data failed").into();
+
+    let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
+
+    jni_wv.read().unwrap().listener().map(|l| {
+        l.write()
+            .unwrap()
+            .on_received_data(jni_wv.clone(), &url, &data)
+    });
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNotifyOnReceivedError<
+    'local,
+>(
+    mut env: JNIEnv,
+    this: JObject<'local>,
+    url: JString,
+    error: JString,
+) {
+    let url: String = env.get_string(&url).expect("get url failed").into();
+    let error: String = env.get_string(&error).expect("get error failed").into();
+
+    let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
+
+    jni_wv.read().unwrap().listener().map(|l| {
+        l.write()
+            .unwrap()
+            .on_received_error(jni_wv.clone(), &url, &error)
+    });
+}
+
 fn get_jni_wv_from_java_obj<'other_local, O>(env: &mut JNIEnv, obj: O) -> WebEngineMut
 where
     O: AsRef<JObject<'other_local>>,
