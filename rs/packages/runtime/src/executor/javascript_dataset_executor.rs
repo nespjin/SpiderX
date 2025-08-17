@@ -101,6 +101,7 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
         webengine.read().unwrap().load_url(self.url)?;
 
         for received in rx {
+            println!("JavaScriptDatasetExecutor::request received {}", received);
             match received {
                 WebEngineEvent::PageFinished(url) => {
                     if url == self.url {
