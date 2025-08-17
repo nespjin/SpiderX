@@ -15,7 +15,8 @@
 use std::{
     fmt::Display,
     sync::{Arc, RwLock, mpsc},
-    thread,
+    thread::{self, JoinHandle},
+    time::Duration,
 };
 
 use crate::{
@@ -89,7 +90,7 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
                 e.clone(),
                 thread::current().id()
             );
-            tx.send(e).expect("Send message to channel failed.");
+            // tx.send(e).expect("Send message to channel failed.");
         });
 
         let listener = Arc::new(RwLock::new(WebEngineListenerImpl::new(
@@ -104,11 +105,13 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
                 WebEngineEvent::PageFinished(url) => {
                     if url == self.url {
                         let result = webengine.write().unwrap().evaluate(self.js)?;
+                        destroy_webengine(webengine)?;
                         return Ok(result);
                     }
                 }
                 WebEngineEvent::PageError(url, error) => {
                     if url == self.url {
+                        destroy_webengine(webengine)?;
                         return Err(error.to_string());
                     }
                 }
@@ -116,7 +119,7 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
             }
         }
 
-        {
+        fn destroy_webengine(webengine: WebEngineMut) -> Result<(), String> {
             let mut wm = WebEngineManager::get_instance()
                 .lock()
                 .map_err(|e| e.to_string())?;
@@ -124,6 +127,7 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
             // Release lock
             let id = { webengine.read().unwrap().id() };
             wm.remove_webengine(id)?;
+            Ok(())
         }
 
         Ok("".to_string())
