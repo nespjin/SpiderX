@@ -1,19 +1,18 @@
 package com.nesp.spiderx.runtime.model
 
 import com.nesp.spiderx.runtime.JniWebView
-import kotlin.concurrent.thread
 
 /**
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
  **/
 class FakeJniWebView : JniWebView() {
 
-    override fun init() {
-        println("FakeJniWebView >>> init")
+    override fun onInit() {
+        println("FakeJniWebView >>> onInit")
     }
 
-    override fun loadUrl(url: String) {
-        println("FakeJniWebView >>> loadUrl $url")
+    override fun performLoadUrl(url: String) {
+        println("FakeJniWebView >>> performLoadUrl $url")
         notifyOnPageStarted(url)
         for (i in 0..100) {
             notifyOnLoadProgress(i)
@@ -27,21 +26,21 @@ class FakeJniWebView : JniWebView() {
         notifyOnPageFinished(url)
     }
 
-    override fun loadData(data: String) {
-        println("FakeJniWebView >>> loadData $data")
+    override fun performLoadData(data: String) {
+        println("FakeJniWebView >>> performLoadData $data")
     }
 
-    override fun reload() {
-        println("FakeJniWebView >>> reload")
+    override fun performReload() {
+        println("FakeJniWebView >>> performReload")
     }
 
-    override fun evaluate(javascript: String): String? {
-        println("FakeJniWebView >>> evaluate $javascript")
-        return "evaluate $javascript"
+    override fun performEvaluate(javascript: String): String? {
+        println("FakeJniWebView >>> performEvaluate $javascript")
+        return "performEvaluate $javascript"
     }
 
-    override fun destroy() {
-        println("FakeJniWebView >>> destroy")
+    override fun onDestroy() {
+        println("FakeJniWebView >>> onDestroy")
     }
 
 }

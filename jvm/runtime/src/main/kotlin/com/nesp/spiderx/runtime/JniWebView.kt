@@ -1,22 +1,62 @@
 package com.nesp.spiderx.runtime
 
+import java.util.concurrent.Callable
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.ThreadFactory
+
 /**
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
  **/
 abstract class JniWebView {
     private var mPtr = -1L
 
-    abstract fun init()
+    private val backgroundExecutor = Executors.newSingleThreadExecutor(getMainThreadFactory())
 
-    abstract fun loadUrl(url: String)
+    fun init() {
+        ensureRunOnBackgroundThread()
+        postMainThread(::onInit).get()
+    }
 
-    abstract fun loadData(data: String)
+    abstract fun onInit()
 
-    abstract fun reload()
+    fun loadUrl(url: String) {
+        ensureRunOnBackgroundThread()
+        postMainThread({ performLoadUrl(url) }).get()
+    }
 
-    abstract fun evaluate(javascript: String): String?
+    abstract fun performLoadUrl(url: String)
 
-    abstract fun destroy()
+    fun loadData(data: String) {
+        ensureRunOnBackgroundThread()
+        postMainThread({ performLoadData(data) }).get()
+    }
+
+    abstract fun performLoadData(data: String)
+
+    fun reload() {
+        ensureRunOnBackgroundThread()
+        postMainThread({ performReload() }).get()
+    }
+
+    abstract fun performReload()
+
+    fun evaluate(javascript: String): String? {
+        ensureRunOnBackgroundThread()
+        return postMainThread(Callable { return@Callable evaluate(javascript) }).get()
+    }
+
+    abstract fun performEvaluate(javascript: String): String?
+
+    fun destroy() {
+        ensureRunOnBackgroundThread()
+        finishBackgroundThread()
+        postMainThread(::onDestroy).get()
+    }
+
+    abstract fun onDestroy()
+
 
     fun notifyOnPageStarted(url: String) {
         nativeNotifyOnPageStarted(url)
@@ -73,22 +113,68 @@ abstract class JniWebView {
     private external fun nativeNotifyOnReceivedError(url: String, error: String)
 
 
-    sealed class ListenerNotifier {
-        class PageStarted(val url: String) : ListenerNotifier()
-        object PageCancelled : ListenerNotifier()
-        object PageFinished : ListenerNotifier()
-        object PageError : ListenerNotifier()
-        object LoadProgress : ListenerNotifier()
-        object ShouldOverrideUrlLoading : ListenerNotifier()
-        object ShouldInterceptRequest : ListenerNotifier()
-        object ReceivedData : ListenerNotifier()
-        object ReceivedError : ListenerNotifier()
+    private fun finishBackgroundThread() {
+        backgroundExecutor.shutdownNow()
     }
 
-    class ListenerNotifierThread : Thread("JniWebViewListenerNotifierThread") {
-        override fun run() {
+    fun waitBackgroundThread(task: Runnable) {
+        val countDownLatch = CountDownLatch(1)
+        backgroundExecutor.execute({
+            task.run()
+            countDownLatch.countDown()
+        })
+        countDownLatch.await()
+    }
 
+    fun postBackgroundThread(task: Runnable): Future<*> {
+        return backgroundExecutor.submit(task)
+    }
+
+    fun <T> postBackgroundThread(task: Callable<T>): Future<T> {
+        return backgroundExecutor.submit(task)
+    }
+
+    fun ensureRunOnBackgroundThread() {
+        if (isMainThread()) {
+            throw IllegalStateException("Must be called on the background thread")
         }
+    }
+
+    open fun isMainThread(): Boolean = true
+
+    fun waitMainThread(task: Runnable) {
+        val countDownLatch = CountDownLatch(1)
+        backgroundExecutor.execute({
+            task.run()
+            countDownLatch.countDown()
+        })
+        countDownLatch.await()
+    }
+
+    fun postMainThread(task: Runnable): Future<*> {
+        return backgroundExecutor.submit(task)
+    }
+
+    fun <T> postMainThread(task: Callable<T>): Future<T> {
+        return backgroundExecutor.submit(task)
+    }
+
+    open fun getMainThreadFactory(): ThreadFactory {
+        return DelegateThreadFactory()
+    }
+
+    class DelegateThreadFactory(
+        private val onTaskRun: OnTaskRun? = null
+    ) : ThreadFactory {
+
+        override fun newThread(r: Runnable): Thread {
+            val runnable = if (onTaskRun == null) r else Runnable { onTaskRun.onRun(r) }
+            return Thread(runnable)
+        }
+    }
+
+    interface OnTaskRun {
+        fun onRun(runnable: Runnable)
     }
 
     interface SpiderXRuntimeJavaScriptObject {

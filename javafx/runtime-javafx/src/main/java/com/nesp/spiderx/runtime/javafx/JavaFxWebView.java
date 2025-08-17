@@ -29,12 +29,14 @@ import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.concurrent.ThreadFactory;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.concurrent.Worker;
@@ -56,7 +58,7 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
     private final Gson gson = new Gson();
 
     @Override
-    public void init() {
+    public void onInit() {
         if (webView != null) {
             return;
         }
@@ -116,23 +118,23 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
     }
 
     @Override
-    public void loadUrl(@NotNull String url) {
+    public void performLoadUrl(@NotNull String url) {
         webView.getEngine().load(url);
     }
 
     @Override
-    public void loadData(@NotNull String data) {
+    public void performLoadData(@NotNull String data) {
         webView.getEngine().loadContent(data);
     }
 
     @Override
-    public void reload() {
+    public void performReload() {
         webView.getEngine().reload();
     }
 
     @Override
     @Nullable
-    public String evaluate(@NotNull String javascript) {
+    public String performEvaluate(@NotNull String javascript) {
         final WebEngine engine = webView.getEngine();
         JSObject window = (JSObject) engine.executeScript("window");
         if (window != null) {
@@ -146,7 +148,7 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
     }
 
     @Override
-    public void destroy() {
+    public void onDestroy() {
         System.out.println("JavaFxJsRuntimeTask destroy");
         if (webView != null) {
             webView.getEngine().getLoadWorker().cancel();
@@ -156,6 +158,17 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
             webView = null;
         }
     }
+
+    @Override
+    public boolean isMainThread() {
+        return super.isMainThread();
+    }
+
+    @Override
+    public @NotNull ThreadFactory getMainThreadFactory() {
+        return new DelegateThreadFactory(Platform::runLater);
+    }
+
 
     private static class JavaFxSpiderXRuntimeJavaScriptObject implements SpiderXRuntimeJavaScriptObject {
         private final JavaFxWebView webView;
