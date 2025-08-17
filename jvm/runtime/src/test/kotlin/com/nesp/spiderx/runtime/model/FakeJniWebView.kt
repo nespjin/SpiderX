@@ -7,7 +7,6 @@ import kotlin.concurrent.thread
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
  **/
 class FakeJniWebView : JniWebView() {
-    private var mPtr = -1L
 
     override fun init() {
         println("FakeJniWebView >>> init")

@@ -4,6 +4,8 @@ package com.nesp.spiderx.runtime
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
  **/
 abstract class JniWebView {
+    private var mPtr = -1L
+
     abstract fun init()
 
     abstract fun loadUrl(url: String)
@@ -69,6 +71,25 @@ abstract class JniWebView {
     }
 
     private external fun nativeNotifyOnReceivedError(url: String, error: String)
+
+
+    sealed class ListenerNotifier {
+        class PageStarted(val url: String) : ListenerNotifier()
+        object PageCancelled : ListenerNotifier()
+        object PageFinished : ListenerNotifier()
+        object PageError : ListenerNotifier()
+        object LoadProgress : ListenerNotifier()
+        object ShouldOverrideUrlLoading : ListenerNotifier()
+        object ShouldInterceptRequest : ListenerNotifier()
+        object ReceivedData : ListenerNotifier()
+        object ReceivedError : ListenerNotifier()
+    }
+
+    class ListenerNotifierThread : Thread("JniWebViewListenerNotifierThread") {
+        override fun run() {
+
+        }
+    }
 
     interface SpiderXRuntimeJavaScriptObject {
         fun sendData(data: String)
