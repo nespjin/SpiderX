@@ -24,7 +24,9 @@ import com.nesp.spiderx.runtime.model.ScreenType
  **/
 
 
-class PluginManager {
+class PluginManager private constructor() {
+
+    private var screenType: ScreenType = ScreenType.COMPACT
 
     fun init(
         databasePath: String,
@@ -32,11 +34,27 @@ class PluginManager {
         isCacheEngine: Boolean,
         webviewClass: Class<*>
     ) {
+        this.screenType = screenType
         nativeInit(databasePath, screenType, isCacheEngine, webviewClass)
     }
 
     fun setScreenType(screenType: ScreenType) {
+        this.screenType = screenType
         nativeSetScreenType(screenType)
+    }
+
+    fun getScreenType(): ScreenType {
+        return screenType
+    }
+
+    fun getUserAgent(): String {
+        return if (screenType == ScreenType.COMPACT) {
+            "Mozilla/5.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004) " +
+                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Mobile Safari/537.36"
+        } else {
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36"
+        }
     }
 
     fun installPluginJson(json: String) {
@@ -104,5 +122,8 @@ class PluginManager {
         init {
             System.loadLibrary(DYNAMIC_LIB_NAME)
         }
+
+        @JvmStatic
+        val instance: PluginManager by lazy(LazyThreadSafetyMode.SYNCHRONIZED, ::PluginManager)
     }
 }

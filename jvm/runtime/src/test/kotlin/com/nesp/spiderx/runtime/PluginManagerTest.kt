@@ -109,7 +109,7 @@ class PluginManagerTest {
 
     @org.junit.jupiter.api.BeforeEach
     fun setUp() {
-        pluginManager = PluginManager()
+        pluginManager = PluginManager.instance
     }
 
     private fun initPluginManager() {
