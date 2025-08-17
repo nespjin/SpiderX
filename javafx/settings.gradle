@@ -35,6 +35,7 @@ pluginManagement {
 rootProject.name = "javafx"
 
 include ':core'
+include ':tools'
 include ':compiler'
 include ':runtime'
 include ':movie-runtime'
@@ -44,6 +45,7 @@ include ':runtime-javafx'
 include ':movie-runtime-javafx'
 
 project(':core').projectDir = new File('../jvm/core')
+project(':tools').projectDir = new File('../jvm/tools')
 project(':compiler').projectDir = new File('../jvm/compiler')
 project(':runtime').projectDir = new File('../jvm/runtime')
 project(':movie-runtime').projectDir = new File('../jvm/movie-runtime')

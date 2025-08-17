@@ -1,0 +1,178 @@
+/*
+ * Copyright (c) 2025.  NESP Technology.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.nesp.spiderx.runtime.javafx;
+
+import com.google.gson.Gson;
+import com.nesp.spiderx.runtime.JniWebView;
+import com.nesp.spiderx.runtime.PluginManager;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.security.GeneralSecurityException;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.concurrent.Worker;
+import javafx.event.EventHandler;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebErrorEvent;
+import javafx.scene.web.WebView;
+
+/**
+ * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
+ **/
+public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEvent>, ChangeListener<Worker.State> {
+    private static final String TAG = "JavaFxWebView";
+    private static final Logger logger = LogManager.getLogger(JavaFxWebView.class);
+
+    private WebView webView;
+    private final ProgressListener progressListener = new ProgressListener(this);
+    private final Gson gson = new Gson();
+
+    @Override
+    public void init() {
+        if (webView != null) {
+            return;
+        }
+        final PluginManager pluginManager = PluginManager.getInstance();
+
+        webView = new WebView();
+        final WebEngine engine = webView.getEngine();
+        engine.setUserAgent(pluginManager.getUserAgent());
+        engine.setJavaScriptEnabled(true);
+        engine.setOnError(this);
+        engine.getLoadWorker().stateProperty().addListener(this);
+
+        final SSLContext sslContext;
+        try {
+            sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, new TrustManager[]{new EmptyX509TrustManager()}, new SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+        } catch (GeneralSecurityException e) {
+            logger.error("SSLContext Failed: ", e);
+        }
+
+        engine.getLoadWorker().progressProperty().addListener(progressListener);
+    }
+
+    @Override
+    public void handle(WebErrorEvent event) {
+        String url = webView.getEngine().getLocation();
+        url = url == null ? "" : url;
+        notifyOnPageError(url, event.getMessage());
+    }
+
+    @Override
+    public void changed(ObservableValue<? extends Worker.State> observable, Worker.State oldValue, Worker.State newValue) {
+        String url = webView.getEngine().getLocation();
+        url = url == null ? "" : url;
+
+        switch (newValue) {
+            case READY:
+                break;
+            case SCHEDULED:
+                notifyOnPageStarted(url);
+                break;
+            case RUNNING:
+                break;
+            case SUCCEEDED:
+                notifyOnPageFinished(url);
+                break;
+            case CANCELLED:
+                notifyOnPageCancelled(url);
+                break;
+            case FAILED:
+                final Worker<Void> loadWorker = webView.getEngine().getLoadWorker();
+                notifyOnPageError(url, loadWorker.getException().getMessage());
+                break;
+        }
+    }
+
+    @Override
+    public void loadUrl(@NotNull String url) {
+        webView.getEngine().load(url);
+    }
+
+    @Override
+    public void loadData(@NotNull String data) {
+        webView.getEngine().loadContent(data);
+    }
+
+    @Override
+    public void reload() {
+        webView.getEngine().reload();
+    }
+
+    @Override
+    @Nullable
+    public String evaluate(@NotNull String javascript) {
+        final Object ret = webView.getEngine().executeScript(javascript);
+        if (ret == null) return null;
+        if (ret instanceof String) return (String) ret;
+        return gson.toJson(ret);
+    }
+
+    @Override
+    public void destroy() {
+        if (webView != null) {
+            webView.getEngine().getLoadWorker().cancel();
+            webView.getEngine().setJavaScriptEnabled(false);
+            webView.getEngine().getLoadWorker().stateProperty().removeListener(this);
+            webView.getEngine().getLoadWorker().progressProperty().removeListener(progressListener);
+            webView = null;
+        }
+    }
+
+    private static class ProgressListener implements ChangeListener<Number> {
+        private final JavaFxWebView webView;
+
+        private ProgressListener(JavaFxWebView webView) {
+            this.webView = webView;
+        }
+
+        @Override
+        public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+            webView.notifyOnLoadProgress(Math.round(newValue.floatValue() * 100));
+        }
+    }
+
+    private static class EmptyX509TrustManager implements X509TrustManager {
+        @Override
+        public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0];
+        }
+    }
+}
