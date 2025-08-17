@@ -1,14 +1,117 @@
 package com.nesp.fishplugin.javafx.app;
 
+import com.nesp.spiderx.runtime.PluginManager;
+import com.nesp.spiderx.runtime.javafx.JavaFxWebView;
+import com.nesp.spiderx.runtime.model.ScreenType;
+
+import java.io.File;
+
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 
+
 public class HelloController {
-    @FXML
-    private Label welcomeText;
 
     @FXML
-    protected void onHelloButtonClick() {
-        welcomeText.setText("Welcome to JavaFX Application!");
+    public Label tvResult;
+
+    private final PluginManager pluginManager = PluginManager.getInstance();
+
+    public HelloController() {
+        final String databasePath = new File(".").getAbsolutePath() + "/build/plugin.db";
+        pluginManager.init(databasePath, ScreenType.EXPANDED, false, JavaFxWebView.class);
     }
+
+    @FXML
+    public void onInstallClick(ActionEvent actionEvent) {
+        pluginManager.installPluginJson(PLUGIN_JSON);
+    }
+
+    @FXML
+    public void onUninstallClick(ActionEvent actionEvent) {
+        pluginManager.uninstallPlugin("com.example.plugin");
+    }
+
+    @FXML
+    public void onRequestClick(ActionEvent actionEvent) {
+        pluginManager.requestDataset("com.example.plugin", "user_data");
+    }
+
+    private static final String PLUGIN_JSON = """
+            {
+              "parent": null,
+              "id": "com.example.plugin",
+              "name": "Test Plugin",
+              "author": "Test Author",
+              "version": "1.0.0",
+              "runtimeVersion": "1.0",
+              "description": "A test plugin",
+              "tags": [],
+              "supportedScreenTypes": [],
+              "variables": {},
+              "dataset": [
+                {
+                  "id": "user_data",
+                  "url": "https://www.baidu.com/",
+                  "url@compact": "https://www.baidu.com/",
+                  "url@medium": "https://www.baidu.com/",
+                  "url@expanded": "https://www.baidu.com/",
+                  "js": "function parse(data) { return JSON.parse(data); }",
+                  "js@compact": "function parse_compact(data) { return JSON.parse(data); }",
+                  "js@medium": "function parse_medium(data) { return JSON.parse(data); }",
+                  "js@expanded": "function parse_expanded(data) { return JSON.parse(data); }",
+                  "dsl": {
+                    "fields": [
+                      "name",
+                      "age"
+                    ],
+                    "parser": "json"
+                  },
+                  "dsl@compact": {
+                    "fields@compact": [
+                      "name",
+                      "age"
+                    ],
+                    "parser@compact": "json"
+                  },
+                  "dsl@medium": {
+                    "fields@medium": [
+                      "name",
+                      "age"
+                    ],
+                    "parser@medium": "json"
+                  },
+                  "dsl@expanded": {
+                    "fields@expanded": [
+                      "name",
+                      "age"
+                    ],
+                    "parser@expanded": "json"
+                  }
+                },
+                {
+                  "id": "product_data",
+                  "url": "https://api.example.com/products",
+                  "url@compact": "https://api.example.com/products",
+                  "url@medium": null,
+                  "url@expanded": null,
+                  "js": null,
+                  "js@compact": null,
+                  "js@medium": null,
+                  "js@expanded": null,
+                  "dsl": {
+                    "fields": [
+                      "name",
+                      "price"
+                    ],
+                    "parser": "json"
+                  },
+                  "dsl@compact": null,
+                  "dsl@medium": null,
+                  "dsl@expanded": null
+                }
+              ]
+            }
+            """;
 }

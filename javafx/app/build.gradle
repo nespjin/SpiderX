@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.JavaExec
+
 /*
  * Copyright (c) 2021-2022.  NESP Technology.
  *
@@ -29,6 +31,10 @@ targetCompatibility = "17"
 
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
+}
+
+tasks.withType(JavaExec) {
+    jvmArgs += ["-Djava.library.path=${rootProject.projectDir}/../rs/target/debug/"]
 }
 
 processResources {
@@ -84,4 +90,8 @@ dependencies {
 
     implementation 'com.alibaba:fastjson:1.2.79'
     implementation 'org.json:json:20211205'
+
+    implementation project(path: ':core')
+    implementation project(path: ':runtime')
+    implementation project(path: ':runtime-javafx')
 }

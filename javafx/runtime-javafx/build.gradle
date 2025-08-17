@@ -55,6 +55,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
     implementation 'com.google.code.gson:gson:2.8.9'
+    implementation 'org.jetbrains:annotations:24.0.1'
 
     implementation project(path:':tools')
     implementation project(path:':core')

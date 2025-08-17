@@ -49,7 +49,7 @@ import netscape.javascript.JSObject;
  **/
 public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEvent>, ChangeListener<Worker.State> {
     private static final String TAG = "JavaFxWebView";
-    private static final Logger logger = LogManager.getLogger(JavaFxWebView.class);
+//    private static final Logger logger = LogManager.getLogger();
 
     private WebView webView;
     private final ProgressListener progressListener = new ProgressListener(this);
@@ -75,7 +75,7 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
             sslContext.init(null, new TrustManager[]{new EmptyX509TrustManager()}, new SecureRandom());
             HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
         } catch (GeneralSecurityException e) {
-            logger.error("SSLContext Failed: ", e);
+//            logger.error("SSLContext Failed: ", e);
         }
 
         engine.getLoadWorker().progressProperty().addListener(progressListener);
@@ -90,6 +90,7 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
 
     @Override
     public void changed(ObservableValue<? extends Worker.State> observable, Worker.State oldValue, Worker.State newValue) {
+        System.out.println("newValue = " + newValue);
         String url = webView.getEngine().getLocation();
         url = url == null ? "" : url;
 
@@ -146,6 +147,7 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
 
     @Override
     public void destroy() {
+        System.out.println("JavaFxJsRuntimeTask destroy");
         if (webView != null) {
             webView.getEngine().getLoadWorker().cancel();
             webView.getEngine().setJavaScriptEnabled(false);
