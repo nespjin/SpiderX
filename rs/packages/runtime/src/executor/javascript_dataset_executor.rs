@@ -90,7 +90,7 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
                 e.clone(),
                 thread::current().id()
             );
-            // tx.send(e).expect("Send message to channel failed.");
+            tx.send(e).expect("Send message to channel failed.");
         });
 
         let listener = Arc::new(RwLock::new(WebEngineListenerImpl::new(
