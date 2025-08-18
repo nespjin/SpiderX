@@ -12,11 +12,13 @@ import java.util.concurrent.ThreadFactory
 abstract class JniWebView {
     private var mPtr = -1L
 
-    private val backgroundExecutor = Executors.newSingleThreadExecutor(getMainThreadFactory())
+    private val mainExecutor = Executors.newSingleThreadExecutor(getMainThreadFactory())
+    private val backgroundExecutor = Executors.newSingleThreadExecutor()
 
     fun init() {
         ensureRunOnBackgroundThread()
         postMainThread(::onInit).get()
+        println("JniWebView: init finished")
     }
 
     abstract fun onInit()
@@ -24,6 +26,7 @@ abstract class JniWebView {
     fun loadUrl(url: String) {
         ensureRunOnBackgroundThread()
         postMainThread({ performLoadUrl(url) }).get()
+        println("JniWebView: loadUrl finished")
     }
 
     abstract fun performLoadUrl(url: String)
@@ -37,26 +40,26 @@ abstract class JniWebView {
 
     fun reload() {
         ensureRunOnBackgroundThread()
-        postMainThread({ performReload() }).get()
+        postMainThread(::performReload).get()
     }
 
     abstract fun performReload()
 
     fun evaluate(javascript: String): String? {
         ensureRunOnBackgroundThread()
-        return postMainThread(Callable { return@Callable evaluate(javascript) }).get()
+        return postMainThread(Callable { return@Callable performEvaluate(javascript) }).get()
     }
 
     abstract fun performEvaluate(javascript: String): String?
 
     fun destroy() {
         ensureRunOnBackgroundThread()
-        finishBackgroundThread()
         postMainThread(::onDestroy).get()
+        finishBackgroundThread()
+        finishMainThread()
     }
 
     abstract fun onDestroy()
-
 
     fun notifyOnPageStarted(url: String) {
         nativeNotifyOnPageStarted(url)
@@ -114,10 +117,10 @@ abstract class JniWebView {
 
 
     private fun finishBackgroundThread() {
-        backgroundExecutor.shutdownNow()
+        backgroundExecutor.shutdown()
     }
 
-    fun waitBackgroundThread(task: Runnable) {
+    open fun waitBackgroundThread(task: Runnable) {
         val countDownLatch = CountDownLatch(1)
         backgroundExecutor.execute({
             task.run()
@@ -126,15 +129,15 @@ abstract class JniWebView {
         countDownLatch.await()
     }
 
-    fun postBackgroundThread(task: Runnable): Future<*> {
+    open fun postBackgroundThread(task: Runnable): Future<*> {
         return backgroundExecutor.submit(task)
     }
 
-    fun <T> postBackgroundThread(task: Callable<T>): Future<T> {
+    open fun <T> postBackgroundThread(task: Callable<T>): Future<T> {
         return backgroundExecutor.submit(task)
     }
 
-    fun ensureRunOnBackgroundThread() {
+    open fun ensureRunOnBackgroundThread() {
         if (isMainThread()) {
             throw IllegalStateException("Must be called on the background thread")
         }
@@ -142,21 +145,25 @@ abstract class JniWebView {
 
     open fun isMainThread(): Boolean = true
 
-    fun waitMainThread(task: Runnable) {
+    private fun finishMainThread() {
+        mainExecutor.shutdown()
+    }
+
+    open fun waitMainThread(task: Runnable) {
         val countDownLatch = CountDownLatch(1)
-        backgroundExecutor.execute({
+        mainExecutor.execute({
             task.run()
             countDownLatch.countDown()
         })
         countDownLatch.await()
     }
 
-    fun postMainThread(task: Runnable): Future<*> {
-        return backgroundExecutor.submit(task)
+    open fun postMainThread(task: Runnable): Future<*> {
+        return mainExecutor.submit(task)
     }
 
-    fun <T> postMainThread(task: Callable<T>): Future<T> {
-        return backgroundExecutor.submit(task)
+    open fun <T> postMainThread(task: Callable<T>): Future<T> {
+        return mainExecutor.submit(task)
     }
 
     open fun getMainThreadFactory(): ThreadFactory {

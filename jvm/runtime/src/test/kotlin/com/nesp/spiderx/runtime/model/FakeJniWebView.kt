@@ -1,6 +1,8 @@
 package com.nesp.spiderx.runtime.model
 
 import com.nesp.spiderx.runtime.JniWebView
+import com.nesp.spiderx.runtime.utils.Looper
+import java.util.concurrent.ThreadFactory
 
 /**
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
@@ -18,7 +20,7 @@ class FakeJniWebView : JniWebView() {
             notifyOnLoadProgress(i)
             Thread.sleep(10)
         }
-        notifyOnPageError(url, "Error on Finished")
+//        notifyOnPageError(url, "Error on Finished")
         val shouldInterceptRequest = notifyOnShouldInterceptRequest(url)
         println("shouldInterceptRequest: $shouldInterceptRequest")
         val shouldOverrideUrlLoading = notifyOnShouldOverrideUrlLoading(url)
@@ -41,6 +43,18 @@ class FakeJniWebView : JniWebView() {
 
     override fun onDestroy() {
         println("FakeJniWebView >>> onDestroy")
+        Looper.main.finish()
+    }
+
+    override fun ensureRunOnBackgroundThread() {
+
+    }
+
+    override fun getMainThreadFactory(): ThreadFactory {
+        return ThreadFactory { task ->
+            Looper.main.post(task)
+            Thread()
+        }
     }
 
 }

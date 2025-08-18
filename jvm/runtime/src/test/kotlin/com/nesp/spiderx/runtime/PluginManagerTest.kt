@@ -15,12 +15,13 @@
  */
 package com.nesp.spiderx.runtime
 
-import com.nesp.spiderx.runtime.model.Dataset
 import com.nesp.spiderx.runtime.model.FakeJniWebView
 import com.nesp.spiderx.runtime.model.ScreenType
+import com.nesp.spiderx.runtime.utils.Looper
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File
+import java.util.concurrent.Executors
 
 
 const val PLUGIN_JSON = """
@@ -107,6 +108,7 @@ class PluginManagerTest {
 
     lateinit var pluginManager: PluginManager
 
+
     @org.junit.jupiter.api.BeforeEach
     fun setUp() {
         pluginManager = PluginManager.instance
@@ -134,8 +136,12 @@ class PluginManagerTest {
     @Test
     fun testRequestDataset() {
         initPluginManager()
-        val ret = pluginManager.requestDataset("com.example.plugin", "user_data")
-        println("testRequestDataset $ret")
+        val backgroundExecutor = Executors.newSingleThreadExecutor()
+        backgroundExecutor.submit {
+            val ret = pluginManager.requestDataset("com.example.plugin", "user_data")
+            println("testRequestDataset ret $ret")
+        }
+        Looper.main.loop()
     }
 
     @Test
