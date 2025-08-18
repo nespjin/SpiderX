@@ -105,11 +105,12 @@ impl DatasetRepository {
             None => return Err(format!("Dataset {}.{} not found", plugin_id, dataset_id)),
         };
 
-        let dm = DeviceManager::get_instance()
-            .lock()
-            .map_err(|e| e.to_string())?;
-
-        let screen_type = &dm.screen_type().ok_or("Screen type is not set")?;
+        let screen_type = {
+            let dm = DeviceManager::get_instance()
+                .lock()
+                .map_err(|e| e.to_string())?;
+            &dm.screen_type().ok_or("Screen type is not set")?
+        };
 
         let url = ScreenTypedValue::new()
             .with_value(dataset.url.clone())
