@@ -14,8 +14,11 @@
 
 use std::{
     fmt::Display,
-    sync::{Arc, RwLock, mpsc},
-    thread::{self, JoinHandle},
+    sync::{
+        Arc, RwLock,
+        mpsc::{self, RecvTimeoutError},
+    },
+    thread::{self},
     time::Duration,
 };
 
@@ -100,24 +103,43 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
         webengine.write().unwrap().set_listener(listener);
         webengine.read().unwrap().load_url(self.url)?;
 
-        for received in rx {
-            println!("JavaScriptDatasetExecutor::request received {} on thread {:?}", received, thread::current().id());
-            match received {
-                WebEngineEvent::PageFinished(url) => {
-                    if url == self.url {
-                        let result = webengine.write().unwrap().evaluate(self.js)?;
-                        destroy_webengine(webengine)?;
-                        return Ok(result);
+        loop {
+            match rx.recv_timeout(Duration::from_secs(10)) {
+                Ok(received) => {
+                    println!(
+                        "JavaScriptDatasetExecutor::request received {} on thread {:?}",
+                        &received,
+                        thread::current().id()
+                    );
+                    match received {
+                        WebEngineEvent::PageFinished(url) => {
+                            if url == self.url {
+                                let result = webengine.write().unwrap().evaluate(self.js)?;
+                                destroy_webengine(webengine)?;
+                                return Ok(result);
+                            }
+                        }
+                        WebEngineEvent::PageError(url, error) => {
+                            if url == self.url {
+                                destroy_webengine(webengine)?;
+                                return Err(error.to_string());
+                            }
+                        }
+                        _ => (),
                     }
                 }
-                WebEngineEvent::PageError(url, error) => {
-                    if url == self.url {
-                        destroy_webengine(webengine)?;
-                        return Err(error.to_string());
-                    }
+                Err(RecvTimeoutError::Timeout) => {
+                    println!("JavaScriptDatasetExecutor::request timeout");
+                    destroy_webengine(webengine)?;
+                    break;
                 }
-                _ => (),
+                Err(RecvTimeoutError::Disconnected) => {
+                    println!("JavaScriptDatasetExecutor::request disconnected");
+                    destroy_webengine(webengine)?;
+                    break;
+                }
             }
+            thread::sleep(Duration::from_millis(80));
         }
 
         fn destroy_webengine(webengine: WebEngineMut) -> Result<(), String> {
