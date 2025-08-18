@@ -100,8 +100,11 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
             self.url.to_string(),
             callback,
         )));
-        webengine.write().unwrap().set_listener(listener);
-        webengine.read().unwrap().load_url(self.url)?;
+
+            webengine.write().unwrap().set_listener(listener);
+            webengine.read().unwrap().load_url(self.url)?;
+
+        let mut result: Result<String, String> = Ok("".to_string());
 
         loop {
             match rx.recv_timeout(Duration::from_secs(10)) {
@@ -114,15 +117,15 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
                     match received {
                         WebEngineEvent::PageFinished(url) => {
                             if url == self.url {
-                                let result = webengine.write().unwrap().evaluate(self.js)?;
-                                destroy_webengine(webengine)?;
-                                return Ok(result);
+                                let ret = webengine.write().unwrap().evaluate(self.js)?;
+                                result = Ok(ret);
+                                break;
                             }
                         }
                         WebEngineEvent::PageError(url, error) => {
                             if url == self.url {
-                                destroy_webengine(webengine)?;
-                                return Err(error.to_string());
+                                result = Err(error.to_string());
+                                break;
                             }
                         }
                         _ => (),
@@ -130,19 +133,19 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
                 }
                 Err(RecvTimeoutError::Timeout) => {
                     println!("JavaScriptDatasetExecutor::request timeout");
-                    destroy_webengine(webengine)?;
+                    result = Err("JavaScriptDatasetExecutor::request timeout".to_string());
                     break;
                 }
                 Err(RecvTimeoutError::Disconnected) => {
                     println!("JavaScriptDatasetExecutor::request disconnected");
-                    destroy_webengine(webengine)?;
+                    result = Err("JavaScriptDatasetExecutor::request disconnected".to_string());
                     break;
                 }
             }
             thread::sleep(Duration::from_millis(80));
         }
 
-        fn destroy_webengine(webengine: WebEngineMut) -> Result<(), String> {
+        {
             let mut wm = WebEngineManager::get_instance()
                 .lock()
                 .map_err(|e| e.to_string())?;
@@ -150,10 +153,9 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
             // Release lock
             let id = { webengine.read().unwrap().id() };
             wm.remove_webengine(id)?;
-            Ok(())
         }
 
-        Ok("".to_string())
+        return result;
     }
 }
 

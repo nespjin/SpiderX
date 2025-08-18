@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use jni::JNIEnv;
 use jni::objects::*;
 use jni::sys::JNI_FALSE;
 use jni::sys::JNI_TRUE;
@@ -19,7 +20,6 @@ use jni::sys::jboolean;
 use jni::sys::jint;
 use jni::sys::jobject;
 use jni::sys::jstring;
-use jni::JNIEnv;
 use std::sync::Mutex;
 use std::sync::OnceLock;
 
@@ -255,9 +255,9 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
         plugin_manager.request_dataset(&plugin_id, &dataset_id)
     };
 
-    handler
-        .throw_java_expception_if_error(data)
-        .map(|e| handler.new_string(&e))
+    // handler
+    //     .throw_java_expception_if_error(data)
+    data.map(|e| handler.new_string(&e))
         .map(|e| e.into_raw())
         .unwrap_or(JObject::null().into_raw())
 }
