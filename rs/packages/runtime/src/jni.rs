@@ -19,6 +19,7 @@ pub(crate) mod jni_dataset;
 pub(crate) mod jni_handler;
 pub(crate) mod jni_json;
 pub(crate) mod jni_list;
+pub(crate) mod jni_log;
 pub(crate) mod jni_map;
 pub(crate) mod jni_methods;
 pub(crate) mod jni_object;

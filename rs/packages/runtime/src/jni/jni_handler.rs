@@ -101,6 +101,24 @@ impl<'local> JniHandler<'local> {
         let jobj_ret = jobj_ret.l().unwrap_or(JObject::null());
         jobj_ret
     }
+    pub fn call_static_method(
+        &mut self,
+        class: &str,
+        method_info: JniMethodInfo,
+        args: &[JValue],
+    ) -> JObject<'local> {
+        let class_ret = self.env.find_class(class);
+        let class: jni::objects::JClass<'local> =
+            self.throw_jni_exception_if_error(class_ret).unwrap();
+
+        let (mth_name, mth_sig) = method_info;
+        let ret = self.env.call_static_method(&class, mth_name, mth_sig, args);
+        let jobj_ret = self
+            .throw_jni_exception_if_error(ret)
+            .unwrap_or(JValueGen::Object(JObject::null()));
+        let jobj_ret = jobj_ret.l().unwrap_or(JObject::null());
+        jobj_ret
+    }
 
     pub fn set_field(&mut self, object: &JObject, field_info: JniFieldInfo, value: JValue) {
         let (fld_name, fld_ty) = field_info;

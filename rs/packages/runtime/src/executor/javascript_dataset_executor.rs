@@ -24,6 +24,7 @@ use std::{
 
 use crate::{
     executor::dataset_executor::DatasetExecutor,
+    utils::log_utils,
     web_engine::{
         web_engine::{WebEngineListener, WebEngineMut},
         web_engine_manager::WebEngineManager,
@@ -77,10 +78,10 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
     fn request(&self) -> Result<String, String> {
         let (tx, rx) = mpsc::channel::<WebEngineEvent>();
         let webengine = {
-            println!(
+            log_utils::logd(&format!(
                 "JavaScriptDatasetExecutor::request on thread {:?}",
                 thread::current().id()
-            );
+            ));
             let mut wm = WebEngineManager::get_instance()
                 .lock()
                 .map_err(|e| e.to_string())?;
@@ -88,11 +89,11 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
         };
 
         let callback: WebEngineCallback = Box::new(move |e| {
-            println!(
+            log_utils::logd(&format!(
                 "WebEngineCallback {} on thread {:?}",
                 e.clone(),
                 thread::current().id()
-            );
+            ));
             tx.send(e).expect("Send message to channel failed.");
         });
 
@@ -109,11 +110,11 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
         loop {
             match rx.recv_timeout(Duration::from_secs(10)) {
                 Ok(received) => {
-                    println!(
+                    log_utils::logd(&format!(
                         "JavaScriptDatasetExecutor::request received {} on thread {:?}",
                         &received,
                         thread::current().id()
-                    );
+                    ));
                     match received {
                         WebEngineEvent::PageFinished(url) => {
                             if url == self.url {
@@ -132,12 +133,12 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
                     }
                 }
                 Err(RecvTimeoutError::Timeout) => {
-                    println!("JavaScriptDatasetExecutor::request timeout");
+                    log_utils::logd(&format!("JavaScriptDatasetExecutor::request timeout"));
                     result = Err("JavaScriptDatasetExecutor::request timeout".to_string());
                     break;
                 }
                 Err(RecvTimeoutError::Disconnected) => {
-                    println!("JavaScriptDatasetExecutor::request disconnected");
+                    log_utils::logd(&format!("JavaScriptDatasetExecutor::request disconnected"));
                     result = Err("JavaScriptDatasetExecutor::request disconnected".to_string());
                     break;
                 }
@@ -175,21 +176,21 @@ impl WebEngineListener for WebEngineListenerImpl {
         let callback = &mut self.callback;
         callback(WebEngineEvent::PageStarted(url.to_string()));
 
-        println!("on_page_started {}", url)
+        log_utils::logd(&format!("on_page_started {}", url))
     }
 
     fn on_page_cancelled(&mut self, engine: WebEngineMut, url: &str) {
         let callback = &mut self.callback;
         callback(WebEngineEvent::PageCancelled(url.to_string()));
 
-        println!("on_page_cancelled {}", url)
+        log_utils::logd(&format!("on_page_cancelled {}", url))
     }
 
     fn on_page_finished(&mut self, engine: WebEngineMut, url: &str) {
         let callback = &mut self.callback;
         callback(WebEngineEvent::PageFinished(url.to_string()));
 
-        println!("on_page_finished {}", url)
+        log_utils::logd(&format!("on_page_finished {}", url))
     }
 
     fn on_page_error(&mut self, engine: WebEngineMut, url: &str, error: &str) {
@@ -199,14 +200,14 @@ impl WebEngineListener for WebEngineListenerImpl {
             error.to_string(),
         ));
 
-        println!("on_page_error {} {}", url, error)
+        log_utils::logd(&format!("on_page_error {} {}", url, error))
     }
 
     fn on_load_progress(&mut self, engine: WebEngineMut, progress: i32) {
         let callback = &mut self.callback;
         callback(WebEngineEvent::LoadProgress(progress));
 
-        println!("on_load_progress {}", progress)
+        log_utils::logd(&format!("on_load_progress {}", progress))
     }
 
     fn should_override_url_loading(&mut self, engine: WebEngineMut, url: &str) -> bool {
@@ -224,7 +225,7 @@ impl WebEngineListener for WebEngineListenerImpl {
             data.to_string(),
         ));
 
-        println!("on_receive_data {} {}", url, data)
+        log_utils::logd(&format!("on_receive_data {} {}", url, data))
     }
 
     fn on_received_error(&mut self, engine: WebEngineMut, url: &str, error: &str) {
@@ -234,6 +235,6 @@ impl WebEngineListener for WebEngineListenerImpl {
             error.to_string(),
         ));
 
-        println!("on_receive_error {} {}", url, error)
+        log_utils::logd(&format!("on_receive_error {} {}", url, error))
     }
 }
