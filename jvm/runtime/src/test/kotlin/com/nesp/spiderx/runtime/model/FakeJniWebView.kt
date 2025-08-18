@@ -2,6 +2,7 @@ package com.nesp.spiderx.runtime.model
 
 import com.nesp.spiderx.runtime.JniWebView
 import com.nesp.spiderx.runtime.utils.Looper
+import java.util.concurrent.Future
 import java.util.concurrent.ThreadFactory
 
 /**
@@ -50,10 +51,18 @@ class FakeJniWebView : JniWebView() {
 
     }
 
+    override fun postMainThread(task: Runnable): Future<*> {
+        return super.postMainThread({
+            println("postMainThread ${Thread.currentThread().name}")
+            task.run()
+        })
+    }
+
     override fun getMainThreadFactory(): ThreadFactory {
         return ThreadFactory { task ->
-            Looper.main.post(task)
-            Thread()
+            Thread {
+                Looper.main.post(task)
+            }
         }
     }
 

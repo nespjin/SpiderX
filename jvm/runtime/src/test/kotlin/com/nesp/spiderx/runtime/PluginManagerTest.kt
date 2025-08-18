@@ -139,8 +139,9 @@ class PluginManagerTest {
         val backgroundExecutor = Executors.newSingleThreadExecutor()
         backgroundExecutor.submit {
             val ret = pluginManager.requestDataset("com.example.plugin", "user_data")
-            println("testRequestDataset ret $ret")
+            println("testRequestDataset ${Thread.currentThread().name} ret $ret")
         }
+        println("testRequestDataset ${Thread.currentThread().name}")
         Looper.main.loop()
     }
 
