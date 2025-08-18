@@ -24,6 +24,7 @@ class Looper {
 
     fun finish() {
         isRunning = false
+        println("Looper finish")
     }
 
     fun post(task: Runnable) {

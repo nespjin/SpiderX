@@ -43,7 +43,7 @@ class FakeJniWebView : JniWebView() {
 
     override fun onDestroy() {
         println("FakeJniWebView >>> onDestroy")
-        Looper.main.finish()
+        postBackgroundThread { Looper.main.finish() }
     }
 
     override fun ensureRunOnBackgroundThread() {
