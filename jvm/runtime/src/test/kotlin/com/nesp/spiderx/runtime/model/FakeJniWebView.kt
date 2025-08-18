@@ -15,18 +15,20 @@ class FakeJniWebView : JniWebView() {
     }
 
     override fun performLoadUrl(url: String) {
-        println("FakeJniWebView >>> performLoadUrl $url")
-        notifyOnPageStarted(url)
-        for (i in 0..100) {
-            notifyOnLoadProgress(i)
-            Thread.sleep(10)
-        }
+        postBackgroundThread {
+            println("FakeJniWebView >>> performLoadUrl $url")
+            notifyOnPageStarted(url)
+            for (i in 0..100) {
+                notifyOnLoadProgress(i)
+                Thread.sleep(10)
+            }
 //        notifyOnPageError(url, "Error on Finished")
-        val shouldInterceptRequest = notifyOnShouldInterceptRequest(url)
-        println("shouldInterceptRequest: $shouldInterceptRequest")
-        val shouldOverrideUrlLoading = notifyOnShouldOverrideUrlLoading(url)
-        println("shouldOverrideUrlLoading: $shouldOverrideUrlLoading")
-        notifyOnPageFinished(url)
+            val shouldInterceptRequest = notifyOnShouldInterceptRequest(url)
+            println("shouldInterceptRequest: $shouldInterceptRequest")
+            val shouldOverrideUrlLoading = notifyOnShouldOverrideUrlLoading(url)
+            println("shouldOverrideUrlLoading: $shouldOverrideUrlLoading")
+            notifyOnPageFinished(url)
+        }
     }
 
     override fun performLoadData(data: String) {

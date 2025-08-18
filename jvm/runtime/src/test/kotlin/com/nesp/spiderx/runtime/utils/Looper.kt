@@ -14,8 +14,10 @@ class Looper {
     fun loop() {
         isRunning = true
         while (isRunning) {
+            println("Lopper isRunning $isRunning")
             synchronized(tasks) {
                 while (tasks.isNotEmpty()) {
+                    println("Lopper tasks.isNotEmpty()")
                     tasks.removeFirst().run()
                 }
             }

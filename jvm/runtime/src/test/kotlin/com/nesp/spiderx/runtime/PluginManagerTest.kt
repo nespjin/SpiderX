@@ -143,6 +143,7 @@ class PluginManagerTest {
         }
         println("testRequestDataset ${Thread.currentThread().name}")
         Looper.main.loop()
+        println("testRequestDataset Looper.loop")
     }
 
     @Test
