@@ -101,8 +101,8 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
             callback,
         )));
 
-            webengine.write().unwrap().set_listener(listener);
-            webengine.read().unwrap().load_url(self.url)?;
+        webengine.write().unwrap().set_listener(listener);
+        webengine.read().unwrap().load_url(self.url)?;
 
         let mut result: Result<String, String> = Ok("".to_string());
 
