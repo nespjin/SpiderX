@@ -15,7 +15,7 @@
 use std::{
     fmt::Display,
     sync::{
-        Arc, RwLock,
+        Arc,
         mpsc::{self, RecvTimeoutError},
     },
     thread::{self},
