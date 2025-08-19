@@ -10,7 +10,7 @@ pub fn jni_log(msg: &str) {
     let out = jni_handler.get_static_field("java/lang/System", ("out", "Ljava/io/PrintStream;"));
     let msg_obj = jni_handler.new_string(format!(
         "[{} {}]\t{}",
-        chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"),
+        chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
         jni_thread::current_thread_name(),
         msg
     ));
