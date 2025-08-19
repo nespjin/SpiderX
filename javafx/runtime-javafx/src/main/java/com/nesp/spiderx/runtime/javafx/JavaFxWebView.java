@@ -20,7 +20,6 @@ import com.google.gson.Gson;
 import com.nesp.spiderx.runtime.JniWebView;
 import com.nesp.spiderx.runtime.PluginManager;
 
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -53,7 +52,7 @@ import netscape.javascript.JSObject;
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
  **/
 public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEvent>, ChangeListener<Worker.State> {
-    private static final Logger logger = LogManager.getLogger(JavaFxWebView.class);
+    private static final Logger LOGGER = LogManager.getLogger(JavaFxWebView.class);
 
     private static final List<WebView> WEBVIEW_POOLS = new ArrayList<>();
 
@@ -84,12 +83,12 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
             sslContext.init(null, new TrustManager[]{new EmptyX509TrustManager()}, new SecureRandom());
             HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
         } catch (GeneralSecurityException e) {
-            logger.error("SSLContext Failed: ", e);
+            LOGGER.error("SSLContext Failed: ", e);
         }
 
         engine.getLoadWorker().progressProperty().addListener(progressListener);
         WEBVIEW_POOLS.add(webView);
-        logger.trace("JavaFxWebView onInit finished");
+        LOGGER.trace("JavaFxWebView onInit finished");
     }
 
     @Override
@@ -103,7 +102,7 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
     public void changed(ObservableValue<? extends Worker.State> observable, Worker.State oldValue, Worker.State newValue) {
         final String location = webView.getEngine().getLocation();
         final String url = location == null ? "" : location;
-        logger.trace("newValue = {} changed Thread {}", newValue.toString(), Thread.currentThread().getName());
+        LOGGER.trace("newValue = {} changed Thread {}", newValue.toString(), Thread.currentThread().getName());
         switch (newValue) {
             case READY:
                 break;
@@ -127,7 +126,7 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
 
     @Override
     public void performLoadUrl(@NotNull String url) {
-        logger.trace("JavaFxWebView performLoadUrl {}", url);
+        LOGGER.trace("JavaFxWebView performLoadUrl {}", url);
         webView.getEngine().load(url);
     }
 
@@ -158,7 +157,7 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
 
     @Override
     public void onDestroy() {
-        logger.trace("JavaFxWebView onDestroy");
+        LOGGER.trace("JavaFxWebView onDestroy");
         if (webView != null) {
             WEBVIEW_POOLS.remove(webView);
             webView.getEngine().getLoadWorker().cancel();
@@ -167,7 +166,7 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
             webView.getEngine().getLoadWorker().progressProperty().removeListener(progressListener);
             webView = null;
         }
-        logger.trace("JavaFxWebView onDestroy finished");
+        LOGGER.trace("JavaFxWebView onDestroy finished");
     }
 
     @Override
