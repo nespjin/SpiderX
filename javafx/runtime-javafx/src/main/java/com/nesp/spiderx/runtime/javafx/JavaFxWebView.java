@@ -127,6 +127,7 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
 
     @Override
     public void performLoadUrl(@NotNull String url) {
+        logger.trace("JavaFxWebView performLoadUrl {}", url);
         webView.getEngine().load(url);
     }
 
