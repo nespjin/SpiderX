@@ -97,10 +97,7 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
             tx.send(e).expect("Send message to channel failed.");
         });
 
-        let listener = Arc::new(WebEngineListenerImpl::new(
-            self.url.to_string(),
-            callback,
-        ));
+        let listener = Arc::new(WebEngineListenerImpl::new(self.url.to_string(), callback));
 
         webengine.write().unwrap().set_listener(listener);
         webengine.read().unwrap().load_url(self.url)?;
@@ -155,6 +152,11 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
             let id = { webengine.read().unwrap().id() };
             wm.remove_webengine(id)?;
         }
+
+        log_utils::logd(&format!(
+            "JavaScriptDatasetExecutor::request end {} {}",
+            self.id, self.url
+        ));
 
         return result;
     }

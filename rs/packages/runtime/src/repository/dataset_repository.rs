@@ -22,7 +22,7 @@ use crate::{
         dataset_executor::DatasetExecutor, javascript_dataset_executor::JavaScriptDatasetExecutor,
     },
     repository::model::dataset,
-    utils::screen_typed_value::ScreenTypedValue,
+    utils::{log_utils, screen_typed_value::ScreenTypedValue},
 };
 
 pub struct DatasetRepository {
@@ -160,6 +160,11 @@ impl DatasetRepository {
         };
 
         let result = dataset_ds.request();
+
+        log_utils::logd(&format!(
+            "DatasetRepository::request_dataset {} {}",
+            plugin_id, dataset_id
+        ));
 
         Ok(result?)
     }

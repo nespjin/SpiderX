@@ -33,6 +33,7 @@ use crate::jni::jni_webview::JAVA_WEBVIEW_CLASS;
 use crate::plugin_manager::PluginManager;
 use crate::plugin_manager::PluginManagerConfig;
 use crate::plugin_manager::PluginSource;
+use crate::utils::log_utils;
 use crate::web_engine::web_engine_manager::WebEngineManager;
 
 pub const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON: jint = 0;
@@ -254,6 +255,11 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
         let plugin_manager = PluginManager::get_instance().lock().unwrap();
         plugin_manager.request_dataset(&plugin_id, &dataset_id)
     };
+
+    log_utils::logd(&format!(
+        "Java_com_nesp_spiderx_runtime_PluginManager_nativeRequestDataset {} {}",
+        plugin_id, dataset_id
+    ));
 
     // handler
     //     .throw_java_expception_if_error(data)

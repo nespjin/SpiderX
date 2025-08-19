@@ -72,7 +72,9 @@ impl WebEngineManager {
             Arc::new(RwLock::new(jni_webview::new_jni_webview(id)?))
         };
 
-        engine.write().unwrap().init()?;
+        {
+            engine.write().map_err(|e| e.to_string())?.init()?;
+        }
 
         self.webengine_id = next_id;
         self.webengines
@@ -103,7 +105,9 @@ impl WebEngineManager {
         };
 
         if let Some(engine) = engine {
-            engine.write().unwrap().remove_listener();
+            {
+                engine.write().unwrap().remove_listener();
+            }
             let is_pool_not_full =
                 self.webengine_pool.read().map_err(|e| e.to_string())?.len() < MAX_WV_POOL_SIZE;
             if self.is_cache_engine && is_pool_not_full {
@@ -113,7 +117,6 @@ impl WebEngineManager {
                     .push(engine);
             } else {
                 engine.write().unwrap().destroy()?;
-                drop(engine);
             }
         }
 
