@@ -19,6 +19,7 @@ pub type WebEngineMut = Arc<RwLockWebEngine>;
 
 pub type RwLockWebEngineListener = RwLock<dyn WebEngineListener>;
 pub type WebEngineListenerMut = Arc<RwLockWebEngineListener>;
+pub type WebEngineListenerArc = Arc<dyn WebEngineListener>;
 
 pub trait WebEngine: Send + Sync {
     fn init(&mut self) -> Result<(), String>;
@@ -35,20 +36,20 @@ pub trait WebEngine: Send + Sync {
 
     fn evaluate(&self, script: &str) -> Result<String, String>;
 
-    // fn add_listener(&mut self, listener: WebEngineListenerMut) -> i64;
+    // fn add_listener(&mut self, listener: WebEngineListenerArc) -> i64;
 
     // fn remove_listener(&mut self, id: i64);
 
     // fn notify_listeners<F>(&self, callback: F)
     // where
     //     Self: Sized,
-    //     F: FnMut(WebEngineListenerMut);
+    //     F: FnMut(WebEngineListenerArc);
 
-    // fn listeners(&self) -> Vec<WebEngineListenerMut>;
+    // fn listeners(&self) -> Vec<WebEngineListenerArc>;
 
-    fn set_listener(&mut self, listener: WebEngineListenerMut);
+    fn set_listener(&mut self, listener: WebEngineListenerArc);
 
-    fn listener(&self) -> Option<WebEngineListenerMut>;
+    fn listener(&self) -> Option<WebEngineListenerArc>;
 
     fn remove_listener(&mut self);
 
@@ -56,21 +57,21 @@ pub trait WebEngine: Send + Sync {
 }
 
 pub trait WebEngineListener: Send + Sync {
-    fn on_page_started(&mut self, engine: WebEngineMut, url: &str);
+    fn on_page_started(&self, engine: WebEngineMut, url: &str);
 
-    fn on_page_cancelled(&mut self, engine: WebEngineMut, url: &str);
+    fn on_page_cancelled(&self, engine: WebEngineMut, url: &str);
 
-    fn on_page_finished(&mut self, engine: WebEngineMut, url: &str);
+    fn on_page_finished(&self, engine: WebEngineMut, url: &str);
 
-    fn on_page_error(&mut self, engine: WebEngineMut, url: &str, error: &str);
+    fn on_page_error(&self, engine: WebEngineMut, url: &str, error: &str);
 
-    fn on_load_progress(&mut self, engine: WebEngineMut, progress: i32);
+    fn on_load_progress(&self, engine: WebEngineMut, progress: i32);
 
-    fn should_override_url_loading(&mut self, engine: WebEngineMut, url: &str) -> bool;
+    fn should_override_url_loading(&self, engine: WebEngineMut, url: &str) -> bool;
 
-    fn should_intercept_request(&mut self, engine: WebEngineMut, url: &str) -> Option<String>;
+    fn should_intercept_request(&self, engine: WebEngineMut, url: &str) -> Option<String>;
 
-    fn on_received_data(&mut self, engine: WebEngineMut, url: &str, data: &str);
+    fn on_received_data(&self, engine: WebEngineMut, url: &str, data: &str);
 
-    fn on_received_error(&mut self, engine: WebEngineMut, url: &str, error: &str);
+    fn on_received_error(&self, engine: WebEngineMut, url: &str, error: &str);
 }

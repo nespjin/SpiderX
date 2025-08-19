@@ -60,7 +60,7 @@ impl Display for WebEngineEvent {
     }
 }
 
-type WebEngineCallback = Box<dyn FnMut(WebEngineEvent) + Send + Sync>;
+type WebEngineCallback = Box<dyn Fn(WebEngineEvent) + Send + Sync>;
 
 pub struct JavaScriptDatasetExecutor<'local> {
     id: &'local str,
@@ -97,10 +97,10 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
             tx.send(e).expect("Send message to channel failed.");
         });
 
-        let listener = Arc::new(RwLock::new(WebEngineListenerImpl::new(
+        let listener = Arc::new(WebEngineListenerImpl::new(
             self.url.to_string(),
             callback,
-        )));
+        ));
 
         webengine.write().unwrap().set_listener(listener);
         webengine.read().unwrap().load_url(self.url)?;
@@ -172,29 +172,29 @@ impl WebEngineListenerImpl {
 }
 
 impl WebEngineListener for WebEngineListenerImpl {
-    fn on_page_started(&mut self, engine: WebEngineMut, url: &str) {
-        let callback = &mut self.callback;
+    fn on_page_started(&self, engine: WebEngineMut, url: &str) {
+        let callback = &self.callback;
         callback(WebEngineEvent::PageStarted(url.to_string()));
 
         log_utils::logd(&format!("on_page_started {}", url))
     }
 
-    fn on_page_cancelled(&mut self, engine: WebEngineMut, url: &str) {
-        let callback = &mut self.callback;
+    fn on_page_cancelled(&self, engine: WebEngineMut, url: &str) {
+        let callback = &self.callback;
         callback(WebEngineEvent::PageCancelled(url.to_string()));
 
         log_utils::logd(&format!("on_page_cancelled {}", url))
     }
 
-    fn on_page_finished(&mut self, engine: WebEngineMut, url: &str) {
-        let callback = &mut self.callback;
+    fn on_page_finished(&self, engine: WebEngineMut, url: &str) {
+        let callback = &self.callback;
         callback(WebEngineEvent::PageFinished(url.to_string()));
 
         log_utils::logd(&format!("on_page_finished {}", url))
     }
 
-    fn on_page_error(&mut self, engine: WebEngineMut, url: &str, error: &str) {
-        let callback = &mut self.callback;
+    fn on_page_error(&self, engine: WebEngineMut, url: &str, error: &str) {
+        let callback = &self.callback;
         callback(WebEngineEvent::PageError(
             url.to_string(),
             error.to_string(),
@@ -203,23 +203,23 @@ impl WebEngineListener for WebEngineListenerImpl {
         log_utils::logd(&format!("on_page_error {} {}", url, error))
     }
 
-    fn on_load_progress(&mut self, engine: WebEngineMut, progress: i32) {
-        let callback = &mut self.callback;
+    fn on_load_progress(&self, engine: WebEngineMut, progress: i32) {
+        let callback = &self.callback;
         callback(WebEngineEvent::LoadProgress(progress));
 
         log_utils::logd(&format!("on_load_progress {}", progress))
     }
 
-    fn should_override_url_loading(&mut self, engine: WebEngineMut, url: &str) -> bool {
+    fn should_override_url_loading(&self, engine: WebEngineMut, url: &str) -> bool {
         true
     }
 
-    fn should_intercept_request(&mut self, engine: WebEngineMut, url: &str) -> Option<String> {
+    fn should_intercept_request(&self, engine: WebEngineMut, url: &str) -> Option<String> {
         Some("ShouldInterceptRequest in Rust".to_string())
     }
 
-    fn on_received_data(&mut self, engine: WebEngineMut, url: &str, data: &str) {
-        let callback = &mut self.callback;
+    fn on_received_data(&self, engine: WebEngineMut, url: &str, data: &str) {
+        let callback = &self.callback;
         callback(WebEngineEvent::ReceivedData(
             url.to_string(),
             data.to_string(),
@@ -228,8 +228,8 @@ impl WebEngineListener for WebEngineListenerImpl {
         log_utils::logd(&format!("on_receive_data {} {}", url, data))
     }
 
-    fn on_received_error(&mut self, engine: WebEngineMut, url: &str, error: &str) {
-        let callback = &mut self.callback;
+    fn on_received_error(&self, engine: WebEngineMut, url: &str, error: &str) {
+        let callback = &self.callback;
         callback(WebEngineEvent::ReceivedError(
             url.to_string(),
             error.to_string(),

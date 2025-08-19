@@ -22,7 +22,7 @@ use once_cell::sync::OnceCell;
 use crate::{
     jni::jni_handler::{JniFieldInfo, JniHandler, JniMethodInfo},
     web_engine::{
-        web_engine::{WebEngine, WebEngineListenerMut, WebEngineMut},
+        web_engine::{WebEngine, WebEngineListenerArc, WebEngineMut},
         web_engine_manager::WebEngineManager,
     },
 };
@@ -67,8 +67,8 @@ pub struct JniWebView {
     webview_java_obj: GlobalRef,
     id: i64,
     // listener_id: i64,
-    // listeners: Arc<RwLock<HashMap<i64, WebEngineListenerMut>>>,
-    listener: Option<WebEngineListenerMut>,
+    // listeners: Arc<RwLock<HashMap<i64, WebEngineListenerArc>>>,
+    listener: Option<WebEngineListenerArc>,
 }
 
 impl JniWebView {
@@ -173,14 +173,14 @@ impl WebEngine for JniWebView {
     //         .collect::<Vec<_>>()
     // }
 
-    fn set_listener(&mut self, listener: WebEngineListenerMut) {
+    fn set_listener(&mut self, listener: WebEngineListenerArc) {
         if self.listener.is_some() {
             return;
         }
         self.listener = Some(listener);
     }
 
-    fn listener(&self) -> Option<WebEngineListenerMut> {
+    fn listener(&self) -> Option<WebEngineListenerArc> {
         self.listener.clone()
     }
 
@@ -220,7 +220,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
         .read()
         .unwrap()
         .listener()
-        .map(|l| l.write().unwrap().on_page_started(jni_wv.clone(), &url));
+        .map(|l| l.on_page_started(jni_wv.clone(), &url));
 }
 
 #[unsafe(no_mangle)]
@@ -238,7 +238,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
         .read()
         .unwrap()
         .listener()
-        .map(|l| l.write().unwrap().on_page_cancelled(jni_wv.clone(), &url));
+        .map(|l| l.on_page_cancelled(jni_wv.clone(), &url));
 }
 
 #[unsafe(no_mangle)]
@@ -256,7 +256,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
         .read()
         .unwrap()
         .listener()
-        .map(|l| l.write().unwrap().on_page_finished(jni_wv.clone(), &url));
+        .map(|l| l.on_page_finished(jni_wv.clone(), &url));
 }
 
 #[unsafe(no_mangle)]
@@ -273,11 +273,11 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
 
     let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
 
-    jni_wv.read().unwrap().listener().map(|l| {
-        l.write()
-            .unwrap()
-            .on_page_error(jni_wv.clone(), &url, &error)
-    });
+    jni_wv
+        .read()
+        .unwrap()
+        .listener()
+        .map(|l| l.on_page_error(jni_wv.clone(), &url, &error));
 }
 
 #[unsafe(no_mangle)]
@@ -290,11 +290,11 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
 ) {
     let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
 
-    jni_wv.read().unwrap().listener().map(|l| {
-        l.write()
-            .unwrap()
-            .on_load_progress(jni_wv.clone(), progress)
-    });
+    jni_wv
+        .read()
+        .unwrap()
+        .listener()
+        .map(|l| l.on_load_progress(jni_wv.clone(), progress));
 }
 
 #[unsafe(no_mangle)]
@@ -313,11 +313,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
         .read()
         .unwrap()
         .listener()
-        .map(|l| {
-            l.write()
-                .unwrap()
-                .should_override_url_loading(jni_wv.clone(), &url)
-        })
+        .map(|l| l.should_override_url_loading(jni_wv.clone(), &url))
         .map(|b| b.into())
         .unwrap_or(JNI_FALSE)
 }
@@ -338,11 +334,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
         .read()
         .unwrap()
         .listener()
-        .map(|l| {
-            l.write()
-                .unwrap()
-                .should_intercept_request(jni_wv.clone(), &url)
-        })
+        .map(|l| l.should_intercept_request(jni_wv.clone(), &url))
         .map(|s| {
             s.map(|s| {
                 env.new_string(&s)
@@ -370,11 +362,11 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
 
     let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
 
-    jni_wv.read().unwrap().listener().map(|l| {
-        l.write()
-            .unwrap()
-            .on_received_data(jni_wv.clone(), &url, &data)
-    });
+    jni_wv
+        .read()
+        .unwrap()
+        .listener()
+        .map(|l| l.on_received_data(jni_wv.clone(), &url, &data));
 }
 
 #[unsafe(no_mangle)]
@@ -391,11 +383,11 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
 
     let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
 
-    jni_wv.read().unwrap().listener().map(|l| {
-        l.write()
-            .unwrap()
-            .on_received_error(jni_wv.clone(), &url, &error)
-    });
+    jni_wv
+        .read()
+        .unwrap()
+        .listener()
+        .map(|l| l.on_received_error(jni_wv.clone(), &url, &error));
 }
 
 fn get_jni_wv_from_java_obj<'other_local, O>(env: &mut JNIEnv, obj: O) -> WebEngineMut
