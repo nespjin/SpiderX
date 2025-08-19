@@ -27,6 +27,7 @@ pub(crate) mod jni_object_owned;
 pub(crate) mod jni_plugin;
 pub(crate) mod jni_plugin_manager;
 pub(crate) mod jni_screen_type;
+pub(crate) mod jni_thread;
 pub(crate) mod jni_webview;
 
 #[unsafe(no_mangle)]
