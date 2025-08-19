@@ -134,6 +134,9 @@ impl WebEngine for JniWebView {
             METHOD_EVALUATE,
             &[JValueGen::Object(&script_obj)],
         );
+        if ret_obj.is_null() {
+            return Ok("".to_string());
+        }
         let ret = jni_handler.get_string(&ret_obj);
         Ok(ret)
     }
