@@ -75,7 +75,7 @@ ext {
 javafx {
     version = jfxVersion
     // Add JavaFx modules
-    modules = ['javafx.base', 'javafx.graphics', 'javafx.controls', 'javafx.fxml']
+    modules = ['javafx.base', 'javafx.graphics', 'javafx.controls', 'javafx.fxml', 'javafx.web']
 }
 
 dependencies {
