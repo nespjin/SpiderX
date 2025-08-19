@@ -6,6 +6,9 @@ import com.nesp.spiderx.runtime.javafx.JavaFxEmptyWebView;
 import com.nesp.spiderx.runtime.javafx.JavaFxWebView;
 import com.nesp.spiderx.runtime.model.ScreenType;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.File;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -16,6 +19,7 @@ import javafx.scene.control.Label;
 
 
 public class HelloController {
+    private static final Logger LOGGER = LogManager.getLogger(HelloController.class);
 
     private final Executor backgroundExecutor = Executors.newSingleThreadExecutor();
 
@@ -43,13 +47,13 @@ public class HelloController {
     @FXML
     public void onRequestClick(ActionEvent actionEvent) {
         backgroundExecutor.execute(() -> {
-            System.out.println("Request Thread " + Thread.currentThread().getName());
+            LOGGER.debug("Request dataset");
             try {
                 pluginManager.requestDataset("com.example.plugin", "user_data");
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            System.out.println("Request Thread End " + Thread.currentThread().getName());
+            LOGGER.debug("Request dataset finished");
         });
     }
 
