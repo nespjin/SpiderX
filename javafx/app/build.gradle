@@ -91,6 +91,10 @@ dependencies {
     implementation 'com.alibaba:fastjson:1.2.79'
     implementation 'org.json:json:20211205'
 
+    implementation 'org.apache.logging.log4j:log4j-api:2.20.0'
+    implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
+    implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0'
+
     implementation project(path: ':core')
     implementation project(path: ':runtime')
     implementation project(path: ':runtime-javafx')

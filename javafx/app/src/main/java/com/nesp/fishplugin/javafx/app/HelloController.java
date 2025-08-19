@@ -41,7 +41,11 @@ public class HelloController {
     public void onRequestClick(ActionEvent actionEvent) {
         backgroundExecutor.execute(() -> {
             System.out.println("Request Thread " + Thread.currentThread().getName());
-            pluginManager.requestDataset("com.example.plugin", "user_data");
+            try {
+                pluginManager.requestDataset("com.example.plugin", "user_data");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             System.out.println("Request Thread End " + Thread.currentThread().getName());
         });
     }
