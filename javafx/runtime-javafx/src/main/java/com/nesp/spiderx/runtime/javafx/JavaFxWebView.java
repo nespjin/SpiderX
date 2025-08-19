@@ -92,10 +92,9 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
 
     @Override
     public void changed(ObservableValue<? extends Worker.State> observable, Worker.State oldValue, Worker.State newValue) {
-        System.out.println("newValue = " + newValue);
         String url = webView.getEngine().getLocation();
         url = url == null ? "" : url;
-        System.out.println("changed Thread " + Thread.currentThread().getName());
+        System.out.println("newValue = " + newValue + " changed Thread " + Thread.currentThread().getName());
         switch (newValue) {
             case READY:
                 break;
