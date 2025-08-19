@@ -10,11 +10,11 @@ import kotlin.concurrent.thread
 open class EmptyJniWebView : JniWebView() {
 
     override fun onInit() {
-        LOGGER.debug("EmptyJniWebView onInit")
+        LOGGER.debug("onInit")
     }
 
     override fun performLoadUrl(url: String) {
-        LOGGER.debug("EmptyJniWebView performLoadUrl")
+        LOGGER.debug("performLoadUrl")
         thread {
             Thread.sleep(1000)
             postMainThread {
@@ -24,20 +24,20 @@ open class EmptyJniWebView : JniWebView() {
     }
 
     override fun performLoadData(data: String) {
-        LOGGER.debug("EmptyJniWebView performLoadData")
+        LOGGER.debug("performLoadData")
     }
 
     override fun performReload() {
-        LOGGER.debug("EmptyJniWebView performReload")
+        LOGGER.debug("performReload")
     }
 
     override fun performEvaluate(javascript: String): String? {
-        LOGGER.debug("EmptyJniWebView performEvaluate")
+        LOGGER.debug("performEvaluate")
         return null
     }
 
     override fun onDestroy() {
-        LOGGER.debug("EmptyJniWebView onDestroy")
+        LOGGER.debug("onDestroy")
     }
 
     companion object {

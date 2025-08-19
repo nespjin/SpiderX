@@ -1,5 +1,6 @@
 package com.nesp.spiderx.runtime
 
+import org.apache.logging.log4j.LogManager
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -16,17 +17,19 @@ abstract class JniWebView {
     private val backgroundExecutor = Executors.newSingleThreadExecutor()
 
     fun init() {
+        LOGGER.debug("init")
         ensureRunOnBackgroundThread()
         postMainThread(::onInit).get()
-        println("JniWebView: init finished")
+        LOGGER.debug("init finished")
     }
 
     abstract fun onInit()
 
     fun loadUrl(url: String) {
+        LOGGER.debug("loadUrl")
         ensureRunOnBackgroundThread()
         postMainThread({ performLoadUrl(url) }).get()
-        println("JniWebView: loadUrl finished")
+        LOGGER.debug("loadUrl finished")
     }
 
     abstract fun performLoadUrl(url: String)
@@ -53,10 +56,12 @@ abstract class JniWebView {
     abstract fun performEvaluate(javascript: String): String?
 
     fun destroy() {
+        LOGGER.debug("destroy")
         ensureRunOnBackgroundThread()
         postMainThread(::onDestroy).get()
         finishBackgroundThread()
         finishMainThread()
+        LOGGER.debug("destroy finished")
     }
 
     abstract fun onDestroy()
@@ -191,6 +196,7 @@ abstract class JniWebView {
     }
 
     companion object {
+        private val LOGGER = LogManager.getLogger(EmptyJniWebView::class.java)
         const val SPIDERX_RUNTIME_JAVASCRIPT_OBJECT_NAME = "spiderxRT"
     }
 }
