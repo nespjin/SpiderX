@@ -2,6 +2,7 @@ package com.nesp.fishplugin.javafx.app;
 
 import com.nesp.spiderx.runtime.EmptyJniWebView;
 import com.nesp.spiderx.runtime.PluginManager;
+import com.nesp.spiderx.runtime.javafx.JavaFxEmptyWebView;
 import com.nesp.spiderx.runtime.javafx.JavaFxWebView;
 import com.nesp.spiderx.runtime.model.ScreenType;
 
@@ -26,7 +27,7 @@ public class HelloController {
     public HelloController() {
         final String databasePath = new File(".").getAbsolutePath() + "/build/plugin.db";
         // pluginManager.init(databasePath, ScreenType.EXPANDED, false, JavaFxWebView.class);
-        pluginManager.init(databasePath, ScreenType.EXPANDED, false, EmptyJniWebView.class);
+        pluginManager.init(databasePath, ScreenType.EXPANDED, false, JavaFxEmptyWebView.class);
     }
 
     @FXML

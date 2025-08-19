@@ -6,7 +6,7 @@ import org.apache.logging.log4j.Logger
 /**
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
  **/
-class EmptyJniWebView : JniWebView() {
+open class EmptyJniWebView : JniWebView() {
 
     override fun onInit() {
         LOGGER.debug("EmptyJniWebView onInit")
