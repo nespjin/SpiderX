@@ -20,8 +20,6 @@ import com.google.gson.Gson;
 import com.nesp.spiderx.runtime.JniWebView;
 import com.nesp.spiderx.runtime.PluginManager;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,6 +27,8 @@ import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ThreadFactory;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -52,6 +52,8 @@ import netscape.javascript.JSObject;
 public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEvent>, ChangeListener<Worker.State> {
     private static final String TAG = "JavaFxWebView";
 //    private static final Logger logger = LogManager.getLogger();
+
+    private static final List<WebView> WEBVIEW_POOLS = new ArrayList<>();
 
     private WebView webView;
     private final ProgressListener progressListener = new ProgressListener(this);
@@ -84,6 +86,7 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
         }
 
         engine.getLoadWorker().progressProperty().addListener(progressListener);
+        WEBVIEW_POOLS.add(webView);
     }
 
     @Override
@@ -153,6 +156,7 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
     public void onDestroy() {
         System.out.println("JavaFxJsRuntimeTask destroy");
         if (webView != null) {
+            WEBVIEW_POOLS.remove(webView);
             webView.getEngine().getLoadWorker().cancel();
             webView.getEngine().setJavaScriptEnabled(false);
             webView.getEngine().getLoadWorker().stateProperty().removeListener(this);
