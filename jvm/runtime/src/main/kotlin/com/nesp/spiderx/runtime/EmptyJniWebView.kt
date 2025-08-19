@@ -2,6 +2,7 @@ package com.nesp.spiderx.runtime
 
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
+import kotlin.concurrent.thread
 
 /**
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
@@ -14,6 +15,12 @@ open class EmptyJniWebView : JniWebView() {
 
     override fun performLoadUrl(url: String) {
         LOGGER.debug("EmptyJniWebView performLoadUrl")
+        thread {
+            Thread.sleep(1000)
+            postMainThread {
+                notifyOnPageFinished(url)
+            }
+        }
     }
 
     override fun performLoadData(data: String) {

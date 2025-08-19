@@ -28,11 +28,11 @@ class PluginManager private constructor() {
 
     private var screenType: ScreenType = ScreenType.COMPACT
 
-    fun init(
+    fun <T : JniWebView> init(
         databasePath: String,
         screenType: ScreenType,
         isCacheEngine: Boolean,
-        webviewClass: Class<*>
+        webviewClass: Class<T>
     ) {
         this.screenType = screenType
         nativeInit(databasePath, screenType, isCacheEngine, webviewClass)
