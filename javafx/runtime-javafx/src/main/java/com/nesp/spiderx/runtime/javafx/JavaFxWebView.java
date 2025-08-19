@@ -65,6 +65,9 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
         final PluginManager pluginManager = PluginManager.getInstance();
 
         webView = new WebView();
+        webView.setVisible(false);
+        webView.setPrefWidth(0);
+        webView.setPrefHeight(0);
         final WebEngine engine = webView.getEngine();
         engine.setUserAgent(pluginManager.getUserAgent());
         engine.setJavaScriptEnabled(true);
