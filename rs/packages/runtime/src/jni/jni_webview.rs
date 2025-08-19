@@ -106,6 +106,7 @@ impl WebEngine for JniWebView {
             METHOD_LOAD_URL,
             &[JValueGen::Object(&url_obj)],
         );
+        jni_handler.delete_local_ref(url_obj);
         Ok(())
     }
 
@@ -117,6 +118,7 @@ impl WebEngine for JniWebView {
             METHOD_LOAD_DATA,
             &[JValueGen::Object(&data_obj)],
         );
+        jni_handler.delete_local_ref(data_obj);
         Ok(())
     }
 
@@ -134,10 +136,12 @@ impl WebEngine for JniWebView {
             METHOD_EVALUATE,
             &[JValueGen::Object(&script_obj)],
         );
+        jni_handler.delete_local_ref(script_obj);
         if ret_obj.is_null() {
             return Ok("".to_string());
         }
         let ret = jni_handler.get_string(&ret_obj);
+        jni_handler.delete_local_ref(ret_obj);
         Ok(ret)
     }
 

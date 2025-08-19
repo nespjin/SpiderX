@@ -43,6 +43,8 @@ impl<'local> JniJson<'local> {
                         jni_methods::MAP_PUT,
                         &[JValueGen::Object(&key_obj), JValueGen::Object(&value)],
                     );
+                    self.handler.delete_local_ref(key_obj);
+                    self.handler.delete_local_ref(value);
                 }
 
                 hash_map_obj
@@ -100,6 +102,8 @@ impl<'local> JniJson<'local> {
                         jni_methods::MAP_PUT,
                         &[JValueGen::Object(&key), JValueGen::Object(&obj)],
                     );
+                    self.handler.delete_local_ref(key);
+                    self.handler.delete_local_ref(obj);
                 }
                 hash_map_obj
             }
