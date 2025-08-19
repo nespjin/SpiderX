@@ -11,6 +11,5 @@
             "database": "${workspaceFolder:SpiderX}/jvm/runtime/build/plugin.db"
         }
     ],
-    "sqltools.useNodeRuntime": true,
-    "window.zoomLevel": 0.5
+    "sqltools.useNodeRuntime": true
 }
