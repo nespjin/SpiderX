@@ -16,19 +16,19 @@ abstract class JniWebView {
     private val backgroundExecutor = Executors.newSingleThreadExecutor()
 
     fun init() {
-        LOGGER.debug("init")
+        LOGGER.trace("init")
         ensureRunOnBackgroundThread()
         postMainThread(::onInit).get()
-        LOGGER.debug("init finished")
+        LOGGER.trace("init finished")
     }
 
     abstract fun onInit()
 
     fun loadUrl(url: String) {
-        LOGGER.debug("loadUrl")
+        LOGGER.trace("loadUrl")
         ensureRunOnBackgroundThread()
         postMainThread({ performLoadUrl(url) }).get()
-        LOGGER.debug("loadUrl finished")
+        LOGGER.trace("loadUrl finished")
     }
 
     abstract fun performLoadUrl(url: String)
@@ -48,6 +48,7 @@ abstract class JniWebView {
     abstract fun performReload()
 
     fun evaluate(javascript: String): String? {
+        LOGGER.trace("evaluate: $javascript")
         ensureRunOnBackgroundThread()
         return postMainThread(Callable { return@Callable performEvaluate(javascript) }).get()
     }
@@ -55,11 +56,11 @@ abstract class JniWebView {
     abstract fun performEvaluate(javascript: String): String?
 
     fun destroy() {
-        LOGGER.debug("destroy")
+        LOGGER.trace("destroy")
         ensureRunOnBackgroundThread()
         postMainThread(::onDestroy).get()
         finishBackgroundThread()
-        LOGGER.debug("destroy finished")
+        LOGGER.trace("destroy finished")
     }
 
     abstract fun onDestroy()
