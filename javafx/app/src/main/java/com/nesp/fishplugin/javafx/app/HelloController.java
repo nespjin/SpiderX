@@ -30,8 +30,8 @@ public class HelloController {
 
     public HelloController() {
         final String databasePath = new File(".").getAbsolutePath() + "/build/plugin.db";
-        // pluginManager.init(databasePath, ScreenType.EXPANDED, false, JavaFxWebView.class);
-        pluginManager.init(databasePath, ScreenType.EXPANDED, false, JavaFxEmptyWebView.class);
+        pluginManager.init(databasePath, ScreenType.EXPANDED, false, JavaFxWebView.class);
+        // pluginManager.init(databasePath, ScreenType.EXPANDED, false, JavaFxEmptyWebView.class);
     }
 
     @FXML

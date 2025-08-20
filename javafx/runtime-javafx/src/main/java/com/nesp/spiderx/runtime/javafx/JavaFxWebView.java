@@ -29,9 +29,6 @@ import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ThreadFactory;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -53,8 +50,6 @@ import netscape.javascript.JSObject;
  **/
 public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEvent>, ChangeListener<Worker.State> {
     private static final Logger LOGGER = LogManager.getLogger(JavaFxWebView.class);
-
-    private static final List<WebView> WEBVIEW_POOLS = new ArrayList<>();
 
     private WebView webView;
     private final ProgressListener progressListener = new ProgressListener(this);
@@ -87,7 +82,6 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
         }
 
         engine.getLoadWorker().progressProperty().addListener(progressListener);
-        WEBVIEW_POOLS.add(webView);
         LOGGER.trace("JavaFxWebView onInit finished");
     }
 
@@ -159,7 +153,6 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
     public void onDestroy() {
         LOGGER.trace("JavaFxWebView onDestroy");
         if (webView != null) {
-            WEBVIEW_POOLS.remove(webView);
             webView.getEngine().getLoadWorker().cancel();
             webView.getEngine().setJavaScriptEnabled(false);
             webView.getEngine().getLoadWorker().stateProperty().removeListener(this);
@@ -170,15 +163,14 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
     }
 
     @Override
-    public boolean isMainThread() {
-        return Platform.isFxApplicationThread();
+    public void dispatchMainThread(@NotNull Runnable task) {
+        Platform.runLater(task);
     }
 
     @Override
-    public @NotNull ThreadFactory getMainThreadFactory() {
-        return new DelegateThreadFactory(Platform::runLater);
+    public boolean isMainThread() {
+        return Platform.isFxApplicationThread();
     }
-
 
     private static class JavaFxSpiderXRuntimeJavaScriptObject implements SpiderXRuntimeJavaScriptObject {
         private final JavaFxWebView webView;

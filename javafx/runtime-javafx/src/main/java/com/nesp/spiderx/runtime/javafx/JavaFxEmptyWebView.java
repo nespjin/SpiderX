@@ -4,8 +4,6 @@ import com.nesp.spiderx.runtime.EmptyJniWebView;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.concurrent.ThreadFactory;
-
 import javafx.application.Platform;
 
 /**
@@ -14,13 +12,12 @@ import javafx.application.Platform;
 public class JavaFxEmptyWebView extends EmptyJniWebView {
 
     @Override
-    public boolean isMainThread() {
-        return Platform.isFxApplicationThread();
+    public void dispatchMainThread(@NotNull Runnable task) {
+        Platform.runLater(task);
     }
 
     @Override
-    public @NotNull ThreadFactory getMainThreadFactory() {
-        return new DelegateThreadFactory(Platform::runLater);
+    public boolean isMainThread() {
+        return Platform.isFxApplicationThread();
     }
-
 }

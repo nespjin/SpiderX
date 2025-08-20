@@ -2,10 +2,10 @@ package com.nesp.spiderx.runtime
 
 import org.apache.logging.log4j.LogManager
 import java.util.concurrent.Callable
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
-import java.util.concurrent.ThreadFactory
 
 /**
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
@@ -13,7 +13,6 @@ import java.util.concurrent.ThreadFactory
 abstract class JniWebView {
     private var mPtr = -1L
 
-    private val mainExecutor = Executors.newSingleThreadExecutor(getMainThreadFactory())
     private val backgroundExecutor = Executors.newSingleThreadExecutor()
 
     fun init() {
@@ -60,7 +59,6 @@ abstract class JniWebView {
         ensureRunOnBackgroundThread()
         postMainThread(::onDestroy).get()
         finishBackgroundThread()
-        finishMainThread()
         LOGGER.debug("destroy finished")
     }
 
@@ -150,13 +148,9 @@ abstract class JniWebView {
 
     open fun isMainThread(): Boolean = true
 
-    private fun finishMainThread() {
-        mainExecutor.shutdown()
-    }
-
     open fun waitMainThread(task: Runnable) {
         val countDownLatch = CountDownLatch(1)
-        mainExecutor.execute({
+        dispatchMainThread({
             task.run()
             countDownLatch.countDown()
         })
@@ -164,29 +158,32 @@ abstract class JniWebView {
     }
 
     open fun postMainThread(task: Runnable): Future<*> {
-        return mainExecutor.submit(task)
+        val result = CompletableFuture<Any>()
+        dispatchMainThread {
+            try {
+                task.run()
+                result.complete(null)
+            } catch (e: Exception) {
+                result.completeExceptionally(e)
+            }
+        }
+        return result
     }
 
     open fun <T> postMainThread(task: Callable<T>): Future<T> {
-        return mainExecutor.submit(task)
-    }
-
-    open fun getMainThreadFactory(): ThreadFactory {
-        return DelegateThreadFactory()
-    }
-
-    class DelegateThreadFactory(
-        private val onTaskRun: OnTaskRun? = null
-    ) : ThreadFactory {
-
-        override fun newThread(r: Runnable): Thread {
-            val runnable = if (onTaskRun == null) r else Runnable { onTaskRun.onRun(r) }
-            return Thread(runnable)
+        val result = CompletableFuture<T>()
+        dispatchMainThread {
+            try {
+                result.complete(task.call())
+            } catch (e: Exception) {
+                result.completeExceptionally(e)
+            }
         }
+        return result
     }
 
-    interface OnTaskRun {
-        fun onRun(runnable: Runnable)
+    open fun dispatchMainThread(task: Runnable) {
+        task.run()
     }
 
     interface SpiderXRuntimeJavaScriptObject {
