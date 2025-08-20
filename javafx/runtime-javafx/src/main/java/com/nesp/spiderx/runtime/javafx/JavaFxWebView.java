@@ -144,6 +144,7 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
         }
 
         final Object ret = engine.executeScript(javascript);
+        LOGGER.trace("{} evaluated result is  {}", javascript, ret);
         if (ret == null) return null;
         if (ret instanceof String) return (String) ret;
         return gson.toJson(ret);

@@ -1,8 +1,6 @@
 package com.nesp.fishplugin.javafx.app;
 
-import com.nesp.spiderx.runtime.EmptyJniWebView;
 import com.nesp.spiderx.runtime.PluginManager;
-import com.nesp.spiderx.runtime.javafx.JavaFxEmptyWebView;
 import com.nesp.spiderx.runtime.javafx.JavaFxWebView;
 import com.nesp.spiderx.runtime.model.ScreenType;
 
@@ -79,7 +77,7 @@ public class HelloController {
                   "js": "function parse(data) { return JSON.parse(data); }",
                   "js@compact": "function parse_compact(data) { return JSON.parse(data); }",
                   "js@medium": "function parse_medium(data) { return JSON.parse(data); }",
-                  "js@expanded": "function parse_expanded(data) { return JSON.parse(data); }",
+                  "js@expanded": "(function parse_expanded(data) { return 1; })();",
                   "dsl": {
                     "fields": [
                       "name",
