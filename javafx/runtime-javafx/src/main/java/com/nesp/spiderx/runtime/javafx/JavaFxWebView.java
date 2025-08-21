@@ -24,7 +24,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.w3c.dom.Document;
 
+import java.io.StringWriter;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
@@ -34,6 +36,12 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -106,7 +114,12 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
             case RUNNING:
                 break;
             case SUCCEEDED:
-                final String document = webView.getEngine().getDocument().getDocumentElement().getTextContent();
+                final String document;
+                try {
+                    document = formatHtmlDocument(webView.getEngine().getDocument());
+                } catch (TransformerException e) {
+                    throw new RuntimeException(e);
+                }
                 notifyOnPageFinished(url, document);
                 break;
             case CANCELLED:
@@ -117,6 +130,19 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
                 notifyOnPageError(url, loadWorker.getException().getMessage());
                 break;
         }
+    }
+
+    private String formatHtmlDocument(Document doc) throws TransformerException {
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+
+        StringWriter writer = new StringWriter();
+        transformer.transform(new DOMSource(doc), new StreamResult(writer));
+
+        return writer.toString();
     }
 
     @Override
