@@ -16,7 +16,7 @@ use core::data::screen_type::ScreenType;
 
 use jni::objects::JObject;
 
-use crate::jni::{jni_handler::JniHandler, jni_handler::JniFieldInfo};
+use crate::jni::{jni_handler::JniFieldInfo, jni_handler::JniHandler};
 
 pub const CLASS_NAME: &'static str = "com/nesp/spiderx/runtime/model/ScreenType";
 
@@ -44,7 +44,7 @@ impl<'local> JniScreenType<'local> {
         self.enum_value_to_screen_type(&enum_value)
     }
 
-    pub fn screen_type_to_java_object(&mut self, screen_type: &ScreenType) -> JObject {
+    pub fn screen_type_to_java_object(&mut self, screen_type: &ScreenType) -> JObject<'local> {
         let enum_value = JniScreenType::get_enum_value_name(screen_type);
         let field_info = if enum_value == FILED_COMPACT.0 {
             FILED_COMPACT
