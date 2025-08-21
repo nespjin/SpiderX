@@ -106,7 +106,8 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
             case RUNNING:
                 break;
             case SUCCEEDED:
-                notifyOnPageFinished(url);
+                final String document = webView.getEngine().getDocument().getDocumentElement().getTextContent();
+                notifyOnPageFinished(url, document);
                 break;
             case CANCELLED:
                 // notifyOnPageCancelled(url);

@@ -34,7 +34,7 @@ use crate::{
 #[derive(Debug, Clone)]
 enum WebEngineEvent {
     PageStarted(String),
-    PageFinished(String),
+    PageFinished(String, String),
     PageCancelled(String),
     PageError(String, String),
     LoadProgress(i32),
@@ -47,7 +47,9 @@ impl Display for WebEngineEvent {
         match self {
             WebEngineEvent::PageStarted(value) => write!(f, "PageStarted {}", value),
             WebEngineEvent::PageCancelled(value) => write!(f, "PageCancelled {}", value),
-            WebEngineEvent::PageFinished(value) => write!(f, "PageFinished {}", value),
+            WebEngineEvent::PageFinished(url, document) => {
+                write!(f, "PageFinished {} {}", url, document)
+            }
             WebEngineEvent::PageError(value, error) => write!(f, "PageError {} {}", value, error),
             WebEngineEvent::LoadProgress(value) => write!(f, "LoadProgress {}", value),
             WebEngineEvent::ReceivedError(value, error) => {
@@ -113,7 +115,7 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
                         thread::current().id()
                     ));
                     match received {
-                        WebEngineEvent::PageFinished(url) => {
+                        WebEngineEvent::PageFinished(url, document) => {
                             if url == self.url {
                                 let ret = webengine.write().unwrap().evaluate(self.js)?;
                                 result = Ok(ret);
@@ -188,11 +190,14 @@ impl WebEngineListener for WebEngineListenerImpl {
         log_utils::logd(&format!("on_page_cancelled {}", url))
     }
 
-    fn on_page_finished(&self, engine: WebEngineMut, url: &str) {
+    fn on_page_finished(&self, engine: WebEngineMut, url: &str, document: &str) {
         let callback = &self.callback;
-        callback(WebEngineEvent::PageFinished(url.to_string()));
+        callback(WebEngineEvent::PageFinished(
+            url.to_string(),
+            document.to_string(),
+        ));
 
-        log_utils::logd(&format!("on_page_finished {}", url))
+        log_utils::logd(&format!("on_page_finished {} {}", url, document))
     }
 
     fn on_page_error(&self, engine: WebEngineMut, url: &str, error: &str) {

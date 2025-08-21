@@ -77,11 +77,11 @@ abstract class JniWebView {
 
     private external fun nativeNotifyOnPageCancelled(url: String)
 
-    fun notifyOnPageFinished(url: String) {
-        nativeNotifyOnPageFinished(url)
+    fun notifyOnPageFinished(url: String, document: String) {
+        nativeNotifyOnPageFinished(url, document)
     }
 
-    private external fun nativeNotifyOnPageFinished(url: String)
+    private external fun nativeNotifyOnPageFinished(url: String, document: String)
 
     fun notifyOnPageError(url: String, error: String) {
         nativeNotifyOnPageError(url, error)

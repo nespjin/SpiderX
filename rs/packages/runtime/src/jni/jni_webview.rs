@@ -255,15 +255,20 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
     mut env: JNIEnv,
     this: JObject<'local>,
     url: JString,
+    document: JString,
 ) {
     let url: String = env.get_string(&url).expect("get url failed").into();
+    let document: String = env
+        .get_string(&document)
+        .expect("get document failed")
+        .into();
 
     let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
     jni_wv
         .read()
         .unwrap()
         .listener()
-        .map(|l| l.on_page_finished(jni_wv.clone(), &url));
+        .map(|l| l.on_page_finished(jni_wv.clone(), &url, &document));
 }
 
 #[unsafe(no_mangle)]

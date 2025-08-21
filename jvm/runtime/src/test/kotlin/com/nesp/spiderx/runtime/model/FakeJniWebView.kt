@@ -27,7 +27,7 @@ class FakeJniWebView : JniWebView() {
             LOGGER.trace("shouldInterceptRequest: $shouldInterceptRequest")
             val shouldOverrideUrlLoading = notifyOnShouldOverrideUrlLoading(url)
             LOGGER.trace("shouldOverrideUrlLoading: $shouldOverrideUrlLoading")
-            notifyOnPageFinished(url)
+            notifyOnPageFinished(url, "")
         }
     }
 

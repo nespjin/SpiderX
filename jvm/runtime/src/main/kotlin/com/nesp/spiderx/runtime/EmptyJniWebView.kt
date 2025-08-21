@@ -18,7 +18,7 @@ open class EmptyJniWebView : JniWebView() {
         thread {
             Thread.sleep(1000)
             postMainThread {
-                notifyOnPageFinished(url)
+                notifyOnPageFinished(url, "")
             }
         }
     }

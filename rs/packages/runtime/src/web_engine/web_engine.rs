@@ -61,7 +61,7 @@ pub trait WebEngineListener: Send + Sync {
 
     fn on_page_cancelled(&self, engine: WebEngineMut, url: &str);
 
-    fn on_page_finished(&self, engine: WebEngineMut, url: &str);
+    fn on_page_finished(&self, engine: WebEngineMut, url: &str, document: &str);
 
     fn on_page_error(&self, engine: WebEngineMut, url: &str, error: &str);
 
