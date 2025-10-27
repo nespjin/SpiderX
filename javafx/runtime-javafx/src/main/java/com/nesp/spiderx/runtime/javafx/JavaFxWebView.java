@@ -26,7 +26,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 
+import java.io.IOException;
 import java.io.StringWriter;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
@@ -62,12 +66,63 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
     private WebView webView;
     private final ProgressListener progressListener = new ProgressListener(this);
     private final Gson gson = new Gson();
+    private final JavaBridge javaBridge = new JavaBridge();
+    private static final String preloadJavaScript = """
+            // 创建请求代理
+            function createRequestProxy() {
+                java.print('拦截请求');
+            
+                document.addEventListener('beforeload', (e) => {
+                    const targetUrl = e.target.src || e.target.href;
+                    java.print('Loading ' + targetUrl);
+                }, true);
+            
+                document.addEventListener('fetch', (e) => {
+                    const targetUrl = e.request.url;
+                    java.print('Loading ' + targetUrl);
+                }, true);
+            
+                // 拦截 fetch
+                const originalFetch = window.fetch;
+                window.fetch = async function(...args) {
+                    console.log('拦截请求:', args[0]);
+                    java.print('拦截请求 ' + args[0]);
+            
+                    // 可以在这里修改请求参数
+                    const modifiedArgs = modifyRequestArgs(args);
+            
+                    try {
+                        const response = await originalFetch.apply(this, modifiedArgs);
+                        console.log('请求响应:', response);
+                        return response;
+                    } catch (error) {
+                        console.error('请求失败:', error);
+                        throw error;
+                    }
+                };
+            
+                // 拦截 XMLHttpRequest
+                const originalXHROpen = XMLHttpRequest.prototype.open;
+                XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+                    console.log('XHR 请求:', method, url);
+                    java.print('XHR 请求: ' + ' ' + method + ' ' + url);
+                    this._url = url; // 保存 URL 供后续使用
+                    return originalXHROpen.apply(this, [method, url, ...rest]);
+                };
+            }
+            
+            createRequestProxy();
+            java.print('createRequestProxy finished');
+            """;
 
     @Override
     public void onInit() {
         if (webView != null) {
             return;
         }
+
+        initURL();
+
         final PluginManager pluginManager = PluginManager.getInstance();
 
         webView = new WebView();
@@ -79,6 +134,12 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
         engine.setJavaScriptEnabled(true);
         engine.setOnError(this);
         engine.getLoadWorker().stateProperty().addListener(this);
+        engine.getLoadWorker().progressProperty().addListener(progressListener);
+        LOGGER.trace("JavaFxWebView onInit finished");
+    }
+
+    private static void initURL() {
+        // setupURLStreamHandler();
 
         final SSLContext sslContext;
         try {
@@ -88,9 +149,17 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
         } catch (GeneralSecurityException e) {
             LOGGER.error("SSLContext Failed: ", e);
         }
+    }
 
-        engine.getLoadWorker().progressProperty().addListener(progressListener);
-        LOGGER.trace("JavaFxWebView onInit finished");
+    private static void setupURLStreamHandler() {
+        try {
+            URL.setURLStreamHandlerFactory(protocol -> {
+                LOGGER.trace("The protocol is {}", protocol);
+                return "https".equals(protocol) || "http".equals(protocol) ?
+                        new WebURLStreamHandler() : null;
+            });
+        } catch (Exception ignore) {
+        }
     }
 
     @Override
@@ -109,6 +178,10 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
             case READY:
                 break;
             case SCHEDULED:
+                final WebEngine engine = webView.getEngine();
+                JSObject window = (JSObject) engine.executeScript("window");
+                window.setMember("java", javaBridge);
+                engine.executeScript(preloadJavaScript);
                 notifyOnPageStarted(url);
                 break;
             case RUNNING:
@@ -250,4 +323,50 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
             return new X509Certificate[0];
         }
     }
+
+    public static class JavaBridge {
+        public void print(String message) {
+            System.out.println("From JavaScript: " + message);
+        }
+    }
+
+    private static class WebURLStreamHandler extends URLStreamHandler {
+        @Override
+        protected URLConnection openConnection(URL url) throws IOException {
+            final String originUrl = url.toString();
+
+            LOGGER.trace("Loading url:{}", originUrl);
+
+            URLConnection originalConn = createSecureConnection(url);
+            originalConn.setRequestProperty("Cache-Control", "no-cache");
+
+            return originalConn;
+        }
+    }
+
+    /**
+     * 创建 HTTP/HTTPS 连接（HTTPS 信任所有证书，测试用）
+     */
+    private static URLConnection createSecureConnection(URL url) throws IOException {
+        URLConnection conn;
+        if ("https".equals(url.getProtocol())) {
+            HttpsURLConnection httpsConn = (HttpsURLConnection) url.openConnection();
+            // HTTPS 证书配置（测试环境专用，生产需替换为合法证书）
+            final SSLContext sslContext;
+            try {
+                sslContext = SSLContext.getInstance("SSL");
+                sslContext.init(null, new TrustManager[]{new EmptyX509TrustManager()}, new SecureRandom());
+                httpsConn.setSSLSocketFactory(sslContext.getSocketFactory());
+            } catch (GeneralSecurityException e) {
+                LOGGER.error("SSLContext Failed: ", e);
+            }
+            httpsConn.setHostnameVerifier((hostname, session) -> true);
+            conn = httpsConn;
+        } else {
+            conn = url.openConnection();
+        }
+        return conn;
+    }
+
 }
+
