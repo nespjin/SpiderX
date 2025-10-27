@@ -1,3 +1,4 @@
+mod frb_generated; /* AUTO INJECTED BY flutter_rust_bridge. This line may not be accurate, and you can change it according to your needs. */
 // Copyright (c) 2025. NESP Technology Corporation.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,3 +37,5 @@ pub(crate) mod web_engine;
 // #[cfg(any(target_os = "android", feature = "jni"))]
 #[allow(non_snake_case)]
 pub(crate) mod jni;
+
+pub(crate) mod dart;
