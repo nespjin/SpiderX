@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use jni::{
+    JNIVersion,
+    sys::{JNI_VERSION_1_1, JNI_VERSION_1_2, JNI_VERSION_1_4, JNI_VERSION_1_6, JNI_VERSION_1_8},
+};
+
 use crate::jni::jni_handler::JVM;
 
 pub(crate) mod jni_classes;
@@ -35,7 +40,20 @@ pub extern "system" fn JNI_OnLoad(
     vm: jni::JavaVM,
     _reserved: *mut std::ffi::c_void,
 ) -> jni::sys::jint {
+    let jni_version = vm
+        .get_env()
+        .expect("Failed to create JNIEnv")
+        .get_version()
+        .expect("Failed to get JNI version");
+    let jni_version_int = match jni_version {
+        JNIVersion::V1 => JNI_VERSION_1_1,
+        JNIVersion::V2 => JNI_VERSION_1_2,
+        JNIVersion::V4 => JNI_VERSION_1_4,
+        JNIVersion::V6 => JNI_VERSION_1_6,
+        JNIVersion::V8 => JNI_VERSION_1_8,
+        JNIVersion::Invalid(v) => v,
+    };
+    log::info!("JNI_OnLoad: {}", jni_version_int);
     JVM.set(vm).expect("Failed to set global JavaVM");
-    // jni::sys::JNI_VERSION_1_8
-    0x000a0000 // Java 10
+    jni_version_int
 }
