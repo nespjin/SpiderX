@@ -32,8 +32,6 @@ dependencyResolutionManagement {
         maven { url "https://plugins.gradle.org/m2/" }
         mavenCentral()
         google()
-        mavenCentral()
-        // Warning: this repository is going to shut down soon
     }
 }
 rootProject.name = "android"
