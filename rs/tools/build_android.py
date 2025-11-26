@@ -36,8 +36,11 @@ def main():
         else:
             # Copy the shared library to the current directory
             script_path = os.path.dirname(os.path.abspath(__file__))
+            source_path = f"{script_path}/../target/{target}/release/libspiderx_runtime.so"
             target_archive_dir = f"{script_path}/../../android/app/src/main/jniLibs/{archive_dirs[target]}"
-            os.system(f'cp {script_path}/../target/{target}/release/libspiderx_runtime.so {target_archive_dir}/')
+            print(f"Copying {source_path} to {target_archive_dir}")
+            os.makedirs(target_archive_dir, exist_ok=True)
+            os.system(f'cp {source_path} {target_archive_dir}/')
             print(f"Successfully built for {target}")
 
 if __name__ == '__main__':
