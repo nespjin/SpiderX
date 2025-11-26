@@ -197,7 +197,7 @@ impl WebEngineListener for WebEngineListenerImpl {
             document.to_string(),
         ));
 
-        log_utils::logd(&format!("on_page_finished {} {}", url, document))
+        log_utils::logd(&format!("on_page_finished {} {}", url, ""))
     }
 
     fn on_page_error(&self, engine: WebEngineMut, url: &str, error: &str) {
@@ -218,6 +218,7 @@ impl WebEngineListener for WebEngineListenerImpl {
     }
 
     fn should_override_url_loading(&self, engine: WebEngineMut, url: &str) -> bool {
+        log_utils::logd(&format!("should_override_url_loading {}", url));
         true
     }
 
