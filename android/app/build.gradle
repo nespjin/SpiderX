@@ -20,7 +20,7 @@ plugins {
 }
 
 android {
-    compileSdk 31
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.nesp.fishplugin.sample.android"
@@ -96,5 +96,12 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
-    implementation project(':movie-runtime-android')
+    implementation 'org.apache.logging.log4j:log4j-api:2.20.0'
+    implementation 'org.apache.logging.log4j:log4j-core:2.20.0'
+    implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.20.0'
+
+    // implementation project(':movie-runtime-android')
+    implementation project(path: ':core')
+    implementation project(path: ':runtime')
+    implementation project(path: ':runtime-android')
 }
