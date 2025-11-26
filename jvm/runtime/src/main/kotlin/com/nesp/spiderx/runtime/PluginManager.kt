@@ -26,6 +26,7 @@ import com.nesp.spiderx.runtime.model.ScreenType
 
 class PluginManager private constructor() {
 
+    private val cache = mutableMapOf<String, Any>()
     private var screenType: ScreenType = ScreenType.COMPACT
 
     fun <T : JniWebView> init(
@@ -36,6 +37,23 @@ class PluginManager private constructor() {
     ) {
         this.screenType = screenType
         nativeInit(databasePath, screenType, isCacheEngine, webviewClass)
+    }
+
+    fun setCache(key: String, value: Any) {
+        cache[key] = value
+    }
+
+    fun <T> getCache(key: String): T? {
+        @Suppress("UNCHECKED_CAST")
+        return cache[key] as? T
+    }
+
+    fun setAndroidContext(context: Any) {
+        setCache("AndroidContext", context)
+    }
+
+    fun getAndroidContext(): Any? {
+        return getCache("AndroidContext")
     }
 
     fun setScreenType(screenType: ScreenType) {
