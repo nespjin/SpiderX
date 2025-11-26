@@ -33,6 +33,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        pluginManager.setAndroidContext(applicationContext)
         val databasePath = getDatabasePath("plugin.db").absolutePath
 
 
