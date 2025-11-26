@@ -18,6 +18,10 @@ package com.nesp.spiderx.runtime.android
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.http.SslError
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.webkit.CookieManager
 import android.webkit.CookieSyncManager
 import android.webkit.JavascriptInterface
@@ -32,22 +36,28 @@ import android.webkit.WebViewClient
 import android.widget.LinearLayout
 import com.nesp.spiderx.runtime.JniWebView
 import com.nesp.spiderx.runtime.PluginManager
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 /**
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
  **/
-class AndroidWebView(private var context: Context?) : JniWebView() {
+class AndroidWebView : JniWebView() {
 
     private var webView: WebView? = null
+    private val mainHandler: Handler by lazy { Handler(Looper.getMainLooper(), null) }
 
     override fun onInit() {
+        Log.d(TAG, "onInit: ")
         if (webView != null) return
-
         val pluginManager = PluginManager.instance
 
-        webView = WebView(context!!).apply {
+        val context = pluginManager.getAndroidContext() as Context
+        webView = WebView(context).apply {
             visibility = WebView.INVISIBLE
             layoutParams = LinearLayout.LayoutParams(1, 1)
             clearFocus()
@@ -99,18 +109,24 @@ class AndroidWebView(private var context: Context?) : JniWebView() {
     }
 
     override fun performEvaluate(javascript: String): String? {
-        val ret = CompletableFuture<String>()
-        webView?.evaluateJavascript(javascript, ret::complete)
-        return try {
-            ret.get(500, TimeUnit.MILLISECONDS)
-        } catch (_: Exception) {
-            null
+        val webView = this.webView ?: return null
+
+        var result: String? = null
+        val lock = Object()
+
+        webView.evaluateJavascript(javascript, {
+            result = it
+            lock.notifyAll()
+        })
+        while (result == null) {
+            synchronized(lock) {
+                lock.wait(500)
+            }
         }
+        return result
     }
 
     override fun onDestroy() {
-        context = null
-
         if (webView != null) {
             webView?.removeAllViews()
             webView?.settings?.javaScriptEnabled = false
@@ -120,10 +136,13 @@ class AndroidWebView(private var context: Context?) : JniWebView() {
             webView?.destroy()
             webView = null
         }
+
+        mainHandler.removeCallbacksAndMessages(null)
     }
 
     private fun enableCokie(webView: WebView) {
         val cookieManager = CookieManager.getInstance()
+        val context = PluginManager.instance.getAndroidContext() as Context
         CookieSyncManager.createInstance(context)
         cookieManager.setAcceptCookie(true)
         cookieManager.setAcceptThirdPartyCookies(webView, true)
@@ -158,9 +177,14 @@ class AndroidWebView(private var context: Context?) : JniWebView() {
             error: WebResourceError?
         ) {
             super.onReceivedError(view, request, error)
+            val errorMessage = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                error?.description?.toString() ?: ""
+            } else {
+                "Error when load ${request?.url} $error"
+            }
             webView.notifyOnPageError(
                 request?.url?.toString() ?: "",
-                error?.description?.toString() ?: ""
+                errorMessage
             )
         }
 
@@ -182,8 +206,9 @@ class AndroidWebView(private var context: Context?) : JniWebView() {
         override fun onPageFinished(view: WebView?, url: String?) {
             super.onPageFinished(view, url)
             val javascript = "'<html>'+document.getElementsByTagName('html')[0].innerHTML+'</html>'"
-            val document = webView.evaluate(javascript) ?: ""
-            webView.notifyOnPageFinished(url ?: "", document)
+            webView.webView?.evaluateJavascript(javascript, { result ->
+                webView.notifyOnPageFinished(url ?: "", result ?: "")
+            })
         }
     }
 
@@ -203,4 +228,16 @@ class AndroidWebView(private var context: Context?) : JniWebView() {
         }
     }
 
+    override fun dispatchMainThread(task: Runnable) {
+        Log.d("AndroidWebView", "dispatchMainThread: $mainHandler")
+        mainHandler.post(task)
+    }
+
+    override fun isMainThread(): Boolean {
+        return Looper.getMainLooper() == Looper.myLooper()
+    }
+
+    companion object {
+        private const val TAG = "AndroidWebView"
+    }
 }
