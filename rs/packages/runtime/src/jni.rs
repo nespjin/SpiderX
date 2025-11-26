@@ -36,5 +36,6 @@ pub extern "system" fn JNI_OnLoad(
     _reserved: *mut std::ffi::c_void,
 ) -> jni::sys::jint {
     JVM.set(vm).expect("Failed to set global JavaVM");
-    jni::sys::JNI_VERSION_1_8
+    // jni::sys::JNI_VERSION_1_8
+    0x000a0000 // Java 10
 }

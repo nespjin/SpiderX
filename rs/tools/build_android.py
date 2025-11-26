@@ -9,6 +9,10 @@ def main():
     toolchain_targets = {
         "armv7-linux-androideabi": "armv7a-linux-androideabi",
     }
+    archive_dirs = {
+        "armv7-linux-androideabi": "armeabi-v7a",
+        "aarch64-linux-android": "arm64-v8a",
+    }
 
     for target in targets:
         os.system(f'rustup target add {target}')
@@ -30,6 +34,10 @@ def main():
             print(f"Failed to build for {target}")
             break
         else:
+            # Copy the shared library to the current directory
+            script_path = os.path.dirname(os.path.abspath(__file__))
+            target_archive_dir = f"{script_path}/../../android/app/src/main/jniLibs/{archive_dirs[target]}"
+            os.system(f'cp {script_path}/../target/{target}/release/libspiderx_runtime.so {target_archive_dir}/')
             print(f"Successfully built for {target}")
 
 if __name__ == '__main__':
