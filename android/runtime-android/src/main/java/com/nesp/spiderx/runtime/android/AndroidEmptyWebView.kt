@@ -23,7 +23,7 @@ import com.nesp.spiderx.runtime.EmptyJniWebView
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
  **/
 class AndroidEmptyWebView : EmptyJniWebView() {
-    private val mainHandler = Handler(Looper.getMainLooper(), null)
+    private val mainHandler: Handler by lazy { Handler(Looper.getMainLooper(), null) }
 
     override fun dispatchMainThread(task: Runnable) {
         mainHandler.post(task)
