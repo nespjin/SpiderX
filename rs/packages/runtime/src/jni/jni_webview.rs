@@ -20,10 +20,12 @@ use jni::{
 use once_cell::sync::OnceCell;
 
 use crate::{
-    jni::jni_handler::{JniFieldInfo, JniHandler, JniMethodInfo}, utils::log_utils, web_engine::{
+    jni::jni_handler::{JniFieldInfo, JniHandler, JniMethodInfo},
+    utils::log_utils,
+    web_engine::{
         web_engine::{WebEngine, WebEngineListenerArc, WebEngineMut},
         web_engine_manager::WebEngineManager,
-    }
+    },
 };
 
 // const JAVA_CLASS_NAME_WV: &'static str = "com/nesp/spiderx/runtime/JniWebView";
@@ -298,15 +300,17 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
 >(
     mut env: JNIEnv,
     this: JObject<'local>,
+    url: JString,
     progress: jint,
 ) {
+    let url: String = env.get_string(&url).expect("get url failed").into();
     let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
 
     jni_wv
         .read()
         .unwrap()
         .listener()
-        .map(|l| l.on_load_progress(jni_wv.clone(), progress));
+        .map(|l| l.on_load_progress(jni_wv.clone(), &url, progress));
 }
 
 #[unsafe(no_mangle)]

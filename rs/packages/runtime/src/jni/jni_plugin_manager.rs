@@ -20,12 +20,17 @@ use jni::sys::jboolean;
 use jni::sys::jint;
 use jni::sys::jobject;
 use jni::sys::jstring;
+use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::OnceLock;
 
 use crate::device::device_manager::DeviceManager;
+use crate::executor::request_dataset_listener::RequestDatasetListener;
+use crate::executor::request_dataset_listener::RequestDatasetListenerWrpper;
+use crate::executor::request_dataset_listener::RequestJavaScriptDatasetListener;
 use crate::jni::jni_classes;
 use crate::jni::jni_handler::JniHandler;
+use crate::jni::jni_handler::JniMethodInfo;
 use crate::jni::jni_methods;
 use crate::jni::jni_plugin::JniPlugin;
 use crate::jni::jni_screen_type::JniScreenType;
@@ -33,6 +38,7 @@ use crate::jni::jni_webview::JAVA_WEBVIEW_CLASS;
 use crate::plugin_manager::PluginManager;
 use crate::plugin_manager::PluginManagerConfig;
 use crate::plugin_manager::PluginSource;
+use crate::plugin_manager::RequestType;
 use crate::utils::log_utils;
 use crate::web_engine::web_engine_manager::WebEngineManager;
 
@@ -246,6 +252,8 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     _this: JObject,
     pluginId: JString,
     datasetId: JString,
+    r#type: jint,
+    listener: JObject,
 ) -> jstring {
     let mut handler = JniHandler::new_with_env(env);
     let plugin_id = handler.get_string(&pluginId);
@@ -253,7 +261,30 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
 
     let data = {
         let plugin_manager = PluginManager::get_instance().lock().unwrap();
-        plugin_manager.request_dataset(&plugin_id, &dataset_id)
+
+        let mut request_type = RequestType::try_from(r#type).unwrap();
+        request_type = match request_type {
+            RequestType::Auto => plugin_manager
+                .auto_request_type(&plugin_id, &dataset_id)
+                .unwrap(),
+            _ => request_type,
+        };
+
+        let jni_listener = handler.new_global_ref(listener);
+
+        let listener: Option<RequestDatasetListenerWrpper> = match request_type {
+            RequestType::Auto => None,
+            RequestType::JavaScript => {
+                let data = JniRequestJavaScriptDatasetListener::new(jni_listener);
+                Some(RequestDatasetListenerWrpper::Dataset(Arc::new(data)))
+            }
+            RequestType::Dsl => {
+                let data = JniRequestDatasetListener::new(jni_listener);
+                Some(RequestDatasetListenerWrpper::Dataset(Arc::new(data)))
+            }
+        };
+
+        plugin_manager.request_dataset(&plugin_id, &dataset_id, request_type, listener)
     };
 
     log_utils::logd(&format!(
@@ -266,4 +297,167 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     data.map(|e| handler.new_string(&e))
         .map(|e| e.into_raw())
         .unwrap_or(JObject::null().into_raw())
+}
+
+struct JniRequestDatasetListener {
+    jni_listener: GlobalRef,
+}
+
+impl JniRequestDatasetListener {
+    fn new(jni_listener: GlobalRef) -> Self {
+        Self {
+            jni_listener: jni_listener,
+        }
+    }
+}
+
+const REQUEST_DATASET_LISTENER_ON_RECEIVED_DATA: JniMethodInfo =
+    ("onReceivedData", "(Ljava/lang/String;Ljava/lang/String;)V");
+const REQUEST_DATASET_LISTENER_ON_RECEIVED_ERROR: JniMethodInfo =
+    ("onReceivedError", "(Ljava/lang/String;Ljava/lang/String;)V");
+const REQUEST_DATASET_LISTENER_ON_PAGE_STARTED: JniMethodInfo =
+    ("onPageStarted", "(Ljava/lang/String;)V");
+const REQUEST_DATASET_LISTENER_ON_PAGE_CANCELLED: JniMethodInfo =
+    ("onPageCancelled", "(Ljava/lang/String;)V");
+const REQUEST_DATASET_LISTENER_ON_PAGE_FINISHED: JniMethodInfo =
+    ("onPageFinished", "(Ljava/lang/String;)V");
+const REQUEST_DATASET_LISTENER_ON_PAGE_ERROR: JniMethodInfo =
+    ("onPageError", "(Ljava/lang/String;Ljava/lang/String;)V");
+const REQUEST_DATASET_LISTENER_ON_LOAD_PROGRESS: JniMethodInfo =
+    ("onLoadProgress", "(Ljava/lang/String;I)V");
+
+fn handle_on_receive_data(jni_listener: &GlobalRef, url: &str, data: &str) {
+    let mut jni_handler = JniHandler::new();
+    let url_obj = jni_handler.new_string(url);
+    let data_obj = jni_handler.new_string(data);
+
+    jni_handler.call_method(
+        jni_listener,
+        REQUEST_DATASET_LISTENER_ON_RECEIVED_DATA,
+        &[JValueGen::Object(&url_obj), JValueGen::Object(&data_obj)],
+    );
+
+    jni_handler.delete_local_ref(url_obj);
+    jni_handler.delete_local_ref(data_obj);
+}
+
+fn handle_on_receive_error(jni_listener: &GlobalRef, url: &str, error: &str) {
+    let mut jni_handler = JniHandler::new();
+    let url_obj = jni_handler.new_string(url);
+    let error_obj = jni_handler.new_string(error);
+
+    jni_handler.call_method(
+        jni_listener,
+        REQUEST_DATASET_LISTENER_ON_RECEIVED_ERROR,
+        &[JValueGen::Object(&url_obj), JValueGen::Object(&error_obj)],
+    );
+
+    jni_handler.delete_local_ref(url_obj);
+    jni_handler.delete_local_ref(error_obj);
+}
+
+impl RequestDatasetListener for JniRequestDatasetListener {
+    fn on_receive_data(&self, url: &str, data: &str) {
+        handle_on_receive_data(&self.jni_listener, url, data);
+    }
+
+    fn on_receive_error(&self, url: &str, error: &str) {
+        handle_on_receive_error(&self.jni_listener, url, error);
+    }
+}
+
+struct JniRequestJavaScriptDatasetListener {
+    jniListener: GlobalRef,
+}
+
+impl JniRequestJavaScriptDatasetListener {
+    fn new(jni_listener: GlobalRef) -> Self {
+        Self {
+            jniListener: jni_listener,
+        }
+    }
+}
+
+impl RequestDatasetListener for JniRequestJavaScriptDatasetListener {
+    fn on_receive_data(&self, url: &str, data: &str) {
+        handle_on_receive_data(&self.jniListener, url, data);
+    }
+
+    fn on_receive_error(&self, url: &str, error: &str) {
+        handle_on_receive_error(&self.jniListener, url, error);
+    }
+}
+
+impl RequestJavaScriptDatasetListener for JniRequestJavaScriptDatasetListener {
+    fn on_page_started(&self, url: &str) {
+        let mut jni_handler = JniHandler::new();
+        let url_obj = jni_handler.new_string(url);
+
+        jni_handler.call_method(
+            &self.jniListener,
+            REQUEST_DATASET_LISTENER_ON_PAGE_STARTED,
+            &[JValueGen::Object(&url_obj)],
+        );
+
+        jni_handler.delete_local_ref(url_obj);
+    }
+
+    fn on_page_cancelled(&self, url: &str) {
+        let mut jni_handler = JniHandler::new();
+        let url_obj = jni_handler.new_string(url);
+
+        jni_handler.call_method(
+            &self.jniListener,
+            REQUEST_DATASET_LISTENER_ON_PAGE_CANCELLED,
+            &[JValueGen::Object(&url_obj)],
+        );
+
+        jni_handler.delete_local_ref(url_obj);
+    }
+
+    fn on_page_finished(&self, url: &str, document: &str) {
+        let mut jni_handler = JniHandler::new();
+        let url_obj = jni_handler.new_string(url);
+        let document_obj = jni_handler.new_string(document);
+
+        jni_handler.call_method(
+            &self.jniListener,
+            REQUEST_DATASET_LISTENER_ON_PAGE_FINISHED,
+            &[
+                JValueGen::Object(&url_obj),
+                JValueGen::Object(&document_obj),
+            ],
+        );
+
+        jni_handler.delete_local_ref(url_obj);
+        jni_handler.delete_local_ref(document_obj);
+    }
+
+    fn on_page_error(&self, url: &str, error: &str) {
+        let mut jni_handler = JniHandler::new();
+        let url_obj = jni_handler.new_string(url);
+        let error_obj = jni_handler.new_string(error);
+
+        jni_handler.call_method(
+            &self.jniListener,
+            REQUEST_DATASET_LISTENER_ON_PAGE_ERROR,
+            &[JValueGen::Object(&url_obj), JValueGen::Object(&error_obj)],
+        );
+
+        jni_handler.delete_local_ref(url_obj);
+        jni_handler.delete_local_ref(error_obj);
+    }
+
+    fn on_load_progress(&self, url: &str, progress: i32) {
+        let mut jni_handler = JniHandler::new();
+        let url_obj = jni_handler.new_string(url);
+
+        jni_handler.call_method(
+            &self.jniListener,
+            REQUEST_DATASET_LISTENER_ON_LOAD_PROGRESS,
+            &[JValueGen::Object(&url_obj), JValueGen::Int(progress)],
+        );
+
+        jni_handler.delete_local_ref(url_obj);
+    }
 }
