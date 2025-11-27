@@ -21,6 +21,7 @@ import android.util.Log
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.nesp.spiderx.runtime.PluginManager
+import com.nesp.spiderx.runtime.RequestJavaScriptDatasetListener
 import com.nesp.spiderx.runtime.android.AndroidWebView
 import com.nesp.spiderx.runtime.model.ScreenType
 import java.util.concurrent.Executor
@@ -64,7 +65,16 @@ class MainActivity : AppCompatActivity() {
         backgroundExecutor.execute {
             Log.d(TAG, "request: dataset")
             try {
-                pluginManager.requestDataset("com.example.plugin", "user_data")
+                pluginManager.requestDataset(
+                    "com.example.plugin",
+                    "user_data",
+                    type = PluginManager.RequestType.JavaScript,
+                    listener = object : RequestJavaScriptDatasetListener() {
+                        override fun onPageStarted(url: String) {
+                            Log.d(TAG, "request: page started $url")
+                        }
+
+                    })
             } catch (e: Exception) {
                 e.printStackTrace()
             }
