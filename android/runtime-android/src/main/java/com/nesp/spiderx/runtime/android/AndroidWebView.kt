@@ -115,12 +115,14 @@ class AndroidWebView : JniWebView() {
             } catch (_: Exception) {
             }
         })
-        while (result == null) {
+        var waitTakeTime = 0L
+        while (result == null && waitTakeTime < 500) {
             try {
-                lock.wait(500)
+                lock.wait(2)
+                waitTakeTime += 2
             } catch (_: Exception) {
+                break
             }
-            break
         }
         return result
     }
