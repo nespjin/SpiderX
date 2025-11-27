@@ -18,6 +18,7 @@ package com.nesp.spiderx.runtime
 
 import com.nesp.spiderx.runtime.model.Plugin
 import com.nesp.spiderx.runtime.model.ScreenType
+import java.io.File
 
 /**
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
@@ -80,7 +81,8 @@ class PluginManager private constructor() {
     }
 
     fun installPluginJsonFile(jsonFilePath: String) {
-        nativeInstallPlugin(PLUGIN_SOURCE_TYPE_JSON_FILE, jsonFilePath.toByteArray())
+        val jsonBytes = File(jsonFilePath).inputStream().readBytes()
+        nativeInstallPlugin(PLUGIN_SOURCE_TYPE_JSON_FILE, jsonBytes)
     }
 
     private fun installPlugin(sourceType: Int, source: ByteArray) {
