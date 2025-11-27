@@ -107,6 +107,7 @@ class PluginManager private constructor() {
         return nativeUninstallPlugin(id)
     }
 
+    @JvmOverloads
     fun requestDataset(
         pluginId: String,
         datasetId: String,
