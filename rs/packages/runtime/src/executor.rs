@@ -15,3 +15,5 @@
 pub(crate) mod dataset_executor;
 pub(crate) mod dsl_dataset_executor;
 pub(crate) mod javascript_dataset_executor;
+pub mod request_dataset_listener;
+pub mod request_javascript_dataset_config;

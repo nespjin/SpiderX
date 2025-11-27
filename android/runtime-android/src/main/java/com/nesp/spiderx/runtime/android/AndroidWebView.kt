@@ -145,7 +145,7 @@ class AndroidWebView : JniWebView() {
     private class DefaultWebChromeClient(private val webView: AndroidWebView) : WebChromeClient() {
         override fun onProgressChanged(view: WebView?, newProgress: Int) {
             super.onProgressChanged(view, newProgress)
-            webView.notifyOnLoadProgress(newProgress)
+            webView.notifyOnLoadProgress(view?.url ?: "", newProgress)
         }
 
     }
