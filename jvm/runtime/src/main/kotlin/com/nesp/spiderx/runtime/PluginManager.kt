@@ -29,6 +29,8 @@ class PluginManager private constructor() {
 
     private val cache = mutableMapOf<String, Any>()
     private var screenType: ScreenType = ScreenType.COMPACT
+    var requestJavaScriptDatasetConfig: RequestJavaScriptDatasetConfig =
+        RequestJavaScriptDatasetConfig()
 
     fun <T : JniWebView> init(
         databasePath: String,
@@ -105,8 +107,18 @@ class PluginManager private constructor() {
         return nativeUninstallPlugin(id)
     }
 
-    fun requestDataset(pluginId: String, datasetId: String): String? {
-        return nativeRequestDataset(pluginId, datasetId)
+    fun requestDataset(
+        pluginId: String,
+        datasetId: String,
+        type: RequestType = RequestType.AUTO,
+        listener: RequestDatasetListener? = null,
+    ): String? {
+        if (listener != null) {
+            if (type == RequestType.JavaScript && listener !is RequestJavaScriptDatasetListener) {
+                throw IllegalArgumentException("The listener must be RequestJavaScriptDatasetListener when type is JavaScript")
+            }
+        }
+        return nativeRequestDataset(pluginId, datasetId, type.value, listener)
     }
 
 
@@ -129,7 +141,16 @@ class PluginManager private constructor() {
 
     private external fun nativeUninstallPlugin(id: String): List<Plugin>?
 
-    private external fun nativeRequestDataset(pluginId: String, datasetId: String): String?
+    private external fun nativeRequestDataset(
+        pluginId: String,
+        datasetId: String,
+        type: Int,
+        listener: RequestDatasetListener?
+    ): String?
+
+    enum class RequestType(val value: Int) {
+        AUTO(0), JavaScript(1), DSL(2)
+    }
 
     companion object {
         private const val TAG = "PluginManager"

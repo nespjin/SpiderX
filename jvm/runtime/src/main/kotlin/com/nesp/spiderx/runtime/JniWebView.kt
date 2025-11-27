@@ -14,6 +14,7 @@ abstract class JniWebView {
     private var mPtr = -1L
 
     private val backgroundExecutor = Executors.newSingleThreadExecutor()
+    private val requestDatasetListeners = mutableListOf<RequestJavaScriptDatasetListener>()
 
     fun init() {
         LOGGER.trace("init")
@@ -66,59 +67,71 @@ abstract class JniWebView {
     abstract fun onDestroy()
 
     fun notifyOnPageStarted(url: String) {
+        notifyRequestDatasetListeners { it.onPageStarted(url) }
         nativeNotifyOnPageStarted(url)
     }
 
     private external fun nativeNotifyOnPageStarted(url: String)
 
     fun notifyOnPageCancelled(url: String) {
+        notifyRequestDatasetListeners { it.onPageCancelled(url) }
         nativeNotifyOnPageCancelled(url)
     }
 
     private external fun nativeNotifyOnPageCancelled(url: String)
 
     fun notifyOnPageFinished(url: String, document: String) {
+        notifyRequestDatasetListeners { it.onPageFinished(url) }
         nativeNotifyOnPageFinished(url, document)
     }
 
     private external fun nativeNotifyOnPageFinished(url: String, document: String)
 
     fun notifyOnPageError(url: String, error: String) {
+        notifyRequestDatasetListeners { it.onPageError(url, error) }
         nativeNotifyOnPageError(url, error)
     }
 
     private external fun nativeNotifyOnPageError(url: String, error: String)
 
-    fun notifyOnLoadProgress(progress: Int) {
-        nativeNotifyOnLoadProgress(progress)
+    fun notifyOnLoadProgress(url: String, progress: Int) {
+        notifyRequestDatasetListeners { it.onLoadProgress(url, progress) }
+        nativeNotifyOnLoadProgress(url, progress)
     }
 
-    private external fun nativeNotifyOnLoadProgress(progress: Int)
+    private external fun nativeNotifyOnLoadProgress(url: String, progress: Int)
 
     fun notifyOnShouldOverrideUrlLoading(url: String): Boolean {
+        val shouldOverride =
+            PluginManager.instance.requestJavaScriptDatasetConfig.shouldOverrideUrlLoading(url)
+        if (shouldOverride != null) return shouldOverride
         return nativeNotifyOnShouldOverrideUrlLoading(url)
     }
 
     private external fun nativeNotifyOnShouldOverrideUrlLoading(url: String): Boolean
 
     fun notifyOnShouldInterceptRequest(url: String): String? {
+        val interceptedUrl =
+            PluginManager.instance.requestJavaScriptDatasetConfig.shouldInterceptRequest(url)
+        if (interceptedUrl != null) return interceptedUrl
         return nativeNotifyOnShouldInterceptRequest(url)
     }
 
     private external fun nativeNotifyOnShouldInterceptRequest(url: String): String?
 
     fun notifyOnReceivedData(url: String, data: String) {
+        notifyRequestDatasetListeners { it.onReceivedData(url, data) }
         nativeNotifyOnReceivedData(url, data)
     }
 
     private external fun nativeNotifyOnReceivedData(url: String, data: String)
 
     fun notifyOnReceivedError(url: String, error: String) {
+        notifyRequestDatasetListeners { it.onReceivedError(url, error) }
         nativeNotifyOnReceivedError(url, error)
     }
 
     private external fun nativeNotifyOnReceivedError(url: String, error: String)
-
 
     private fun finishBackgroundThread() {
         backgroundExecutor.shutdown()
@@ -185,6 +198,26 @@ abstract class JniWebView {
 
     open fun dispatchMainThread(task: Runnable) {
         task.run()
+    }
+
+    fun addRequestDatasetListener(listener: RequestJavaScriptDatasetListener) {
+        synchronized(requestDatasetListeners) {
+            requestDatasetListeners.add(listener)
+        }
+    }
+
+    fun removeRequestDatasetListener(listener: RequestJavaScriptDatasetListener) {
+        synchronized(requestDatasetListeners) {
+            requestDatasetListeners.remove(listener)
+        }
+    }
+
+    private fun notifyRequestDatasetListeners(callback: (RequestJavaScriptDatasetListener) -> Unit) {
+        synchronized(requestDatasetListeners) {
+            for (listener in requestDatasetListeners) {
+                callback(listener)
+            }
+        }
     }
 
     interface SpiderXRuntimeJavaScriptObject {
