@@ -9,10 +9,14 @@ abstract class RequestJavaScriptDatasetListener : RequestDatasetListener() {
 
     open fun onPageCancelled(url: String) {}
 
-    open fun onPageFinished(url: String,document: String) {}
+    open fun onPageFinished(url: String, document: String) {}
 
     open fun onPageError(url: String, error: String) {}
 
     open fun onLoadProgress(url: String, progress: Int) {}
+
+    open fun onShouldOverrideUrlLoading(url: String) {}
+
+    open fun onShouldInterceptRequest(url: String) {}
 
 }

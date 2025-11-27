@@ -102,6 +102,7 @@ abstract class JniWebView {
     private external fun nativeNotifyOnLoadProgress(url: String, progress: Int)
 
     fun notifyOnShouldOverrideUrlLoading(url: String): Boolean {
+        notifyRequestDatasetListeners { it.onShouldOverrideUrlLoading(url) }
         val shouldOverride =
             PluginManager.instance.requestJavaScriptDatasetConfig.shouldOverrideUrlLoading(url)
         if (shouldOverride != null) return shouldOverride
@@ -111,6 +112,7 @@ abstract class JniWebView {
     private external fun nativeNotifyOnShouldOverrideUrlLoading(url: String): Boolean
 
     fun notifyOnShouldInterceptRequest(url: String): String? {
+        notifyRequestDatasetListeners { it.onShouldInterceptRequest(url) }
         val interceptedUrl =
             PluginManager.instance.requestJavaScriptDatasetConfig.shouldInterceptRequest(url)
         if (interceptedUrl != null) return interceptedUrl
