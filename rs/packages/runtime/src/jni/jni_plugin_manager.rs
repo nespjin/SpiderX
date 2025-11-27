@@ -272,15 +272,19 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
 
         let jni_listener = handler.new_global_ref(listener);
 
-        let listener: Option<RequestDatasetListenerWrpper> = match request_type {
-            RequestType::Auto => None,
-            RequestType::JavaScript => {
-                let data = JniRequestJavaScriptDatasetListener::new(jni_listener);
-                Some(RequestDatasetListenerWrpper::Dataset(Arc::new(data)))
-            }
-            RequestType::Dsl => {
-                let data = JniRequestDatasetListener::new(jni_listener);
-                Some(RequestDatasetListenerWrpper::Dataset(Arc::new(data)))
+        let listener: Option<RequestDatasetListenerWrpper> = if jni_listener.is_null() {
+            None
+        } else {
+            match request_type {
+                RequestType::Auto => None,
+                RequestType::JavaScript => {
+                    let data = JniRequestJavaScriptDatasetListener::new(jni_listener);
+                    Some(RequestDatasetListenerWrpper::Dataset(Arc::new(data)))
+                }
+                RequestType::Dsl => {
+                    let data = JniRequestDatasetListener::new(jni_listener);
+                    Some(RequestDatasetListenerWrpper::Dataset(Arc::new(data)))
+                }
             }
         };
 
