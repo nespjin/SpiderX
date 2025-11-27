@@ -23,6 +23,10 @@ use compiler::{json_plugin_compiler::JsonPluginCompiler, plugin_compiler::Plugin
 
 use crate::{
     database::database,
+    executor::{
+        request_dataset_listener::RequestDatasetListenerWrpper,
+        request_javascript_dataset_config::RequestJavaScriptDatasetConfigArc,
+    },
     repository::{dataset_repository::DatasetRepository, plugin_repository::PluginRepository},
 };
 
@@ -40,6 +44,7 @@ pub struct PluginManager {
     config: Option<PluginManagerConfig>,
     dataset_repository: Option<DatasetRepository>,
     plugin_repository: Option<PluginRepository>,
+    request_javascript_dataset_config: Option<RequestJavaScriptDatasetConfigArc>,
 }
 
 impl PluginManager {
@@ -50,6 +55,7 @@ impl PluginManager {
                 config: None,
                 dataset_repository: None,
                 plugin_repository: None,
+                request_javascript_dataset_config: None,
             })
         })
     }
@@ -79,6 +85,19 @@ impl PluginManager {
         self.config = Some(config);
 
         Ok(())
+    }
+
+    pub fn set_request_javascript_dataset_config(
+        &mut self,
+        request_javascript_dataset_config: RequestJavaScriptDatasetConfigArc,
+    ) {
+        self.request_javascript_dataset_config = Some(request_javascript_dataset_config);
+    }
+
+    pub fn get_request_javascript_dataset_config(
+        &self,
+    ) -> Option<RequestJavaScriptDatasetConfigArc> {
+        self.request_javascript_dataset_config.clone()
     }
 
     pub fn install_plugin(&self, source: &PluginSource) -> Result<(), String> {
@@ -149,13 +168,31 @@ impl PluginManager {
         Ok(())
     }
 
-    pub fn request_dataset(&self, plugin_id: &str, dataset_id: &str) -> Result<String, String> {
+    pub fn request_dataset(
+        &self,
+        plugin_id: &str,
+        dataset_id: &str,
+        r#type: RequestType,
+        listener: Option<RequestDatasetListenerWrpper>,
+    ) -> Result<String, String> {
         self.ensure_initialized()?;
         let result = match self.dataset_repository.as_ref() {
-            Some(repo) => repo.request_dataset(plugin_id, dataset_id)?,
+            Some(repo) => repo.request_dataset(plugin_id, dataset_id, r#type, listener)?,
             None => return Err("DatasetRepository is not initialized".to_string()),
         };
         Ok(result)
+    }
+
+    pub fn auto_request_type(
+        &self,
+        plugin_id: &str,
+        dataset_id: &str,
+    ) -> Result<RequestType, String> {
+        self.ensure_initialized()?;
+        match self.dataset_repository.as_ref() {
+            Some(repo) => repo.auto_request_type(plugin_id, dataset_id),
+            None => Err("DatasetRepository is not initialized".to_string()),
+        }
     }
 
     fn ensure_initialized(&self) -> Result<(), String> {
@@ -163,6 +200,25 @@ impl PluginManager {
             return Err("The plugin manager is not initialized".to_string());
         }
         Ok(())
+    }
+}
+
+pub enum RequestType {
+    Auto = 0,
+    JavaScript,
+    Dsl,
+}
+
+impl TryFrom<i32> for RequestType {
+    type Error = ();
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        match value {
+            x if x == RequestType::Auto as i32 => Ok(RequestType::Auto),
+            x if x == RequestType::JavaScript as i32 => Ok(RequestType::JavaScript),
+            x if x == RequestType::Dsl as i32 => Ok(RequestType::Dsl),
+            _ => Err(()),
+        }
     }
 }
 

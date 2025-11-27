@@ -17,8 +17,8 @@ use std::sync::{Arc, RwLock};
 pub type RwLockWebEngine = RwLock<dyn WebEngine>;
 pub type WebEngineMut = Arc<RwLockWebEngine>;
 
-pub type RwLockWebEngineListener = RwLock<dyn WebEngineListener>;
-pub type WebEngineListenerMut = Arc<RwLockWebEngineListener>;
+// pub type RwLockWebEngineListener = RwLock<dyn WebEngineListener>;
+// pub type WebEngineListenerMut = Arc<RwLockWebEngineListener>;
 pub type WebEngineListenerArc = Arc<dyn WebEngineListener>;
 
 pub trait WebEngine: Send + Sync {
@@ -65,7 +65,7 @@ pub trait WebEngineListener: Send + Sync {
 
     fn on_page_error(&self, engine: WebEngineMut, url: &str, error: &str);
 
-    fn on_load_progress(&self, engine: WebEngineMut, progress: i32);
+    fn on_load_progress(&self, engine: WebEngineMut, url: &str, progress: i32);
 
     fn should_override_url_loading(&self, engine: WebEngineMut, url: &str) -> bool;
 

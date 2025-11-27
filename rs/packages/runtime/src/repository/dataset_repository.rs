@@ -19,8 +19,13 @@ use crate::{
     database::{database, dataset_dao},
     device::device_manager::DeviceManager,
     executor::{
-        dataset_executor::DatasetExecutor, javascript_dataset_executor::JavaScriptDatasetExecutor,
+        dataset_executor::DatasetExecutor,
+        javascript_dataset_executor::JavaScriptDatasetExecutor,
+        request_dataset_listener::{
+            RequestDatasetListenerWrpper, RequestJavaScriptDatasetListenerArc,
+        },
     },
+    plugin_manager::{PluginManager, RequestType},
     repository::model::dataset,
     utils::{log_utils, screen_typed_value::ScreenTypedValue},
 };
@@ -98,7 +103,13 @@ impl DatasetRepository {
         Ok(())
     }
 
-    pub fn request_dataset(&self, plugin_id: &str, dataset_id: &str) -> Result<String, String> {
+    pub fn request_dataset(
+        &self,
+        plugin_id: &str,
+        dataset_id: &str,
+        r#type: RequestType,
+        listener: Option<RequestDatasetListenerWrpper>,
+    ) -> Result<String, String> {
         let dataset = self.get_dataset_in_plugin(plugin_id, dataset_id)?;
         let dataset = match dataset {
             Some(dataset) => dataset,
@@ -145,6 +156,20 @@ impl DatasetRepository {
             HashMap::new()
         };
 
+        let request_javascript_dataset_listener: Option<RequestJavaScriptDatasetListenerArc> =
+            match listener {
+                Some(listener) => match listener {
+                    RequestDatasetListenerWrpper::JavaScriptDataset(listener) => {
+                        Some(listener.clone())
+                    }
+                    _ => None,
+                },
+                None => None,
+            };
+
+        let plugin_manager = PluginManager::get_instance().lock().unwrap();
+        let config = plugin_manager.get_request_javascript_dataset_config();
+
         let dataset_ds: Box<dyn DatasetExecutor> = if let Some(_) = dsl_value {
             // Box::new(DslDatasetExecutor::new(dataset_id, url_value, &dsl))
             // TODO: Remove this
@@ -152,9 +177,17 @@ impl DatasetRepository {
                 dataset_id,
                 url_value,
                 js_value.unwrap(),
+                request_javascript_dataset_listener,
+                config,
             ))
         } else if let Some(js) = js_value {
-            Box::new(JavaScriptDatasetExecutor::new(dataset_id, url_value, js))
+            Box::new(JavaScriptDatasetExecutor::new(
+                dataset_id,
+                url_value,
+                js,
+                request_javascript_dataset_listener,
+                config,
+            ))
         } else {
             return Err("The dsl and js is both empty".to_string());
         };
@@ -167,5 +200,36 @@ impl DatasetRepository {
         ));
 
         Ok(result?)
+    }
+
+    pub fn auto_request_type(
+        &self,
+        plugin_id: &str,
+        dataset_id: &str,
+    ) -> Result<RequestType, String> {
+        let dataset = self.get_dataset_in_plugin(plugin_id, dataset_id)?;
+        let dataset = match dataset {
+            Some(dataset) => dataset,
+            None => return Err(format!("Dataset {}.{} not found", plugin_id, dataset_id)),
+        };
+
+        let screen_type = {
+            let dm = DeviceManager::get_instance()
+                .lock()
+                .map_err(|e| e.to_string())?;
+            &dm.screen_type().ok_or("Screen type is not set")?
+        };
+
+        let dsl = ScreenTypedValue::new()
+            .with_option_value(dataset.dsl.clone())
+            .with_option_compact(dataset.dsl_compact.clone())
+            .with_option_medium(dataset.dsl_medium.clone())
+            .with_option_expanded(dataset.dsl_expanded.clone());
+        let dsl_value = dsl.value(screen_type);
+
+        match dsl_value {
+            Some(_) => Ok(RequestType::Dsl),
+            None => Ok(RequestType::JavaScript),
+        }
     }
 }
