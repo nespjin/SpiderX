@@ -168,6 +168,7 @@ class AndroidWebView : JniWebView() {
             view: WebView?,
             request: WebResourceRequest?
         ): WebResourceResponse? {
+            Log.d(TAG, "shouldInterceptRequest: ${request?.url}")
             webView.notifyOnShouldInterceptRequest(request?.url?.toString() ?: "")
             return super.shouldInterceptRequest(view, request)
         }
@@ -193,6 +194,7 @@ class AndroidWebView : JniWebView() {
             view: WebView?,
             request: WebResourceRequest?
         ): Boolean {
+            Log.d(TAG, "shouldOverrideUrlLoading: ${request?.url}")
             return webView.notifyOnShouldOverrideUrlLoading(request?.url?.toString() ?: "")
         }
 
