@@ -261,7 +261,6 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
 
     let data = {
         let plugin_manager = PluginManager::get_instance().lock().unwrap();
-
         let mut request_type = RequestType::try_from(r#type).unwrap();
         request_type = match request_type {
             RequestType::Auto => plugin_manager
@@ -279,7 +278,9 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
                 RequestType::Auto => None,
                 RequestType::JavaScript => {
                     let data = JniRequestJavaScriptDatasetListener::new(jni_listener);
-                    Some(RequestDatasetListenerWrpper::Dataset(Arc::new(data)))
+                    let arc = Arc::new(data);
+                    let java_script_dataset = RequestDatasetListenerWrpper::JavaScriptDataset(arc);
+                    Some(java_script_dataset)
                 }
                 RequestType::Dsl => {
                     let data = JniRequestDatasetListener::new(jni_listener);
@@ -324,7 +325,7 @@ const REQUEST_DATASET_LISTENER_ON_PAGE_STARTED: JniMethodInfo =
 const REQUEST_DATASET_LISTENER_ON_PAGE_CANCELLED: JniMethodInfo =
     ("onPageCancelled", "(Ljava/lang/String;)V");
 const REQUEST_DATASET_LISTENER_ON_PAGE_FINISHED: JniMethodInfo =
-    ("onPageFinished", "(Ljava/lang/String;)V");
+    ("onPageFinished", "(Ljava/lang/String;Ljava/lang/String;)V");
 const REQUEST_DATASET_LISTENER_ON_PAGE_ERROR: JniMethodInfo =
     ("onPageError", "(Ljava/lang/String;Ljava/lang/String;)V");
 const REQUEST_DATASET_LISTENER_ON_LOAD_PROGRESS: JniMethodInfo =

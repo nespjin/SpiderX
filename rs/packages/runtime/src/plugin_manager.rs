@@ -177,7 +177,13 @@ impl PluginManager {
     ) -> Result<String, String> {
         self.ensure_initialized()?;
         let result = match self.dataset_repository.as_ref() {
-            Some(repo) => repo.request_dataset(plugin_id, dataset_id, r#type, listener)?,
+            Some(repo) => repo.request_dataset(
+                plugin_id,
+                dataset_id,
+                r#type,
+                listener,
+                self.request_javascript_dataset_config.clone(),
+            )?,
             None => return Err("DatasetRepository is not initialized".to_string()),
         };
         Ok(result)

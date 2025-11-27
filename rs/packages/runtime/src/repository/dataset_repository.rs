@@ -24,6 +24,9 @@ use crate::{
         request_dataset_listener::{
             RequestDatasetListenerWrpper, RequestJavaScriptDatasetListenerArc,
         },
+        request_javascript_dataset_config::{
+            RequestJavaScriptDatasetConfig, RequestJavaScriptDatasetConfigArc,
+        },
     },
     plugin_manager::{PluginManager, RequestType},
     repository::model::dataset,
@@ -109,6 +112,7 @@ impl DatasetRepository {
         dataset_id: &str,
         r#type: RequestType,
         listener: Option<RequestDatasetListenerWrpper>,
+        config: Option<RequestJavaScriptDatasetConfigArc>,
     ) -> Result<String, String> {
         let dataset = self.get_dataset_in_plugin(plugin_id, dataset_id)?;
         let dataset = match dataset {
@@ -166,9 +170,6 @@ impl DatasetRepository {
                 },
                 None => None,
             };
-
-        let plugin_manager = PluginManager::get_instance().lock().unwrap();
-        let config = plugin_manager.get_request_javascript_dataset_config();
 
         let dataset_ds: Box<dyn DatasetExecutor> = if let Some(_) = dsl_value {
             // Box::new(DslDatasetExecutor::new(dataset_id, url_value, &dsl))
