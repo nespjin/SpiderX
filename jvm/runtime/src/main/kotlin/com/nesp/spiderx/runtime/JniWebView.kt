@@ -81,7 +81,7 @@ abstract class JniWebView {
     private external fun nativeNotifyOnPageCancelled(url: String)
 
     fun notifyOnPageFinished(url: String, document: String) {
-        notifyRequestDatasetListeners { it.onPageFinished(url) }
+        notifyRequestDatasetListeners { it.onPageFinished(url, document) }
         nativeNotifyOnPageFinished(url, document)
     }
 

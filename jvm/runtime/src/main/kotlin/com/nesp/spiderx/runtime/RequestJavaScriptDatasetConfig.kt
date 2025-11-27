@@ -5,8 +5,8 @@ package com.nesp.spiderx.runtime
  **/
 open class RequestJavaScriptDatasetConfig {
 
-    fun shouldOverrideUrlLoading(url: String): Boolean? = null
+    open fun shouldOverrideUrlLoading(url: String): Boolean? = null
 
-    fun shouldInterceptRequest(url: String): String? = null
+    open fun shouldInterceptRequest(url: String): String? = null
 
 }

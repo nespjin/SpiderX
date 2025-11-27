@@ -5,14 +5,14 @@ package com.nesp.spiderx.runtime
  **/
 abstract class RequestJavaScriptDatasetListener : RequestDatasetListener() {
 
-    fun onPageStarted(url: String) {}
+    open fun onPageStarted(url: String) {}
 
-    fun onPageCancelled(url: String) {}
+    open fun onPageCancelled(url: String) {}
 
-    fun onPageFinished(url: String) {}
+    open fun onPageFinished(url: String,document: String) {}
 
-    fun onPageError(url: String, error: String) {}
+    open fun onPageError(url: String, error: String) {}
 
-    fun onLoadProgress(url: String, progress: Int) {}
+    open fun onLoadProgress(url: String, progress: Int) {}
 
 }

@@ -5,7 +5,7 @@ package com.nesp.spiderx.runtime
  **/
 abstract class RequestDatasetListener {
 
-    fun onReceivedData(url: String, data: String) {}
+    open fun onReceivedData(url: String, data: String) {}
 
-    fun onReceivedError(url: String, error: String) {}
+    open fun onReceivedError(url: String, error: String) {}
 }
