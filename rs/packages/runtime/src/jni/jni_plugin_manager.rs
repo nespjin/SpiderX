@@ -330,6 +330,10 @@ const REQUEST_DATASET_LISTENER_ON_PAGE_ERROR: JniMethodInfo =
     ("onPageError", "(Ljava/lang/String;Ljava/lang/String;)V");
 const REQUEST_DATASET_LISTENER_ON_LOAD_PROGRESS: JniMethodInfo =
     ("onLoadProgress", "(Ljava/lang/String;I)V");
+const REQUEST_DATASET_LISTENER_ON_SHOULD_OVERRIDE_URL_LOADING: JniMethodInfo =
+    ("onShouldOverrideUrlLoading", "(Ljava/lang/String;)V");
+const REQUEST_DATASET_LISTENER_ON_SHOULD_INTERCEPT_REQUEST: JniMethodInfo =
+    ("onShouldInterceptRequest", "(Ljava/lang/String;)V");
 
 fn handle_on_receive_data(jni_listener: &GlobalRef, url: &str, data: &str) {
     let mut jni_handler = JniHandler::new();
@@ -461,6 +465,32 @@ impl RequestJavaScriptDatasetListener for JniRequestJavaScriptDatasetListener {
             &self.jniListener,
             REQUEST_DATASET_LISTENER_ON_LOAD_PROGRESS,
             &[JValueGen::Object(&url_obj), JValueGen::Int(progress)],
+        );
+
+        jni_handler.delete_local_ref(url_obj);
+    }
+
+    fn on_should_override_url_loading(&self, url: &str) {
+        let mut jni_handler = JniHandler::new();
+        let url_obj = jni_handler.new_string(url);
+
+        jni_handler.call_method(
+            &self.jniListener,
+            REQUEST_DATASET_LISTENER_ON_SHOULD_OVERRIDE_URL_LOADING,
+            &[JValueGen::Object(&url_obj)],
+        );
+
+        jni_handler.delete_local_ref(url_obj);
+    }
+
+    fn on_should_intercept_request(&self, url: &str) {
+        let mut jni_handler = JniHandler::new();
+        let url_obj = jni_handler.new_string(url);
+
+        jni_handler.call_method(
+            &self.jniListener,
+            REQUEST_DATASET_LISTENER_ON_SHOULD_INTERCEPT_REQUEST,
+            &[JValueGen::Object(&url_obj)],
         );
 
         jni_handler.delete_local_ref(url_obj);

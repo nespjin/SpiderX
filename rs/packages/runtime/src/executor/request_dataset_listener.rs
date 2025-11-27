@@ -40,4 +40,8 @@ pub trait RequestJavaScriptDatasetListener:
     fn on_page_error(&self, url: &str, error: &str) {}
 
     fn on_load_progress(&self, url: &str, progress: i32) {}
+
+    fn on_should_override_url_loading(&self, url: &str) {}
+
+    fn on_should_intercept_request(&self, url: &str) {}
 }

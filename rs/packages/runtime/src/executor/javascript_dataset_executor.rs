@@ -278,6 +278,11 @@ impl WebEngineListener for WebEngineListenerImpl {
     }
 
     fn should_override_url_loading(&self, engine: WebEngineMut, url: &str) -> bool {
+        let listener = &self.listener;
+        if let Some(listener) = listener.as_ref() {
+            listener.on_should_override_url_loading(url);
+        }
+
         let config = &self.config;
         if let Some(config) = config.as_ref() {
             if let Some(ret) = config.should_override_url_loading(url) {
@@ -289,6 +294,11 @@ impl WebEngineListener for WebEngineListenerImpl {
     }
 
     fn should_intercept_request(&self, engine: WebEngineMut, url: &str) -> Option<String> {
+        let listener = &self.listener;
+        if let Some(listener) = listener.as_ref() {
+            listener.on_should_intercept_request(url);
+        }
+
         let config = &self.config;
         if let Some(config) = config.as_ref() {
             if let Some(ret) = config.should_intercept_request(url) {
