@@ -110,12 +110,17 @@ class AndroidWebView : JniWebView() {
 
         webView.evaluateJavascript(javascript, {
             result = it
-            lock.notifyAll()
+            try {
+                lock.notifyAll()
+            } catch (_: Exception) {
+            }
         })
         while (result == null) {
-            synchronized(lock) {
+            try {
                 lock.wait(500)
+            } catch (_: Exception) {
             }
+            break
         }
         return result
     }
@@ -223,7 +228,6 @@ class AndroidWebView : JniWebView() {
     }
 
     override fun dispatchMainThread(task: Runnable) {
-        Log.d("AndroidWebView", "dispatchMainThread: $mainHandler")
         mainHandler.post(task)
     }
 
