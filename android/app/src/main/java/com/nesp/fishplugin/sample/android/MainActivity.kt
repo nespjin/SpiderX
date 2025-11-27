@@ -74,6 +74,21 @@ class MainActivity : AppCompatActivity() {
                             Log.d(TAG, "request: page started $url")
                         }
 
+                        override fun onLoadProgress(url: String, progress: Int) {
+                            Log.d(TAG, "request: load progress $url $progress")
+                        }
+
+                        override fun onPageFinished(url: String, document: String) {
+                            Log.d(TAG, "request: page finished $url $document")
+                        }
+
+                        override fun onShouldInterceptRequest(url: String) {
+                            Log.d(TAG, "onShouldInterceptRequest: $url")
+                        }
+
+                        override fun onShouldOverrideUrlLoading(url: String) {
+                            Log.d(TAG, "onShouldOverrideUrlLoading: $url")
+                        }
                     })
             } catch (e: Exception) {
                 e.printStackTrace()
