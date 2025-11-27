@@ -304,9 +304,10 @@ public class JavaFxWebView extends JniWebView implements EventHandler<WebErrorEv
 
         @Override
         public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
-            System.out.println("ProgressListener Thread " + Thread.currentThread().getName());
+            final int progress = Math.round(newValue.floatValue() * 100);
+            LOGGER.info("ProgressListener Thread {} progress {}", Thread.currentThread().getName(), progress);
             final String url = webView.webView.getEngine().getLocation();
-            webView.notifyOnLoadProgress(url, Math.round(newValue.floatValue() * 100));
+            webView.notifyOnLoadProgress(url, progress);
         }
     }
 
