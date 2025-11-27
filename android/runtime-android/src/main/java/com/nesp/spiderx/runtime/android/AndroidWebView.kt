@@ -36,12 +36,6 @@ import android.webkit.WebViewClient
 import android.widget.LinearLayout
 import com.nesp.spiderx.runtime.JniWebView
 import com.nesp.spiderx.runtime.PluginManager
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 /**
  * @author <a href="mailto:1756404649@qq.com">JinZhaolu</a>
@@ -89,7 +83,7 @@ class AndroidWebView : JniWebView() {
                 SPIDERX_RUNTIME_JAVASCRIPT_OBJECT_NAME
             )
 
-            enableCokie(this)
+            enableCookie(this)
 
             webChromeClient = DefaultWebChromeClient(this@AndroidWebView)
             webViewClient = DefaultWebViewClient(this@AndroidWebView)
@@ -140,7 +134,7 @@ class AndroidWebView : JniWebView() {
         mainHandler.removeCallbacksAndMessages(null)
     }
 
-    private fun enableCokie(webView: WebView) {
+    private fun enableCookie(webView: WebView) {
         val cookieManager = CookieManager.getInstance()
         val context = PluginManager.instance.getAndroidContext() as Context
         CookieSyncManager.createInstance(context)
