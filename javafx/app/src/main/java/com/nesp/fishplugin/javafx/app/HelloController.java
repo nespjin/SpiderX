@@ -50,7 +50,7 @@ public class HelloController {
             try {
                 pluginManager.requestDataset("com.example.plugin", "user_data");
             } catch (Exception e) {
-                e.printStackTrace();
+                LOGGER.error("error when request dataset", e);
             }
             LOGGER.debug("Request dataset finished");
         });
