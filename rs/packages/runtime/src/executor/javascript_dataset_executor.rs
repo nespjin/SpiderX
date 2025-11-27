@@ -23,7 +23,11 @@ use std::{
 };
 
 use crate::{
-    executor::dataset_executor::DatasetExecutor,
+    executor::{
+        dataset_executor::DatasetExecutor,
+        request_dataset_listener::RequestJavaScriptDatasetListenerArc,
+        request_javascript_dataset_config::RequestJavaScriptDatasetConfigArc,
+    },
     utils::log_utils,
     web_engine::{
         web_engine::{WebEngineListener, WebEngineMut},
@@ -37,7 +41,7 @@ enum WebEngineEvent {
     PageFinished(String, String),
     PageCancelled(String),
     PageError(String, String),
-    LoadProgress(i32),
+    LoadProgress(String, i32),
     ReceivedError(String, String),
     ReceivedData(String, String),
 }
@@ -51,12 +55,12 @@ impl Display for WebEngineEvent {
                 write!(f, "PageFinished {} {}", url, document)
             }
             WebEngineEvent::PageError(value, error) => write!(f, "PageError {} {}", value, error),
-            WebEngineEvent::LoadProgress(value) => write!(f, "LoadProgress {}", value),
-            WebEngineEvent::ReceivedError(value, error) => {
-                write!(f, "ReceivedError {} {}", value, error)
+            WebEngineEvent::LoadProgress(url, value) => write!(f, "LoadProgress {} {}", url, value),
+            WebEngineEvent::ReceivedError(url, error) => {
+                write!(f, "ReceivedError {} {}", url, error)
             }
-            WebEngineEvent::ReceivedData(value, data) => {
-                write!(f, "ReceivedData {} {}", value, data)
+            WebEngineEvent::ReceivedData(url, data) => {
+                write!(f, "ReceivedData {} {}", url, data)
             }
         }
     }
@@ -68,11 +72,25 @@ pub struct JavaScriptDatasetExecutor<'local> {
     id: &'local str,
     url: &'local str,
     js: &'local str,
+    listener: Option<RequestJavaScriptDatasetListenerArc>,
+    config: Option<RequestJavaScriptDatasetConfigArc>,
 }
 
 impl<'local> JavaScriptDatasetExecutor<'local> {
-    pub fn new(id: &'local str, url: &'local str, js: &'local str) -> Self {
-        Self { id, url, js }
+    pub fn new(
+        id: &'local str,
+        url: &'local str,
+        js: &'local str,
+        listener: Option<RequestJavaScriptDatasetListenerArc>,
+        config: Option<RequestJavaScriptDatasetConfigArc>,
+    ) -> Self {
+        Self {
+            id,
+            url,
+            js,
+            listener,
+            config,
+        }
     }
 }
 
@@ -99,7 +117,12 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
             tx.send(e).expect("Send message to channel failed.");
         });
 
-        let listener = Arc::new(WebEngineListenerImpl::new(self.url.to_string(), callback));
+        let listener = Arc::new(WebEngineListenerImpl::new(
+            self.url.to_string(),
+            self.listener.clone(),
+            self.config.clone(),
+            callback,
+        ));
 
         webengine.write().unwrap().set_listener(listener);
         webengine.read().unwrap().load_url(self.url)?;
@@ -166,17 +189,34 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
 
 struct WebEngineListenerImpl {
     url: String,
+    listener: Option<RequestJavaScriptDatasetListenerArc>,
+    config: Option<RequestJavaScriptDatasetConfigArc>,
     callback: WebEngineCallback,
 }
 
 impl WebEngineListenerImpl {
-    fn new(url: String, callback: WebEngineCallback) -> Self {
-        Self { url, callback }
+    fn new(
+        url: String,
+        listener: Option<RequestJavaScriptDatasetListenerArc>,
+        config: Option<RequestJavaScriptDatasetConfigArc>,
+        callback: WebEngineCallback,
+    ) -> Self {
+        Self {
+            url,
+            listener,
+            config,
+            callback,
+        }
     }
 }
 
 impl WebEngineListener for WebEngineListenerImpl {
     fn on_page_started(&self, engine: WebEngineMut, url: &str) {
+        let listener = &self.listener;
+        if let Some(listener) = listener.as_ref() {
+            listener.on_page_started(url);
+        }
+
         let callback = &self.callback;
         callback(WebEngineEvent::PageStarted(url.to_string()));
 
@@ -184,6 +224,11 @@ impl WebEngineListener for WebEngineListenerImpl {
     }
 
     fn on_page_cancelled(&self, engine: WebEngineMut, url: &str) {
+        let listener = &self.listener;
+        if let Some(listener) = listener.as_ref() {
+            listener.on_page_cancelled(url);
+        }
+
         let callback = &self.callback;
         callback(WebEngineEvent::PageCancelled(url.to_string()));
 
@@ -191,6 +236,11 @@ impl WebEngineListener for WebEngineListenerImpl {
     }
 
     fn on_page_finished(&self, engine: WebEngineMut, url: &str, document: &str) {
+        let listener = &self.listener;
+        if let Some(listener) = listener.as_ref() {
+            listener.on_page_finished(url, document);
+        }
+
         let callback = &self.callback;
         callback(WebEngineEvent::PageFinished(
             url.to_string(),
@@ -201,6 +251,11 @@ impl WebEngineListener for WebEngineListenerImpl {
     }
 
     fn on_page_error(&self, engine: WebEngineMut, url: &str, error: &str) {
+        let listener = &self.listener;
+        if let Some(listener) = listener.as_ref() {
+            listener.on_page_error(url, error);
+        }
+
         let callback = &self.callback;
         callback(WebEngineEvent::PageError(
             url.to_string(),
@@ -210,23 +265,46 @@ impl WebEngineListener for WebEngineListenerImpl {
         log_utils::logd(&format!("on_page_error {} {}", url, error))
     }
 
-    fn on_load_progress(&self, engine: WebEngineMut, progress: i32) {
-        let callback = &self.callback;
-        callback(WebEngineEvent::LoadProgress(progress));
+    fn on_load_progress(&self, engine: WebEngineMut, url: &str, progress: i32) {
+        let listener = &self.listener;
+        if let Some(listener) = listener.as_ref() {
+            listener.on_load_progress(url, progress);
+        }
 
-        log_utils::logd(&format!("on_load_progress {}", progress))
+        let callback = &self.callback;
+        callback(WebEngineEvent::LoadProgress(url.to_string(), progress));
+
+        log_utils::logd(&format!("on_load_progress {} {}", url, progress))
     }
 
     fn should_override_url_loading(&self, engine: WebEngineMut, url: &str) -> bool {
+        let config = &self.config;
+        if let Some(config) = config.as_ref() {
+            if let Some(ret) = config.should_override_url_loading(url) {
+                return ret;
+            }
+        }
         log_utils::logd(&format!("should_override_url_loading {}", url));
-        true
+        false
     }
 
     fn should_intercept_request(&self, engine: WebEngineMut, url: &str) -> Option<String> {
-        Some("ShouldInterceptRequest in Rust".to_string())
+        let config = &self.config;
+        if let Some(config) = config.as_ref() {
+            if let Some(ret) = config.should_intercept_request(url) {
+                return Some(ret);
+            }
+        }
+        log_utils::logd(&format!("should_intercept_request {}", url));
+        None
     }
 
     fn on_received_data(&self, engine: WebEngineMut, url: &str, data: &str) {
+        let listener = &self.listener;
+        if let Some(listener) = listener.as_ref() {
+            listener.on_receive_data(url, data);
+        }
+
         let callback = &self.callback;
         callback(WebEngineEvent::ReceivedData(
             url.to_string(),
@@ -237,6 +315,11 @@ impl WebEngineListener for WebEngineListenerImpl {
     }
 
     fn on_received_error(&self, engine: WebEngineMut, url: &str, error: &str) {
+        let listener = &self.listener;
+        if let Some(listener) = listener.as_ref() {
+            listener.on_receive_error(url, error);
+        }
+
         let callback = &self.callback;
         callback(WebEngineEvent::ReceivedError(
             url.to_string(),
