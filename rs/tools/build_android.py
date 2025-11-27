@@ -3,6 +3,12 @@
 
 def main():
     import os
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Build SpiderX for Android")
+    parser.add_argument('-r', "--release", action="store_true", default=False, help="Build release version")
+    args = parser.parse_args()
+    is_release = args.release or False
 
     ANDROID_API = 35
     targets = ["aarch64-linux-android", "armv7-linux-androideabi"]
@@ -30,13 +36,17 @@ def main():
         })
         os.environ.update(env)
         print(f"Building for {target}")
-        if os.system(f'cargo build --target {target} --release') != 0:
+        build_command = f'cargo build --target {target}'
+        if is_release:
+            build_command += ' --release'
+        if os.system(build_command) != 0:
             print(f"Failed to build for {target}")
             break
         else:
             # Copy the shared library to the current directory
             script_path = os.path.dirname(os.path.abspath(__file__))
-            source_path = f"{script_path}/../target/{target}/release/libspiderx_runtime.so"
+            build_type = 'release' if is_release else 'debug'
+            source_path = f"{script_path}/../target/{target}/{build_type}/libspiderx_runtime.so"
             target_archive_dir = f"{script_path}/../../android/app/src/main/jniLibs/{archive_dirs[target]}"
             print(f"Copying {source_path} to {target_archive_dir}")
             os.makedirs(target_archive_dir, exist_ok=True)
