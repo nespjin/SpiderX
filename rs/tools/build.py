@@ -173,7 +173,7 @@ def build(
     output_file = os.path.join(output_dir, output_name)
     target_archive_dir = ''
     if is_android:
-        target_archive_dir = f"{work_dir}/../android/app/src/main/jniLibs/{ANDROID_ARCHIVE_DIRS[android_arch]}"
+        target_archive_dir = f"{work_dir}/../android/runtime-android/src/main/jniLibs/{ANDROID_ARCHIVE_DIRS[android_arch]}"
 
     if len(target_archive_dir) > 0:
         # Copy the shared library to the current directory
