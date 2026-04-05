@@ -141,6 +141,11 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
                         WebEngineEvent::PageFinished(url, _document) => {
                             if url == self.url {
                                 let ret = webengine.write().unwrap().evaluate(self.js)?;
+                                log_utils::logd(&format!(
+                                    "JavaScriptDatasetExecutor::request evaluate {} {}",
+                                    self.js,
+                                    ret
+                                ));
                                 result = Ok(ret);
                                 break;
                             }
@@ -179,8 +184,8 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
         }
 
         log_utils::logd(&format!(
-            "JavaScriptDatasetExecutor::request end {} {}",
-            self.id, self.url
+            "JavaScriptDatasetExecutor::request end {} {} {:?}",
+            self.id, self.url, result
         ));
 
         return result;

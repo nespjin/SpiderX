@@ -183,10 +183,10 @@ impl PluginManager {
                 r#type,
                 listener,
                 self.request_javascript_dataset_config.clone(),
-            )?,
-            None => return Err("DatasetRepository is not initialized".to_string()),
+            ),
+            None => Err("DatasetRepository is not initialized".to_string()),
         };
-        Ok(result)
+        result
     }
 
     pub fn auto_request_type(

@@ -293,8 +293,8 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     };
 
     log_utils::logd(&format!(
-        "Java_com_nesp_spiderx_runtime_PluginManager_nativeRequestDataset {} {}",
-        plugin_id, dataset_id
+        "Java_com_nesp_spiderx_runtime_PluginManager_nativeRequestDataset {} {} {:?}",
+        plugin_id, dataset_id, data
     ));
 
     // handler

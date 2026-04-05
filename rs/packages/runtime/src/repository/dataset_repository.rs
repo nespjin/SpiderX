@@ -194,8 +194,8 @@ impl DatasetRepository {
         let result = dataset_ds.request();
 
         log_utils::logd(&format!(
-            "DatasetRepository::request_dataset {} {}",
-            plugin_id, dataset_id
+            "DatasetRepository::request_dataset {} {} {:?}",
+            plugin_id, dataset_id, result
         ));
 
         Ok(result?)
