@@ -79,6 +79,14 @@ impl DatasetRepository {
         plugin_id: &str,
         id: &str,
     ) -> Result<Option<Dataset>, String> {
+        if plugin_id.is_empty() {
+            return Err("Plugin id is empty".to_string());
+        }
+
+        if id.is_empty() {
+            return Err("Dataset id is empty".to_string());
+        }
+
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
         match dataset_dao::find_by_id_in_plugin(&mut sqlite_connection, plugin_id, id)
