@@ -212,10 +212,11 @@ def main():
         help="Build for Android.",
     )
     argparser.add_argument(
-        "--android-arch",
-        default="arm64",
+        "--archs",
+        default=["arm64", "arm"],
         # choices=["arm64", "arm", "x86", "x86_64"],
         choices=["arm64", "arm"],
+        nargs="+",
         help="The arch to build for Android.",
     )
     argparser.add_argument(
@@ -231,14 +232,20 @@ def main():
             shutil.rmtree(output)
         except Exception as e:
             print("an error occurs when clear output:\n" + e)
-    if args.android:
-        output = os.path.join(output, ANDROID_ABIS[args.android_arch])
-        prepare_android_compile_env(args.android_arch)
 
-    output = os.path.join(output, "release" if args.release else "debug")
+
+    for arch in args.archs:
+        new_output = output
+        print(f"Building for {'Android' if args.android else ''} {arch} {'release' if args.release else 'debug'}")
+        if args.android:
+            new_output = os.path.join(new_output, ANDROID_ABIS[arch])
+            prepare_android_compile_env(arch)
  
-    build(args.android, args.android_arch, args.release, work_dir, 
-            args.include_dirs, output)
+        new_output = os.path.join(new_output, "release" if args.release else "debug")
+
+        build(args.android, arch, args.release, work_dir, 
+                args.include_dirs, new_output)
+        print("")
 
 
 if __name__ == "__main__":
