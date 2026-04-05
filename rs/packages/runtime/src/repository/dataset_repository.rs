@@ -24,11 +24,9 @@ use crate::{
         request_dataset_listener::{
             RequestDatasetListenerWrpper, RequestJavaScriptDatasetListenerArc,
         },
-        request_javascript_dataset_config::{
-            RequestJavaScriptDatasetConfig, RequestJavaScriptDatasetConfigArc,
-        },
+        request_javascript_dataset_config::RequestJavaScriptDatasetConfigArc,
     },
-    plugin_manager::{PluginManager, RequestType},
+    plugin_manager::RequestType,
     repository::model::dataset,
     utils::{log_utils, screen_typed_value::ScreenTypedValue},
 };
@@ -110,7 +108,7 @@ impl DatasetRepository {
         &self,
         plugin_id: &str,
         dataset_id: &str,
-        r#type: RequestType,
+        _type: RequestType,
         listener: Option<RequestDatasetListenerWrpper>,
         config: Option<RequestJavaScriptDatasetConfigArc>,
     ) -> Result<String, String> {
@@ -152,7 +150,7 @@ impl DatasetRepository {
             .with_option_expanded(dataset.dsl_expanded.clone());
         let dsl_value = dsl.value(screen_type);
 
-        let dsl = if let Some(dsl) = dsl_value {
+        let _dsl = if let Some(dsl) = dsl_value {
             let dsl_map: HashMap<String, serde_json::Value> =
                 serde_json::from_value(dsl.clone()).map_err(|e| e.to_string())?;
             dsl_map
