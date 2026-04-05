@@ -6,7 +6,7 @@
       <GradleProjectSettings>
         <option name="testRunner" value="CHOOSE_PER_TEST" />
         <option name="externalProjectPath" value="$PROJECT_DIR$/android" />
-        <option name="gradleJvm" value="#GRADLE_LOCAL_JAVA_HOME" />
+        <option name="gradleJvm" value="17" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$/android" />
@@ -22,9 +22,26 @@
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/javafx" />
+        <option name="gradleJvm" value="17" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/javafx" />
+            <option value="$PROJECT_DIR$/javafx/app" />
+            <option value="$PROJECT_DIR$/javafx/movie-runtime-javafx" />
+            <option value="$PROJECT_DIR$/javafx/runtime-javafx" />
+            <option value="$PROJECT_DIR$/jvm/compiler" />
+            <option value="$PROJECT_DIR$/jvm/core" />
+            <option value="$PROJECT_DIR$/jvm/movie-runtime" />
+            <option value="$PROJECT_DIR$/jvm/runtime" />
+            <option value="$PROJECT_DIR$/jvm/tools" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
         <option name="testRunner" value="CHOOSE_PER_TEST" />
         <option name="externalProjectPath" value="$PROJECT_DIR$/jvm" />
-        <option name="gradleJvm" value="#GRADLE_LOCAL_JAVA_HOME" />
+        <option name="gradleJvm" value="17" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$/jvm" />
@@ -45,7 +62,7 @@
       <GradleProjectSettings>
         <option name="testRunner" value="CHOOSE_PER_TEST" />
         <option name="externalProjectPath" value="$PROJECT_DIR$/tools/editor" />
-        <option name="gradleJvm" value="jbr-21" />
+        <option name="gradleJvm" value="17" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$/javafx/movie-runtime-javafx" />

@@ -22,9 +22,10 @@ plugins {
     id 'org.openjfx.javafxplugin'
 }
 
-group 'com.nesp.fishplugin.javafx'
+group 'com.nesp.fishplugin.javafx.app'
 version '1.0'
 
+//mainClassName = 'com.nesp.fishplugin.javafx.app.App'
 
 sourceCompatibility = "17"
 targetCompatibility = "17"
@@ -34,10 +35,10 @@ tasks.withType(JavaCompile) {
 }
 
 tasks.withType(JavaExec) {
-    jvmArgs += ["-Djava.library.path=${rootProject.projectDir}/../rs/target/debug/"]
-    jvmArgs += ["--add-exports java.base/java.lang=ALL-UNNAMED"]
-    jvmArgs += ["--add-exports java.desktop/sun.awt=ALL-UNNAMED"]
-    jvmArgs += ["--add-exports java.desktop/sun.java2d=ALL-UNNAMED"]
+    jvmArgs += ["-Djava.library.path=${rootProject.projectDir}/../rs/target/release/"]
+//    jvmArgs += ["--add-exports java.base/java.lang=ALL-UNNAMED"]
+//    jvmArgs += ["--add-exports java.desktop/sun.awt=ALL-UNNAMED"]
+//    jvmArgs += ["--add-exports java.desktop/sun.java2d=ALL-UNNAMED"]
 }
 
 processResources {
