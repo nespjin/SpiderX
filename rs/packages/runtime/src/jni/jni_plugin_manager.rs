@@ -297,9 +297,9 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
         plugin_id, dataset_id, data
     ));
 
-    // handler
-    //     .throw_java_expception_if_error(data)
-    data.map(|e| handler.new_string(&e))
+    handler
+        .throw_java_expception_if_error(data)
+        .map(|e| handler.new_string(&e))
         .map(|e| e.into_raw())
         .unwrap_or(JObject::null().into_raw())
 }
