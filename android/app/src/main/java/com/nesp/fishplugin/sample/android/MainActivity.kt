@@ -22,12 +22,14 @@ import android.os.Looper
 import android.os.Message
 import android.util.Log
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.nesp.spiderx.runtime.PluginManager
 import com.nesp.spiderx.runtime.RequestJavaScriptDatasetListener
 import com.nesp.spiderx.runtime.android.AndroidWebView
 import com.nesp.spiderx.runtime.model.ScreenType
+import org.apache.logging.log4j.core.util.internal.HttpInputStreamUtil.readStream
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 
@@ -38,13 +40,35 @@ class MainActivity : AppCompatActivity() {
     private val mainHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
             super.handleMessage(msg)
-            Log.d(TAG, "handleMessage: ${msg.what} ${msg.obj} ${msg.obj.javaClass}")
             when (msg.what) {
                 0 -> if (msg.obj is String) tvResult.text = msg.obj as String
             }
         }
     }
     lateinit var tvResult: TextView
+    lateinit var etDatasetId: EditText
+
+    private val requestJavaScriptDatasetListener = object : RequestJavaScriptDatasetListener() {
+        override fun onPageStarted(url: String) {
+            Log.d(TAG, "request: page started $url")
+        }
+
+        override fun onLoadProgress(url: String, progress: Int) {
+            Log.d(TAG, "request: load progress $url $progress")
+        }
+
+        override fun onPageFinished(url: String, document: String) {
+            Log.d(TAG, "request: page finished $url $document")
+        }
+
+        override fun onShouldInterceptRequest(url: String) {
+            Log.d(TAG, "onShouldInterceptRequest: $url")
+        }
+
+        override fun onShouldOverrideUrlLoading(url: String) {
+            Log.d(TAG, "onShouldOverrideUrlLoading: $url")
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,10 +84,12 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.uninstall_plugin).setOnClickListener { uninstallPlugin() }
         findViewById<Button>(R.id.request_dataset).setOnClickListener { request() }
         tvResult = findViewById(R.id.tv_result)
+        etDatasetId = findViewById(R.id.et_dataset_id)
     }
 
     private fun installPlugin() {
-        pluginManager.installPluginJson(PLUGIN_JSON)
+        val pluginJson = readStream(assets.open("plugin.json")).toString(Charsets.UTF_8)
+        pluginManager.installPluginJson(pluginJson)
     }
 
     private fun uninstallPlugin() {
@@ -71,38 +97,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun request() {
+        val datasetId = etDatasetId.text.toString()
         backgroundExecutor.execute {
-            Log.d(TAG, "request: dataset")
+            Log.d(TAG, "request: dataset $datasetId")
             try {
                 val result = pluginManager.requestDataset(
                     "com.example.plugin",
-                    "user_data",
+                    datasetId,
                     type = PluginManager.RequestType.JavaScript,
-                    listener = object : RequestJavaScriptDatasetListener() {
-                        override fun onPageStarted(url: String) {
-                            Log.d(TAG, "request: page started $url")
-                        }
-
-                        override fun onLoadProgress(url: String, progress: Int) {
-                            Log.d(TAG, "request: load progress $url $progress")
-                        }
-
-                        override fun onPageFinished(url: String, document: String) {
-                            Log.d(TAG, "request: page finished $url $document")
-                        }
-
-                        override fun onShouldInterceptRequest(url: String) {
-                            Log.d(TAG, "onShouldInterceptRequest: $url")
-                        }
-
-                        override fun onShouldOverrideUrlLoading(url: String) {
-                            Log.d(TAG, "onShouldOverrideUrlLoading: $url")
-                        }
-                    })
+                    listener = requestJavaScriptDatasetListener
+                )
                 Log.d(TAG, "request: result $result")
                 mainHandler.obtainMessage(0, result).sendToTarget()
             } catch (e: Exception) {
                 e.printStackTrace()
+                mainHandler.obtainMessage(0, e.message).sendToTarget()
             }
             Log.d(TAG, "request: finished")
         }
@@ -110,84 +119,6 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "MainActivity"
-
-        private val PLUGIN_JSON: String = """
-            {
-              "parent": null,
-              "id": "com.example.plugin",
-              "name": "Test Plugin",
-              "author": "Test Author",
-              "version": "1.0.0",
-              "runtimeVersion": "1.0",
-              "description": "A test plugin",
-              "tags": [],
-              "supportedScreenTypes": [],
-              "variables": {},
-              "dataset": [
-                {
-                  "id": "user_data",
-                  "url": "https://silidm.com/",
-                  "url@compact": "https://silidm.com/",
-                  "url@medium": "https://silidm.com/",
-                  "url@expanded": "https://silidm.com/",
-                  "js": "function parse(data) { return JSON.parse(data); }",
-                  "js@compact": "function parse_compact(data) { return JSON.parse(data); }",
-                  "js@medium": "function parse_medium(data) { return JSON.parse(data); }",
-                  "js@expanded": "(function parse_expanded(data) { return 1; })();",
-                  "dsl": {
-                    "fields": [
-                      "name",
-                      "age"
-                    ],
-                    "parser": "json"
-                  },
-                  "dsl@compact": {
-                    "fields@compact": [
-                      "name",
-                      "age"
-                    ],
-                    "parser@compact": "json"
-                  },
-                  "dsl@medium": {
-                    "fields@medium": [
-                      "name",
-                      "age"
-                    ],
-                    "parser@medium": "json"
-                  },
-                  "dsl@expanded": {
-                    "fields@expanded": [
-                      "name",
-                      "age"
-                    ],
-                    "parser@expanded": "json"
-                  }
-                },
-                {
-                  "id": "product_data",
-                  "url": "https://api.example.com/products",
-                  "url@compact": "https://api.example.com/products",
-                  "url@medium": null,
-                  "url@expanded": null,
-                  "js": null,
-                  "js@compact": null,
-                  "js@medium": null,
-                  "js@expanded": null,
-                  "dsl": {
-                    "fields": [
-                      "name",
-                      "price"
-                    ],
-                    "parser": "json"
-                  },
-                  "dsl@compact": null,
-                  "dsl@medium": null,
-                  "dsl@expanded": null
-                }
-              ]
-            }
-            
-            """.trimIndent()
 
         init {
             System.loadLibrary("spiderx_runtime")
