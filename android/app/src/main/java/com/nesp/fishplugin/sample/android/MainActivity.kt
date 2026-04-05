@@ -17,8 +17,12 @@
 package com.nesp.fishplugin.sample.android
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.Message
 import android.util.Log
 import android.widget.Button
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.nesp.spiderx.runtime.PluginManager
 import com.nesp.spiderx.runtime.RequestJavaScriptDatasetListener
@@ -31,6 +35,15 @@ class MainActivity : AppCompatActivity() {
 
     private val backgroundExecutor: Executor = Executors.newSingleThreadExecutor()
     private val pluginManager: PluginManager = PluginManager.instance
+    private val mainHandler = object : Handler(Looper.getMainLooper()) {
+        override fun handleMessage(msg: Message) {
+            super.handleMessage(msg)
+            when (msg.what) {
+                0 -> if (msg.obj is String) tvResult.text = msg.obj as String
+            }
+        }
+    }
+    lateinit var tvResult: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,15 +55,10 @@ class MainActivity : AppCompatActivity() {
         // pluginManager.init(databasePath, ScreenType.EXPANDED, false, JavaFxEmptyWebView.class);
         pluginManager.init(databasePath, ScreenType.EXPANDED, false, AndroidWebView::class.java)
         setContentView(R.layout.activity_main)
-        findViewById<Button>(R.id.install_plugin).setOnClickListener {
-            installPlugin()
-        }
-        findViewById<Button>(R.id.uninstall_plugin).setOnClickListener {
-            uninstallPlugin()
-        }
-        findViewById<Button>(R.id.request_dataset).setOnClickListener {
-            request()
-        }
+        findViewById<Button>(R.id.install_plugin).setOnClickListener { installPlugin() }
+        findViewById<Button>(R.id.uninstall_plugin).setOnClickListener { uninstallPlugin() }
+        findViewById<Button>(R.id.request_dataset).setOnClickListener { request() }
+        tvResult = findViewById(R.id.tv_result)
     }
 
     private fun installPlugin() {
@@ -65,7 +73,7 @@ class MainActivity : AppCompatActivity() {
         backgroundExecutor.execute {
             Log.d(TAG, "request: dataset")
             try {
-                pluginManager.requestDataset(
+                val result = pluginManager.requestDataset(
                     "com.example.plugin",
                     "user_data",
                     type = PluginManager.RequestType.JavaScript,
@@ -90,6 +98,7 @@ class MainActivity : AppCompatActivity() {
                             Log.d(TAG, "onShouldOverrideUrlLoading: $url")
                         }
                     })
+                mainHandler.obtainMessage(0, result).sendToTarget()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
