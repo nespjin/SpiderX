@@ -48,13 +48,19 @@ abstract class JniWebView {
 
     abstract fun performReload()
 
+    open fun executePerformEvaluateOnMainThread() = true;
+
     fun evaluate(javascript: String): String? {
         LOGGER.trace("evaluate: $javascript")
         ensureRunOnBackgroundThread()
-        return postMainThread(Callable { return@Callable performEvaluate(javascript) }).get()
+        if (executePerformEvaluateOnMainThread()) {
+            return postMainThread(Callable { return@Callable performEvaluate(javascript) }).get()
+        }
+        return performEvaluate(javascript);
     }
 
     abstract fun performEvaluate(javascript: String): String?
+
 
     fun destroy() {
         LOGGER.trace("destroy")

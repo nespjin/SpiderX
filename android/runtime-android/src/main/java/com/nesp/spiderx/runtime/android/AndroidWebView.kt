@@ -102,28 +102,38 @@ class AndroidWebView : JniWebView() {
         webView?.reload()
     }
 
+    override fun executePerformEvaluateOnMainThread(): Boolean = false
+
     override fun performEvaluate(javascript: String): String? {
         val webView = this.webView ?: return null
 
         var result: String? = null
         val lock = Object()
 
-        webView.evaluateJavascript(javascript, {
-            result = it
-            try {
-                lock.notifyAll()
-            } catch (_: Exception) {
+        postMainThread {
+            webView.evaluateJavascript(javascript) {
+                Log.d(TAG, "performEvaluate: $javascript result is $it")
+                result = it
+                try {
+                    lock.notifyAll()
+                } catch (_: Exception) {
+                }
             }
-        })
+        }
+
         var waitTakeTime = 0L
-        while (result == null && waitTakeTime < 500) {
+        while (result == null && waitTakeTime < 5000) {
             try {
-                lock.wait(2)
-                waitTakeTime += 2
-            } catch (_: Exception) {
+                synchronized(lock) {
+                    lock.wait(2)
+                    waitTakeTime += 2
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "performEvaluate: failed to wait for result", e)
                 break
             }
         }
+        Log.d(TAG, "performEvaluate: $javascript final result is $result")
         return result
     }
 
