@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     private val mainHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
             super.handleMessage(msg)
+            Log.d(TAG, "handleMessage: ${msg.what} ${msg.obj} ${msg.obj.javaClass}")
             when (msg.what) {
                 0 -> if (msg.obj is String) tvResult.text = msg.obj as String
             }
@@ -98,6 +99,7 @@ class MainActivity : AppCompatActivity() {
                             Log.d(TAG, "onShouldOverrideUrlLoading: $url")
                         }
                     })
+                Log.d(TAG, "request: result $result")
                 mainHandler.obtainMessage(0, result).sendToTarget()
             } catch (e: Exception) {
                 e.printStackTrace()
