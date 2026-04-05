@@ -21,9 +21,9 @@ pub enum RequestDatasetListenerWrpper {
 pub type RequestDatasetListenerArc = Arc<dyn RequestDatasetListener>;
 
 pub trait RequestDatasetListener: Any + 'static + Send + Sync {
-    fn on_receive_data(&self, url: &str, data: &str) {}
+    fn on_receive_data(&self, _url: &str, _data: &str) {}
 
-    fn on_receive_error(&self, url: &str, error: &str) {}
+    fn on_receive_error(&self, _url: &str, _error: &str) {}
 }
 
 pub type RequestJavaScriptDatasetListenerArc = Arc<dyn RequestJavaScriptDatasetListener>;
@@ -31,17 +31,17 @@ pub type RequestJavaScriptDatasetListenerArc = Arc<dyn RequestJavaScriptDatasetL
 pub trait RequestJavaScriptDatasetListener:
     RequestDatasetListener + Any + 'static + Send + Sync
 {
-    fn on_page_started(&self, url: &str) {}
+    fn on_page_started(&self, _url: &str) {}
 
-    fn on_page_cancelled(&self, url: &str) {}
+    fn on_page_cancelled(&self, _url: &str) {}
 
-    fn on_page_finished(&self, url: &str, document: &str) {}
+    fn on_page_finished(&self, _url: &str, _document: &str) {}
 
-    fn on_page_error(&self, url: &str, error: &str) {}
+    fn on_page_error(&self, _url: &str, _error: &str) {}
 
-    fn on_load_progress(&self, url: &str, progress: i32) {}
+    fn on_load_progress(&self, _url: &str, _progress: i32) {}
 
-    fn on_should_override_url_loading(&self, url: &str) {}
+    fn on_should_override_url_loading(&self, _url: &str) {}
 
-    fn on_should_intercept_request(&self, url: &str) {}
+    fn on_should_intercept_request(&self, _url: &str) {}
 }

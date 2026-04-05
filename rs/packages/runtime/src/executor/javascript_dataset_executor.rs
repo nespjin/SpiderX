@@ -138,7 +138,7 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
                         thread::current().id()
                     ));
                     match received {
-                        WebEngineEvent::PageFinished(url, document) => {
+                        WebEngineEvent::PageFinished(url, _document) => {
                             if url == self.url {
                                 let ret = webengine.write().unwrap().evaluate(self.js)?;
                                 result = Ok(ret);
@@ -211,7 +211,7 @@ impl WebEngineListenerImpl {
 }
 
 impl WebEngineListener for WebEngineListenerImpl {
-    fn on_page_started(&self, engine: WebEngineMut, url: &str) {
+    fn on_page_started(&self, _engine: WebEngineMut, url: &str) {
         let listener = &self.listener;
         if let Some(listener) = listener.as_ref() {
             listener.on_page_started(url);
@@ -223,7 +223,7 @@ impl WebEngineListener for WebEngineListenerImpl {
         log_utils::logd(&format!("on_page_started {}", url))
     }
 
-    fn on_page_cancelled(&self, engine: WebEngineMut, url: &str) {
+    fn on_page_cancelled(&self, _engine: WebEngineMut, url: &str) {
         let listener = &self.listener;
         if let Some(listener) = listener.as_ref() {
             listener.on_page_cancelled(url);
@@ -235,7 +235,7 @@ impl WebEngineListener for WebEngineListenerImpl {
         log_utils::logd(&format!("on_page_cancelled {}", url))
     }
 
-    fn on_page_finished(&self, engine: WebEngineMut, url: &str, document: &str) {
+    fn on_page_finished(&self, _engine: WebEngineMut, url: &str, document: &str) {
         let listener = &self.listener;
         if let Some(listener) = listener.as_ref() {
             listener.on_page_finished(url, document);
@@ -250,7 +250,7 @@ impl WebEngineListener for WebEngineListenerImpl {
         log_utils::logd(&format!("on_page_finished {} {}", url, ""))
     }
 
-    fn on_page_error(&self, engine: WebEngineMut, url: &str, error: &str) {
+    fn on_page_error(&self, _engine: WebEngineMut, url: &str, error: &str) {
         let listener = &self.listener;
         if let Some(listener) = listener.as_ref() {
             listener.on_page_error(url, error);
@@ -265,7 +265,7 @@ impl WebEngineListener for WebEngineListenerImpl {
         log_utils::logd(&format!("on_page_error {} {}", url, error))
     }
 
-    fn on_load_progress(&self, engine: WebEngineMut, url: &str, progress: i32) {
+    fn on_load_progress(&self, _engine: WebEngineMut, url: &str, progress: i32) {
         let listener = &self.listener;
         if let Some(listener) = listener.as_ref() {
             listener.on_load_progress(url, progress);
@@ -277,7 +277,7 @@ impl WebEngineListener for WebEngineListenerImpl {
         log_utils::logd(&format!("on_load_progress {} {}", url, progress))
     }
 
-    fn should_override_url_loading(&self, engine: WebEngineMut, url: &str) -> bool {
+    fn should_override_url_loading(&self, _engine: WebEngineMut, url: &str) -> bool {
         let listener = &self.listener;
         if let Some(listener) = listener.as_ref() {
             listener.on_should_override_url_loading(url);
@@ -293,7 +293,7 @@ impl WebEngineListener for WebEngineListenerImpl {
         false
     }
 
-    fn should_intercept_request(&self, engine: WebEngineMut, url: &str) -> Option<String> {
+    fn should_intercept_request(&self, _engine: WebEngineMut, url: &str) -> Option<String> {
         let listener = &self.listener;
         if let Some(listener) = listener.as_ref() {
             listener.on_should_intercept_request(url);
@@ -309,7 +309,7 @@ impl WebEngineListener for WebEngineListenerImpl {
         None
     }
 
-    fn on_received_data(&self, engine: WebEngineMut, url: &str, data: &str) {
+    fn on_received_data(&self, _engine: WebEngineMut, url: &str, data: &str) {
         let listener = &self.listener;
         if let Some(listener) = listener.as_ref() {
             listener.on_receive_data(url, data);
@@ -324,7 +324,7 @@ impl WebEngineListener for WebEngineListenerImpl {
         log_utils::logd(&format!("on_receive_data {} {}", url, data))
     }
 
-    fn on_received_error(&self, engine: WebEngineMut, url: &str, error: &str) {
+    fn on_received_error(&self, _engine: WebEngineMut, url: &str, error: &str) {
         let listener = &self.listener;
         if let Some(listener) = listener.as_ref() {
             listener.on_receive_error(url, error);

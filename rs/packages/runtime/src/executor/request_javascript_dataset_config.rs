@@ -17,11 +17,11 @@ use std::sync::Arc;
 pub type RequestJavaScriptDatasetConfigArc = Arc<dyn RequestJavaScriptDatasetConfig>;
 
 pub trait RequestJavaScriptDatasetConfig: Send + Sync {
-    fn should_override_url_loading(&self, url: &str) -> Option<bool> {
+    fn should_override_url_loading(&self, _url: &str) -> Option<bool> {
         None
     }
 
-    fn should_intercept_request(&self, url: &str) -> Option<String> {
+    fn should_intercept_request(&self, _url: &str) -> Option<String> {
         None
     }
 }
