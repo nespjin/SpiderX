@@ -4,6 +4,9 @@
     <option name="MigrateToGradleLocalJavaHome">
       <set>
         <option value="$PROJECT_DIR$/jvm" />
+        <option value="$PROJECT_DIR$/javafx" />
+        <option value="$PROJECT_DIR$/tools/editor" />
+        <option value="$PROJECT_DIR$/android" />
       </set>
     </option>
   </component>
