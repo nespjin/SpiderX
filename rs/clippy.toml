@@ -1,0 +1,21 @@
+# Rust Clippy Configuration for SpiderX
+# This file configures linting rules to improve code quality
+
+# Allow certain lints that are too strict for this project
+[lints.clippy]
+# Warn about common issues
+too_many_arguments = "warn"
+large_types_passed_by_value = "warn"
+unnecessary_wraps = "warn"
+
+# Allow some patterns that are acceptable in this codebase
+needless_return = "allow"
+redundant_closure = "allow"
+
+# Performance-related lints
+len_without_is_empty = "warn"
+unused_self = "warn"
+
+# Style improvements
+manual_strip = "warn"
+match_like_matches_macro = "warn"
