@@ -22,7 +22,8 @@ use std::{
 use compiler::{json_plugin_compiler::JsonPluginCompiler, plugin_compiler::PluginCompiler};
 
 use crate::{
-    database::database,
+    cache::CacheManager,
+    database::connection_pool::DatabasePool,
     executor::{
         request_dataset_listener::RequestDatasetListenerWrpper,
         request_javascript_dataset_config::RequestJavaScriptDatasetConfigArc,
@@ -67,7 +68,7 @@ impl PluginManager {
 
         let database_path_str = &config.database_path;
         let database_path = Path::new(database_path_str);
-        
+
         // Create parent directory if it doesn't exist
         if let Some(parent) = database_path.parent() {
             if !parent.exists() {
@@ -75,16 +76,26 @@ impl PluginManager {
             }
         }
 
-        self.plugin_repository = Some(PluginRepository::new(database_path_str.clone()));
-        self.dataset_repository = Some(DatasetRepository::new(database_path_str.clone()));
+        // Initialize connection pool
+        DatabasePool::init(database_path_str)?;
+        log::info!("Connection pool initialized for: {}", database_path_str);
 
-        // Initialize the database.
-        let mut conn: diesel::SqliteConnection =
-            database::open(database_path_str).map_err(|e| e.to_string())?;
-        database::run_migrations(&mut conn).map_err(|e| e.to_string())?;
+        // Initialize cache manager
+        CacheManager::init();
+        log::info!("Cache manager initialized");
+
+        self.plugin_repository = Some(PluginRepository::new());
+        self.dataset_repository = Some(DatasetRepository::new());
+
+        // Run migrations using pooled connection
+        let pool = DatabasePool::get_instance()
+            .get()
+            .ok_or("Failed to get database pool instance")?;
+        pool.run_migrations()?;
 
         self.config = Some(config);
 
+        log::info!("PluginManager initialized successfully with connection pooling and caching");
         Ok(())
     }
 
@@ -122,17 +133,17 @@ impl PluginManager {
         self.ensure_initialized()?;
         let plugin_id = plugin.id.to_string();
         let datasets = plugin.datasets.clone();
-        
+
         self.plugin_repository
             .as_ref()
             .ok_or("PluginRepository is not initialized".to_string())?
             .save_plugin(plugin)?;
-            
+
         self.dataset_repository
             .as_ref()
             .ok_or("DatasetRepository is not initialized".to_string())?
             .save_datasets(&plugin_id, datasets)?;
-            
+
         Ok(())
     }
 
@@ -163,17 +174,17 @@ impl PluginManager {
     /// Uninstall a plugin by id
     pub fn uninstall_plugin(&mut self, id: &str) -> Result<(), String> {
         self.ensure_initialized()?;
-        
+
         self.plugin_repository
             .as_ref()
             .ok_or("PluginRepository is not initialized".to_string())?
             .delete_plugin(id)?;
-            
+
         self.dataset_repository
             .as_ref()
             .ok_or("DatasetRepository is not initialized".to_string())?
             .delete_datasets(id)?;
-            
+
         Ok(())
     }
 

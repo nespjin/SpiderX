@@ -16,7 +16,8 @@ use core::data::plugin::Dataset;
 use std::collections::HashMap;
 
 use crate::{
-    database::{database, dataset_dao},
+    cache::CacheManager,
+    database::{connection_pool::get_pooled_connection, dataset_dao},
     device::device_manager::DeviceManager,
     executor::{
         dataset_executor::DatasetExecutor,
@@ -31,45 +32,93 @@ use crate::{
     utils::{log_utils, screen_typed_value::ScreenTypedValue},
 };
 
-pub struct DatasetRepository {
-    database_path: String,
-}
+pub struct DatasetRepository {}
 
 impl DatasetRepository {
-    pub fn new(database_path: String) -> DatasetRepository {
-        DatasetRepository { database_path }
+    pub fn new() -> DatasetRepository {
+        DatasetRepository {}
     }
 
     pub fn save_dataset(&self, plugin_id: &str, dataset: Dataset) -> Result<(), String> {
-        let mut sqlite_connection =
-            database::open(&self.database_path).map_err(|e| e.to_string())?;
-        let entity = dataset::dataset_to_entity(plugin_id.to_string(), dataset)?;
-        dataset_dao::upsert(&mut sqlite_connection, &entity).map_err(|e| e.to_string())?;
+        let cache = CacheManager::init();
+
+        // Invalidate old cache entries
+        cache.remove_dataset(plugin_id, &dataset.id);
+        cache.remove_plugin_datasets(plugin_id); // Invalidate list cache
+
+        let mut pooled_conn = get_pooled_connection()?;
+        let entity = dataset::dataset_to_entity(plugin_id.to_string(), dataset.clone())?;
+        dataset_dao::upsert(&mut *pooled_conn, &entity).map_err(|e| e.to_string())?;
+
+        // Update cache with new data
+        cache.insert_dataset(plugin_id.to_string(), dataset.id.clone(), dataset.clone());
+        log::debug!("Updated cache for dataset: {}.{}", plugin_id, dataset.id);
+
         Ok(())
     }
 
     pub fn save_datasets(&self, plugin_id: &str, datasets: Vec<Dataset>) -> Result<(), String> {
-        let mut sqlite_connection =
-            database::open(&self.database_path).map_err(|e| e.to_string())?;
-        let entities = dataset::datasets_to_entities(plugin_id.to_string(), datasets)?;
-        dataset_dao::upsert_all(&mut sqlite_connection, &entities)
+        let cache = CacheManager::init();
+
+        // Invalidate old cache entries for this plugin
+        cache.remove_plugin_datasets(plugin_id);
+
+        let mut pooled_conn = get_pooled_connection()?;
+        let entities = dataset::datasets_to_entities(plugin_id.to_string(), datasets.clone())?;
+        dataset_dao::upsert_all(&mut *pooled_conn, &entities)
             .map(|_| ())
-            .map_err(|e| e.to_string())
+            .map_err(|e| e.to_string())?;
+
+        // Update cache for all datasets
+        for dataset in &datasets {
+            cache.insert_dataset(plugin_id.to_string(), dataset.id.clone(), dataset.clone());
+        }
+        // Note: We don't cache the list here - it will be cached on first read
+
+        log::debug!(
+            "Updated cache for {} datasets of plugin: {}",
+            datasets.len(),
+            plugin_id
+        );
+        Ok(())
     }
 
     pub fn get_datasets(&self, plugin_id: &str) -> Result<Vec<Dataset>, String> {
-        let mut sqlite_connection =
-            database::open(&self.database_path).map_err(|e| e.to_string())?;
-        let entities = dataset_dao::find_by_plugin_id(&mut sqlite_connection, plugin_id)
+        let cache = CacheManager::init();
+
+        // Check cache first
+        if let Some(cached) = cache.get_plugin_datasets(plugin_id) {
+            log::debug!("Cache hit for plugin datasets: {}", plugin_id);
+            return Ok(cached);
+        }
+
+        log::debug!(
+            "Cache miss for plugin datasets: {}, querying database",
+            plugin_id
+        );
+
+        let mut pooled_conn = get_pooled_connection()?;
+        let entities = dataset_dao::find_by_plugin_id(&mut *pooled_conn, plugin_id)
             .map_err(|e| e.to_string())?;
-        dataset::datasets_entities_to_external_models(entities)
+        let datasets = dataset::datasets_entities_to_external_models(entities)?;
+
+        // Cache the result
+        cache.insert_plugin_datasets(plugin_id.to_string(), datasets.clone());
+        log::debug!(
+            "Cached {} datasets for plugin: {}",
+            datasets.len(),
+            plugin_id
+        );
+
+        Ok(datasets)
     }
 
     pub fn get_dataset(&self, id: &str) -> Result<Option<Dataset>, String> {
-        let mut sqlite_connection =
-            database::open(&self.database_path).map_err(|e| e.to_string())?;
+        // Note: This method doesn't know the plugin_id, so we can't efficiently cache it
+        // We'll use pooled connection but skip caching for this method
+        let mut pooled_conn = get_pooled_connection()?;
 
-        match dataset_dao::find_by_id(&mut sqlite_connection, id).map_err(|e| e.to_string())? {
+        match dataset_dao::find_by_id(&mut *pooled_conn, id).map_err(|e| e.to_string())? {
             Some(entity) => Ok(Some(dataset::dataset_entity_to_external_model(entity)?)),
             None => Ok(None),
         }
@@ -88,30 +137,80 @@ impl DatasetRepository {
             return Err("Dataset id is empty".to_string());
         }
 
-        let mut sqlite_connection =
-            database::open(&self.database_path).map_err(|e| e.to_string())?;
-        match dataset_dao::find_by_id_in_plugin(&mut sqlite_connection, plugin_id, id)
+        let cache = CacheManager::init();
+
+        // Check cache first
+        if let Some(cached) = cache.get_dataset(plugin_id, id) {
+            log::debug!("Cache hit for dataset: {}.{}", plugin_id, id);
+            return Ok(Some(cached));
+        }
+
+        log::debug!("Cache miss for dataset: {}.{}", plugin_id, id);
+
+        let mut pooled_conn = get_pooled_connection()?;
+        match dataset_dao::find_by_id_in_plugin(&mut *pooled_conn, plugin_id, id)
             .map_err(|e| e.to_string())?
         {
-            Some(entity) => Ok(Some(dataset::dataset_entity_to_external_model(entity)?)),
+            Some(entity) => {
+                let dataset = dataset::dataset_entity_to_external_model(entity)?;
+
+                // Cache the result
+                cache.insert_dataset(plugin_id.to_string(), id.to_string(), dataset.clone());
+                log::debug!("Cached dataset: {}.{}", plugin_id, id);
+
+                Ok(Some(dataset))
+            }
             None => Ok(None),
         }
     }
 
     pub fn delete_dataset(&self, id: &str) -> Result<(), String> {
-        let mut sqlite_connection =
-            database::open(&self.database_path).map_err(|e| e.to_string())?;
-        dataset_dao::delete_by_id(&mut sqlite_connection, id)
-            .map(|_| ())
-            .map_err(|e| e.to_string())
+        // First get the dataset from database to know plugin_id for precise cache invalidation
+        let mut pooled_conn = get_pooled_connection()?;
+
+        let entity = dataset_dao::find_by_id(&mut *pooled_conn, id).map_err(|e| e.to_string())?;
+
+        if let Some(entity) = entity {
+            let plugin_id = entity.plugin_id.clone();
+            let dataset_id = entity.id.clone();
+
+            // Delete from database
+            dataset_dao::delete_by_id(&mut *pooled_conn, id)
+                .map(|_| ())
+                .map_err(|e| e.to_string())?;
+
+            // Precise cache invalidation
+            let cache = CacheManager::init();
+            cache.remove_dataset(&plugin_id, &dataset_id);
+            cache.remove_plugin_datasets(&plugin_id); // Invalidate list cache
+
+            log::debug!(
+                "Invalidated cache for deleted dataset: {}.{}",
+                plugin_id,
+                dataset_id
+            );
+        } else {
+            log::warn!("Attempted to delete non-existent dataset: {}", id);
+        }
+
+        Ok(())
     }
 
     pub fn delete_datasets(&self, plugin_id: &str) -> Result<(), String> {
-        let mut sqlite_connection =
-            database::open(&self.database_path).map_err(|e| e.to_string())?;
-        dataset_dao::delete_by_plugin_id(&mut sqlite_connection, plugin_id)
+        let mut pooled_conn = get_pooled_connection()?;
+        dataset_dao::delete_by_plugin_id(&mut *pooled_conn, plugin_id)
             .map(|_| ())
-            .map_err(|e| e.to_string())
+            .map_err(|e| e.to_string())?;
+
+        // Invalidate cache for this plugin's datasets
+        let cache = CacheManager::init();
+        cache.remove_plugin_datasets(plugin_id);
+        log::debug!(
+            "Invalidated cache for deleted datasets of plugin: {}",
+            plugin_id
+        );
+
+        Ok(())
     }
 
     pub fn request_dataset(
