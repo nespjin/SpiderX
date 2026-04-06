@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::fmt::Display;
+
 use jni::{
     JNIEnv, JavaVM,
     descriptors::Desc,
@@ -161,15 +163,18 @@ impl<'local> JniHandler<'local> {
         self.get_string(&name)
     }
 
-    pub fn throw_java_exception_if_error<T>(&mut self, error: Result<T, String>) -> Option<T> {
+    pub fn throw_java_exception_if_error<T, E: Display>(
+        &mut self,
+        error: Result<T, E>,
+    ) -> Option<T> {
         if let Err(e) = &error {
             eprintln!("Throwing Java exception: {}", e);
             self.env
-                .throw_new("java/lang/Exception", e.as_str())
+                .throw_new("java/lang/Exception", e.to_string().as_str())
                 .ok()?;
             return None;
         }
-        Some(error.unwrap())
+        Some(error.ok()).flatten()
     }
 
     pub fn throw_java_exception_msg(&mut self, msg: &str) {
