@@ -55,14 +55,42 @@ impl PluginRepository {
     pub fn get_plugins(&self) -> Result<Vec<Plugin>, String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
+        
+        // Fetch all plugins
         let entities = plugin_dao::find_all(&mut sqlite_connection).map_err(|e| e.to_string())?;
-        let mut dataset_entities = Vec::new();
-        for entity in &entities {
-            let datasets =
-                dataset_dao::find_by_plugin_id(&mut sqlite_connection, entity.id.as_str())
-                    .map_err(|e| e.to_string())?;
-            dataset_entities.push(datasets);
+        
+        if entities.is_empty() {
+            return Ok(Vec::new());
         }
+        
+        // Collect all plugin IDs
+        let plugin_ids: Vec<String> = entities.iter().map(|e| e.id.clone()).collect();
+        
+        // Single query to fetch all datasets for all plugins (fixes N+1 problem)
+        let all_datasets = dataset_dao::find_by_plugin_ids(&mut sqlite_connection, &plugin_ids)
+            .map_err(|e| e.to_string())?;
+        
+        // Group datasets by plugin_id
+        let mut datasets_by_plugin: std::collections::HashMap<String, Vec<_>> = 
+            std::collections::HashMap::new();
+        for dataset in all_datasets {
+            datasets_by_plugin
+                .entry(dataset.plugin_id.clone())
+                .or_insert_with(Vec::new)
+                .push(dataset);
+        }
+        
+        // Build dataset_entities in the same order as entities
+        let dataset_entities: Vec<Vec<_>> = entities
+            .iter()
+            .map(|entity| {
+                datasets_by_plugin
+                    .get(&entity.id)
+                    .cloned()
+                    .unwrap_or_default()
+            })
+            .collect();
+        
         let plugins = plugin::entities_to_external_models(entities, dataset_entities)?;
         Ok(plugins)
     }
@@ -70,10 +98,13 @@ impl PluginRepository {
     pub fn get_plugin(&self, id: &str) -> Result<Option<Plugin>, String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
+        
         let entity =
             plugin_dao::find_by_id(&mut sqlite_connection, id).map_err(|e| e.to_string())?;
+        
         match entity {
             Some(entity) => {
+                // Fetch datasets for this specific plugin
                 let dataset_entities = dataset_dao::find_by_plugin_id(&mut sqlite_connection, id)
                     .map_err(|e| e.to_string())?;
                 let plugin = plugin::entity_to_external_model(entity, dataset_entities)?;
