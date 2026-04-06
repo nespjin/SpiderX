@@ -147,41 +147,6 @@ impl WebEngine for JniWebView {
         Ok(ret)
     }
 
-    // fn add_listener(&mut self, listener: WebEngineListenerMut) -> i64 {
-    //     let id = self.listener_id;
-    //     self.listener_id += 1;
-    //     self.listeners.write().unwrap().insert(id, listener);
-    //     id
-    // }
-
-    // fn remove_listener(&mut self, id: i64) {
-    //     self.listeners.write().unwrap().remove(&id);
-    //     // self.listeners
-    //     //     .write()
-    //     //     .unwrap()
-    //     //     .retain(|l| !std::ptr::addr_eq(l.as_ref(), listener.as_ref()));
-    // }
-
-    // fn notify_listeners<F>(&self, mut callback: F)
-    // where
-    //     F: FnMut(WebEngineListenerMut),
-    // {
-    //     self.listeners
-    //         .read()
-    //         .unwrap()
-    //         .values()
-    //         .for_each(|l| callback(l.clone()));
-    // }
-
-    // fn listeners(&self) -> Vec<WebEngineListenerMut> {
-    //     self.listeners
-    //         .read()
-    //         .unwrap()
-    //         .values()
-    //         .cloned()
-    //         .collect::<Vec<_>>()
-    // }
-
     fn set_listener(&mut self, listener: WebEngineListenerArc) {
         if self.listener.is_some() {
             return;
@@ -217,14 +182,6 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_JniWebView_nativeNot
 
     let jni_wv = get_jni_wv_from_java_obj(&mut env, this);
 
-    // let listeners = jni_wv.listeners();
-    // listeners.iter().for_each(|listener| {
-    //     listener.on_load_progress(jni_wv.clone(), 100);
-    // });
-
-    // jni_wv.notify_listeners(|listener| {
-    //     listener.on_page_started(jni_wv.clone(), &url);
-    // });
     jni_wv
         .read()
         .unwrap()
