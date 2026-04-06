@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use std::{
-    collections::HashMap,
+    collections::{HashMap, VecDeque},
     sync::{Arc, Mutex, OnceLock, RwLock},
 };
 
@@ -24,7 +24,7 @@ const MAX_WV_POOL_SIZE: usize = 10;
 pub struct WebEngineManager {
     webengine_id: i64,
     webengines: Arc<RwLock<HashMap<i64, WebEngineMut>>>,
-    webengine_pool: Arc<RwLock<Vec<WebEngineMut>>>,
+    webengine_pool: Arc<RwLock<VecDeque<WebEngineMut>>>,
     is_cache_engine: bool,
 }
 
@@ -35,7 +35,7 @@ impl WebEngineManager {
             Mutex::new(WebEngineManager {
                 webengine_id: 0,
                 webengines: Arc::new(RwLock::new(HashMap::new())),
-                webengine_pool: Arc::new(RwLock::new(Vec::new())),
+                webengine_pool: Arc::new(RwLock::new(VecDeque::new())),
                 is_cache_engine: false,
             })
         })
@@ -60,11 +60,13 @@ impl WebEngineManager {
             .map_err(|e| e.to_string())?
             .is_empty()
         {
+            // O(1) removal from front with VecDeque
             let engine = self
                 .webengine_pool
                 .write()
                 .map_err(|e| e.to_string())?
-                .remove(0);
+                .pop_front();
+            let mut engine = engine.expect("Pool indicated non-empty but pop_front returned None");
             engine.write().map_err(|e| e.to_string())?.set_id(id);
             engine
         } else {
