@@ -42,28 +42,29 @@ pub enum PluginSource {
 }
 
 pub struct PluginManager {
-    config: Option<PluginManagerConfig>,
-    dataset_repository: Option<DatasetRepository>,
-    plugin_repository: Option<PluginRepository>,
-    request_javascript_dataset_config: Option<RequestJavaScriptDatasetConfigArc>,
+    config: Mutex<Option<PluginManagerConfig>>,
+    dataset_repository: Mutex<Option<DatasetRepository>>,
+    plugin_repository: Mutex<Option<PluginRepository>>,
+    request_javascript_dataset_config: Mutex<Option<RequestJavaScriptDatasetConfigArc>>,
 }
 
 impl PluginManager {
-    pub fn get_instance() -> &'static Mutex<PluginManager> {
-        static INSTANCE: OnceLock<Mutex<PluginManager>> = OnceLock::new();
-        INSTANCE.get_or_init(|| {
-            Mutex::new(PluginManager {
-                config: None,
-                dataset_repository: None,
-                plugin_repository: None,
-                request_javascript_dataset_config: None,
-            })
+    pub fn get_instance() -> &'static PluginManager {
+        static INSTANCE: OnceLock<PluginManager> = OnceLock::new();
+        INSTANCE.get_or_init(|| PluginManager {
+            config: Mutex::new(None),
+            dataset_repository: Mutex::new(None),
+            plugin_repository: Mutex::new(None),
+            request_javascript_dataset_config: Mutex::new(None),
         })
     }
 
-    pub fn init(&mut self, config: PluginManagerConfig) -> Result<(), String> {
-        if self.config.is_some() {
-            return Err("PluginManager has been initialized.".to_string());
+    pub fn init(&self, config: PluginManagerConfig) -> Result<(), String> {
+        {
+            let config = self.config.lock().unwrap();
+            if config.is_some() {
+                return Err("PluginManager has been initialized.".to_string());
+            }
         }
 
         #[cfg(target_os = "android")]
@@ -94,8 +95,14 @@ impl PluginManager {
         CacheManager::init();
         log::info!("Cache manager initialized");
 
-        self.plugin_repository = Some(PluginRepository::new());
-        self.dataset_repository = Some(DatasetRepository::new());
+        {
+            let mut plugin_repository = self.plugin_repository.lock().unwrap();
+            *plugin_repository = Some(PluginRepository::new());
+        }
+        {
+            let mut dataset_repository = self.dataset_repository.lock().unwrap();
+            *dataset_repository = Some(DatasetRepository::new());
+        }
 
         // Run migrations using pooled connection
         let pool = DatabasePool::get_instance()
@@ -103,23 +110,30 @@ impl PluginManager {
             .ok_or("Failed to get database pool instance")?;
         pool.run_migrations()?;
 
-        self.config = Some(config);
+        {
+            let mut cfg = self.config.lock().unwrap();
+            *cfg = Some(config);
+        }
 
         log::info!("PluginManager initialized successfully with connection pooling and caching");
         Ok(())
     }
 
     pub fn set_request_javascript_dataset_config(
-        &mut self,
+        &self,
         request_javascript_dataset_config: RequestJavaScriptDatasetConfigArc,
     ) {
-        self.request_javascript_dataset_config = Some(request_javascript_dataset_config);
+        let mut cfg = self.request_javascript_dataset_config.lock().unwrap();
+        *cfg = Some(request_javascript_dataset_config);
     }
 
     pub fn get_request_javascript_dataset_config(
         &self,
     ) -> Option<RequestJavaScriptDatasetConfigArc> {
-        self.request_javascript_dataset_config.clone()
+        self.request_javascript_dataset_config
+            .lock()
+            .unwrap()
+            .clone()
     }
 
     pub fn install_plugin(&self, source: &PluginSource) -> Result<(), String> {
@@ -144,15 +158,25 @@ impl PluginManager {
         let plugin_id = plugin.id.to_string();
         let datasets = plugin.datasets.clone();
 
-        self.plugin_repository
-            .as_ref()
-            .ok_or("PluginRepository is not initialized".to_string())?
-            .save_plugin(plugin)?;
+        {
+            self.plugin_repository
+                .lock()
+                .ok()
+                .ok_or("Failed to lock PluginRepository")?
+                .as_ref()
+                .ok_or("PluginRepository is not initialized".to_string())?
+                .save_plugin(plugin)?;
+        }
 
-        self.dataset_repository
-            .as_ref()
-            .ok_or("DatasetRepository is not initialized".to_string())?
-            .save_datasets(&plugin_id, datasets)?;
+        {
+            self.dataset_repository
+                .lock()
+                .ok()
+                .ok_or("Failed to lock DatasetRepository")?
+                .as_ref()
+                .ok_or("DatasetRepository is not initialized".to_string())?
+                .save_datasets(&plugin_id, datasets)?;
+        }
 
         Ok(())
     }
@@ -160,6 +184,9 @@ impl PluginManager {
     pub fn is_plugin_installed(&self, id: &str) -> Result<bool, String> {
         self.ensure_initialized()?;
         self.plugin_repository
+            .lock()
+            .ok()
+            .ok_or("Failed to lock PluginRepository")?
             .as_ref()
             .ok_or("PluginRepository is not initialized".to_string())?
             .is_plugin_exists(id)
@@ -168,6 +195,9 @@ impl PluginManager {
     pub fn get_installed_plugin(&self, id: &str) -> Result<Option<Plugin>, String> {
         self.ensure_initialized()?;
         self.plugin_repository
+            .lock()
+            .ok()
+            .ok_or("Failed to lock PluginRepository")?
             .as_ref()
             .ok_or("PluginRepository is not initialized".to_string())?
             .get_plugin(id)
@@ -176,24 +206,36 @@ impl PluginManager {
     pub fn get_installed_plugins(&self) -> Result<Vec<Plugin>, String> {
         self.ensure_initialized()?;
         self.plugin_repository
+            .lock()
+            .ok()
+            .ok_or("Failed to lock PluginRepository")?
             .as_ref()
             .ok_or("PluginRepository is not initialized".to_string())?
             .get_plugins()
     }
 
     /// Uninstall a plugin by id
-    pub fn uninstall_plugin(&mut self, id: &str) -> Result<(), String> {
+    pub fn uninstall_plugin(&self, id: &str) -> Result<(), String> {
         self.ensure_initialized()?;
+        {
+            self.plugin_repository
+                .lock()
+                .ok()
+                .ok_or("Failed to lock PluginRepository")?
+                .as_ref()
+                .ok_or("PluginRepository is not initialized".to_string())?
+                .delete_plugin(id)?;
+        }
 
-        self.plugin_repository
-            .as_ref()
-            .ok_or("PluginRepository is not initialized".to_string())?
-            .delete_plugin(id)?;
-
-        self.dataset_repository
-            .as_ref()
-            .ok_or("DatasetRepository is not initialized".to_string())?
-            .delete_datasets(id)?;
+        {
+            self.dataset_repository
+                .lock()
+                .ok()
+                .ok_or("Failed to lock DatasetRepository")?
+                .as_ref()
+                .ok_or("DatasetRepository is not initialized".to_string())?
+                .delete_datasets(id)?;
+        }
 
         Ok(())
     }
@@ -206,16 +248,19 @@ impl PluginManager {
         listener: Option<RequestDatasetListenerWrpper>,
     ) -> Result<String, String> {
         self.ensure_initialized()?;
+        let config = {
+            self.request_javascript_dataset_config
+                .lock()
+                .ok()
+                .ok_or("Failed to lock RequestJavaScriptDatasetConfigArc")?
+        };
         self.dataset_repository
+            .lock()
+            .ok()
+            .ok_or("Failed to lock DatasetRepository")?
             .as_ref()
             .ok_or("DatasetRepository is not initialized".to_string())?
-            .request_dataset(
-                plugin_id,
-                dataset_id,
-                r#type,
-                listener,
-                self.request_javascript_dataset_config.clone(),
-            )
+            .request_dataset(plugin_id, dataset_id, r#type, listener, config.clone())
     }
 
     pub fn auto_request_type(
@@ -225,13 +270,16 @@ impl PluginManager {
     ) -> Result<RequestType, String> {
         self.ensure_initialized()?;
         self.dataset_repository
+            .lock()
+            .ok()
+            .ok_or("Failed to lock DatasetRepository")?
             .as_ref()
             .ok_or("DatasetRepository is not initialized".to_string())?
             .auto_request_type(plugin_id, dataset_id)
     }
 
     fn ensure_initialized(&self) -> Result<(), String> {
-        if self.config.is_none() {
+        if self.config.lock().unwrap().is_none() {
             return Err("The plugin manager is not initialized".to_string());
         }
         Ok(())
@@ -264,7 +312,6 @@ mod test {
     #[test]
     fn test_plugin_manager_init() {
         let plugin_manager = PluginManager::get_instance();
-        let mut plugin_manager = plugin_manager.lock().unwrap();
         let config = PluginManagerConfig {
             database_path: "target/runtime.db".to_string(),
         };

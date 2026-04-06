@@ -45,30 +45,30 @@ pub const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON: jint = 0;
 pub const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON_FILE: jint = 1;
 
 pub struct JniPluginManager {
-    is_initialized: bool,
+    is_initialized: Mutex<bool>,
 }
 
 impl JniPluginManager {
-    pub fn get_instance() -> &'static Mutex<JniPluginManager> {
-        static INSTANCE: OnceLock<Mutex<JniPluginManager>> = OnceLock::new();
-        INSTANCE.get_or_init(|| {
-            Mutex::new(JniPluginManager {
-                is_initialized: false,
-            })
+    pub fn get_instance() -> &'static JniPluginManager {
+        static INSTANCE: OnceLock<JniPluginManager> = OnceLock::new();
+        INSTANCE.get_or_init(|| JniPluginManager {
+            is_initialized: Mutex::new(false),
         })
     }
 
-    pub fn init(&mut self, wv_java_class: GlobalRef) -> Result<(), String> {
-        if self.is_initialized {
-            return Err("The jni plugin manager is already init.".to_string());
+    pub fn init(&self, wv_java_class: GlobalRef) -> Result<(), String> {
+        {
+            let mut is_initialized = self.is_initialized.lock().unwrap();
+            if *is_initialized {
+                return Err("The jni plugin manager is already init.".to_string());
+            }
+            *is_initialized = true;
         }
 
-        self.is_initialized = true;
-
-        if let Err(_) = JAVA_WEBVIEW_CLASS.set(wv_java_class) {
-            return Err("Failed to set global Java WebView class.".to_string());
-        }
-        Ok(())
+        JAVA_WEBVIEW_CLASS
+            .set(wv_java_class)
+            .map(|_| ())
+            .map_err(|_| "Failed to set global Java WebView class.".to_string())
     }
 }
 
@@ -86,12 +86,12 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
 
     {
         let config = PluginManagerConfig { database_path };
-        let mut plugin_manager = PluginManager::get_instance().lock().unwrap();
+        let plugin_manager = PluginManager::get_instance();
         handler.throw_java_exception_if_error(plugin_manager.init(config));
     }
 
     {
-        let mut jni_plugin_manager = JniPluginManager::get_instance().lock().unwrap();
+        let jni_plugin_manager = JniPluginManager::get_instance();
         let wv_java_class_global = handler.new_global_ref(&webviewClass);
         handler.throw_java_exception_if_error(jni_plugin_manager.init(wv_java_class_global));
     }
@@ -155,7 +155,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
         }
     };
 
-    let plugin_manager = PluginManager::get_instance().lock().unwrap();
+    let plugin_manager = PluginManager::get_instance();
     handler.throw_java_exception_if_error(plugin_manager.install_plugin(&plugin_source));
 }
 
@@ -169,7 +169,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     let id = handler.get_string(&id);
 
     let is_installed = {
-        let plugin_manager = PluginManager::get_instance().lock().unwrap();
+        let plugin_manager = PluginManager::get_instance();
         plugin_manager.is_plugin_installed(&id)
     };
 
@@ -189,7 +189,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     let id = handler.get_string(&id);
 
     let installed_plugin = {
-        let plugin_manager = PluginManager::get_instance().lock().unwrap();
+        let plugin_manager = PluginManager::get_instance();
         plugin_manager.get_installed_plugin(&id)
     };
 
@@ -210,7 +210,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     let mut handler = JniHandler::new_with_env(env);
 
     let plugins = {
-        let plugin_manager = PluginManager::get_instance().lock().unwrap();
+        let plugin_manager = PluginManager::get_instance();
         match handler.throw_java_exception_if_error(plugin_manager.get_installed_plugins()) {
             Some(p) => p,
             None => return JObject::null().into_raw(),
@@ -241,7 +241,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     let mut handler = JniHandler::new_with_env(env);
     let id = handler.get_string(&id);
 
-    let mut plugin_manager = PluginManager::get_instance().lock().unwrap();
+    let plugin_manager = PluginManager::get_instance();
     handler.throw_java_exception_if_error(plugin_manager.uninstall_plugin(&id));
 }
 
@@ -259,7 +259,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     let dataset_id = handler.get_string(&datasetId);
 
     let data = {
-        let plugin_manager = PluginManager::get_instance().lock().unwrap();
+        let plugin_manager = PluginManager::get_instance();
         let mut request_type = RequestType::try_from(r#type).unwrap();
         request_type = match request_type {
             RequestType::Auto => plugin_manager
