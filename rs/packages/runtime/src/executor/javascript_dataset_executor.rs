@@ -113,7 +113,11 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
                 e.clone(),
                 thread::current().id()
             );
-            tx.send(e).expect("Send message to channel failed.");
+            let ret = tx.send(e);
+            if ret.is_err() {
+                log::error!("WebEngineCallback send error {}", ret.err().unwrap());
+            }
+            log::debug!("WebEngineCallback end on thread {:?}", thread::current().id());
         });
 
         let listener = Arc::new(WebEngineListenerImpl::new(
@@ -129,7 +133,7 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
         let mut result: Result<String, String> = Ok(String::new());
 
         loop {
-            match rx.recv_timeout(Duration::from_secs(10)) {
+            match rx.recv_timeout(Duration::from_secs(30)) {
                 Ok(received) => {
                     log::debug!(
                         "JavaScriptDatasetExecutor::request received {} on thread {:?}",
@@ -138,6 +142,11 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
                     );
                     match received {
                         WebEngineEvent::PageFinished(url, _document) => {
+                            log::debug!(
+                                "JavaScriptDatasetExecutor::request page finished {} {}",
+                                url,
+                                self.url
+                            );
                             if url == self.url {
                                 let ret = webengine.write().unwrap().evaluate(self.js)?;
                                 log::debug!(
@@ -241,6 +250,7 @@ impl WebEngineListener for WebEngineListenerImpl {
     }
 
     fn on_page_finished(&self, _engine: WebEngineMut, url: &str, document: &str) {
+        log::debug!("on_page_finished >>>>>>>>>>>>>>>>>>>>>>> {}", url);
         let listener = &self.listener;
         if let Some(listener) = listener.as_ref() {
             listener.on_page_finished(url, document);
@@ -279,7 +289,7 @@ impl WebEngineListener for WebEngineListenerImpl {
         let callback = &self.callback;
         callback(WebEngineEvent::LoadProgress(url.to_string(), progress));
 
-        log::debug!("on_load_progress {}", url);
+        log::debug!("on_load_progress {} {}", url, progress);
     }
 
     fn should_override_url_loading(&self, _engine: WebEngineMut, url: &str) -> bool {
@@ -341,6 +351,6 @@ impl WebEngineListener for WebEngineListenerImpl {
             error.to_string(),
         ));
 
-        log::debug!("on_receive_error {}", url);
+        log::debug!("on_receive_error {} {}", url, error);
     }
 }
