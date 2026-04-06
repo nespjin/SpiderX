@@ -19,35 +19,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:padding="16dp"
     tools:context=".MainActivity">
-
-    <Button
-        android:id="@+id/install_plugin"
-        android:text="Install Plugin"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toTopOf="@+id/uninstall_plugin"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <Button
-        android:id="@+id/uninstall_plugin"
-        android:text="Uninstall Plugin"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toTopOf="@+id/request_dataset"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.497"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <Button
-        android:id="@+id/request_dataset"
-        android:text="Request"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
         android:id="@+id/tv_result"
@@ -62,8 +35,70 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:text="fdafaskjfk" />
 
+
+    <Button
+        android:id="@+id/install_plugin"
+        android:text="Install Plugin"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@+id/uninstall_plugin"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/uninstall_plugin"
+        android:text="Uninstall Plugin"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@+id/get_installed_plugins"
+        app:layout_constraintEnd_toStartOf="@id/et_uninstall_plugin_id"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent" />
+
     <EditText
-        android:id="@+id/et_dataset_id"
+        android:id="@+id/et_uninstall_plugin_id"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:autofillHints="text"
+        android:inputType="text"
+        android:hint="plugin id"
+        app:layout_constraintBottom_toBottomOf="@id/uninstall_plugin"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/uninstall_plugin"
+        tools:text="Plugin ID" />
+
+    <Button
+        android:id="@+id/request_dataset"
+        android:text="Request"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/et_req_plugin_id"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/get_installed_plugins"
+        android:text="Get Installed Plugins"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@+id/request_dataset"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <EditText
+        android:id="@+id/et_req_plugin_id"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:autofillHints="text"
+        android:inputType="text"
+        android:hint="plugin id"
+        app:layout_constraintBottom_toBottomOf="@id/request_dataset"
+        app:layout_constraintEnd_toStartOf="@id/et_req_dataset_id"
+        app:layout_constraintStart_toEndOf="@id/request_dataset"
+        tools:text="Plugin ID" />
+
+    <EditText
+        android:id="@+id/et_req_dataset_id"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:autofillHints="text"
@@ -71,6 +106,7 @@
         android:hint="dataset id"
         app:layout_constraintBottom_toBottomOf="@id/request_dataset"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/request_dataset"
+        app:layout_constraintStart_toEndOf="@id/et_req_plugin_id"
         tools:text="Dataset ID" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

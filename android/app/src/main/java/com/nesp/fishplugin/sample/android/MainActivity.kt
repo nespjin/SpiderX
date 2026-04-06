@@ -16,6 +16,7 @@
 
 package com.nesp.fishplugin.sample.android
 
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -32,6 +33,7 @@ import com.nesp.spiderx.runtime.model.ScreenType
 import org.apache.logging.log4j.core.util.internal.HttpInputStreamUtil.readStream
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
+import androidx.core.content.edit
 
 class MainActivity : AppCompatActivity() {
 
@@ -45,8 +47,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-    lateinit var tvResult: TextView
-    lateinit var etDatasetId: EditText
+    private lateinit var tvResult: TextView
+    private lateinit var etReqPluginId: EditText
+    private lateinit var etReqDatasetId: EditText
+    private lateinit var etUninstallPluginId: EditText
+
+    private lateinit var sharedPreferences: SharedPreferences
 
     private val requestJavaScriptDatasetListener = object : RequestJavaScriptDatasetListener() {
         override fun onPageStarted(url: String) {
@@ -72,37 +78,69 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        sharedPreferences = getSharedPreferences("plugin", MODE_PRIVATE)
+
         pluginManager.setAndroidContext(applicationContext)
         val databasePath = getDatabasePath("plugin.db").absolutePath
-
 
         // pluginManager.init(databasePath, ScreenType.EXPANDED, false, JavaFxJcefWebView.class);
         // pluginManager.init(databasePath, ScreenType.EXPANDED, false, JavaFxEmptyWebView.class);
         pluginManager.init(databasePath, ScreenType.EXPANDED, false, AndroidWebView::class.java)
+
         setContentView(R.layout.activity_main)
         findViewById<Button>(R.id.install_plugin).setOnClickListener { installPlugin() }
         findViewById<Button>(R.id.uninstall_plugin).setOnClickListener { uninstallPlugin() }
         findViewById<Button>(R.id.request_dataset).setOnClickListener { request() }
+        findViewById<Button>(R.id.get_installed_plugins).setOnClickListener { getInstalledPlugins() }
+
         tvResult = findViewById(R.id.tv_result)
-        etDatasetId = findViewById(R.id.et_dataset_id)
+        etReqPluginId = findViewById(R.id.et_req_plugin_id)
+        etReqDatasetId = findViewById(R.id.et_req_dataset_id)
+        etUninstallPluginId = findViewById(R.id.et_uninstall_plugin_id)
+
+        val sharPer = sharedPreferences
+        etReqPluginId.setText(sharPer.getString(SHAR_PER_KEY_REQ_PLUGIN_ID, ""))
+        etReqDatasetId.setText(sharPer.getString(SHAR_PER_KEY_REQ_DATASET_ID, ""))
+        etUninstallPluginId.setText(sharPer.getString(SHAR_PER_KEY_UNINSTALL_PLUGIN_ID, ""))
     }
 
     private fun installPlugin() {
-        val pluginJson = readStream(assets.open("plugin.json")).toString(Charsets.UTF_8)
-        pluginManager.installPluginJson(pluginJson)
+        try {
+            val pluginJson = readStream(assets.open("plugin.json")).toString(Charsets.UTF_8)
+            pluginManager.installPluginJson(pluginJson)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            mainHandler.obtainMessage(0, e.message).sendToTarget()
+        }
     }
 
     private fun uninstallPlugin() {
-        pluginManager.uninstallPlugin("com.example.plugin")
+        val pluginId = etUninstallPluginId.text.toString()
+        sharedPreferences.edit {
+            putString(SHAR_PER_KEY_UNINSTALL_PLUGIN_ID, pluginId)
+        }
+        try {
+            pluginManager.uninstallPlugin(pluginId)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            mainHandler.obtainMessage(0, e.message).sendToTarget()
+        }
     }
 
     private fun request() {
-        val datasetId = etDatasetId.text.toString()
+        val pluginId = etReqPluginId.text.toString()
+        val datasetId = etReqDatasetId.text.toString()
+
+        sharedPreferences.edit {
+            putString(SHAR_PER_KEY_REQ_PLUGIN_ID, pluginId)
+            putString(SHAR_PER_KEY_REQ_DATASET_ID, datasetId)
+        }
+
         backgroundExecutor.execute {
-            Log.d(TAG, "request: dataset $datasetId")
+            Log.d(TAG, "request: dataset $pluginId $datasetId")
             try {
                 val result = pluginManager.requestDataset(
-                    "com.example.plugin",
+                    pluginId,
                     datasetId,
                     type = PluginManager.RequestType.JavaScript,
                     listener = requestJavaScriptDatasetListener
@@ -117,8 +155,30 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun getInstalledPlugins() {
+        val plugins = pluginManager.getInstalledPlugins()
+        Log.d(TAG, "getInstalledPlugins: $plugins")
+        if (plugins == null) {
+            mainHandler.obtainMessage(0, "[]").sendToTarget()
+            return
+        }
+
+        val result = StringBuilder()
+        for (plugin in plugins) {
+            result.append(plugin.id + " ->\n")
+            for (dataset in plugin.datasets) {
+                result.append("    " + dataset.id + "\n")
+            }
+        }
+
+        mainHandler.obtainMessage(0, result.toString()).sendToTarget()
+    }
+
     companion object {
         private const val TAG = "MainActivity"
+        private const val SHAR_PER_KEY_UNINSTALL_PLUGIN_ID = "uninstall_plugin_id"
+        private const val SHAR_PER_KEY_REQ_PLUGIN_ID = "req_plugin_id"
+        private const val SHAR_PER_KEY_REQ_DATASET_ID = "req_dataset_id"
 
         init {
             System.loadLibrary("spiderx_runtime")
