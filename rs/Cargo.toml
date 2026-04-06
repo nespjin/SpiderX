@@ -8,3 +8,16 @@ opt-level = "z"
 lto = true
 codegen-units = 1
 panic = "abort"
+
+[workspace.lints.clippy]
+# Performance optimizations
+unnecessary_clone = "warn"
+too_many_arguments = "warn"
+
+# Code quality
+unwrap_used = "warn"
+expect_used = "warn"
+
+# Style improvements
+manual_strip = "warn"
+match_like_matches_macro = "warn"
