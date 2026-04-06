@@ -57,7 +57,7 @@ class AndroidWebView : JniWebView() {
             clearFocus()
             settings.defaultTextEncodingName = "utf-8"
             settings.userAgentString = pluginManager.getUserAgent()
-            settings.cacheMode = WebSettings.LOAD_DEFAULT
+            settings.cacheMode = WebSettings.LOAD_NO_CACHE
             settings.pluginState = WebSettings.PluginState.OFF
             settings.displayZoomControls = false
             settings.allowFileAccess = true
@@ -71,9 +71,9 @@ class AndroidWebView : JniWebView() {
             settings.allowFileAccessFromFileURLs = true
             settings.allowUniversalAccessFromFileURLs = true
             settings.javaScriptCanOpenWindowsAutomatically = false
-            settings.loadsImagesAutomatically = false
-            settings.blockNetworkImage = true
-            settings.blockNetworkLoads = false
+            // settings.loadsImagesAutomatically = false
+            // settings.blockNetworkImage = true
+            // settings.blockNetworkLoads = false
             settings.databaseEnabled = true
 
             setLayerType(WebView.LAYER_TYPE_HARDWARE, null)
@@ -138,6 +138,7 @@ class AndroidWebView : JniWebView() {
     }
 
     override fun onDestroy() {
+        Log.d(TAG, "onDestroy: ")
         if (webView != null) {
             webView?.removeAllViews()
             webView?.settings?.javaScriptEnabled = false
@@ -162,6 +163,7 @@ class AndroidWebView : JniWebView() {
     private class DefaultWebChromeClient(private val webView: AndroidWebView) : WebChromeClient() {
         override fun onProgressChanged(view: WebView?, newProgress: Int) {
             super.onProgressChanged(view, newProgress)
+            Log.d(TAG, "onProgressChanged: ${view?.url} $newProgress")
             webView.notifyOnLoadProgress(view?.url ?: "", newProgress)
         }
 
@@ -171,6 +173,7 @@ class AndroidWebView : JniWebView() {
 
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
             super.onPageStarted(view, url, favicon)
+            Log.d(TAG, "onPageStarted: $url")
             webView.notifyOnPageStarted(url ?: "")
         }
 
@@ -193,6 +196,11 @@ class AndroidWebView : JniWebView() {
                 error?.description?.toString() ?: ""
             } else {
                 "Error when load ${request?.url} $error"
+            }
+            Log.d(TAG, "onReceivedError: $errorMessage")
+            if (view?.url != request?.url?.toString()) {
+                Log.d(TAG, "onReceivedError: ${view?.url} ${request?.url} is not page error")
+                return
             }
             webView.notifyOnPageError(
                 request?.url?.toString() ?: "",
@@ -218,10 +226,12 @@ class AndroidWebView : JniWebView() {
 
         override fun onPageFinished(view: WebView?, url: String?) {
             super.onPageFinished(view, url)
+            Log.d(TAG, "onPageFinished: $url")
             val javascript = "'<html>'+document.getElementsByTagName('html')[0].innerHTML+'</html>'"
-            webView.webView?.evaluateJavascript(javascript, { result ->
+            webView.webView?.evaluateJavascript(javascript) { result ->
+                Log.d(TAG, "onPageFinished: notify $url result is $result")
                 webView.notifyOnPageFinished(url ?: "", result ?: "")
-            })
+            }
         }
     }
 
