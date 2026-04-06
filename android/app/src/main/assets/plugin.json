@@ -1,0 +1,74 @@
+{
+  "parent": null,
+  "id": "com.example.plugin",
+  "name": "Test Plugin",
+  "author": "Test Author",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "description": "A test plugin",
+  "tags": [],
+  "supportedScreenTypes": [],
+  "variables": {},
+  "dataset": [
+    {
+      "id": "user_data",
+      "url": "https://silidm.com/",
+      "url@compact": "https://silidm.com/",
+      "url@medium": "https://silidm.com/",
+      "url@expanded": "https://silidm.com/",
+      "js": "function parse(data) { return JSON.parse(data); }",
+      "js@compact": "function parse_compact(data) { return JSON.parse(data); }",
+      "js@medium": "function parse_medium(data) { return JSON.parse(data); }",
+      "js@expanded": "(function parse_expanded(data) { return { name: 'Test User', age: 32 }; })();",
+      "dsl": {
+        "fields": [
+          "name",
+          "age"
+        ],
+        "parser": "json"
+      },
+      "dsl@compact": {
+        "fields@compact": [
+          "name",
+          "age"
+        ],
+        "parser@compact": "json"
+      },
+      "dsl@medium": {
+        "fields@medium": [
+          "name",
+          "age"
+        ],
+        "parser@medium": "json"
+      },
+      "dsl@expanded": {
+        "fields@expanded": [
+          "name",
+          "age"
+        ],
+        "parser@expanded": "json"
+      }
+    },
+    {
+      "id": "product_data",
+      "url": "https://api.example.com/products",
+      "url@compact": "https://api.example.com/products",
+      "url@medium": null,
+      "url@expanded": null,
+      "js": null,
+      "js@compact": null,
+      "js@medium": null,
+      "js@expanded": null,
+      "dsl": {
+        "fields": [
+          "name",
+          "price"
+        ],
+        "parser": "json"
+      },
+      "dsl@compact": null,
+      "dsl@medium": null,
+      "dsl@expanded": null
+    }
+  ]
+}

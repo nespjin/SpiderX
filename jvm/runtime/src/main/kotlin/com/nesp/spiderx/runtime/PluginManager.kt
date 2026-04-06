@@ -103,8 +103,8 @@ class PluginManager private constructor() {
         return nativeGetInstalledPlugins()
     }
 
-    fun uninstallPlugin(id: String): List<Plugin>? {
-        return nativeUninstallPlugin(id)
+    fun uninstallPlugin(id: String) {
+        nativeUninstallPlugin(id)
     }
 
     @JvmOverloads
@@ -140,7 +140,7 @@ class PluginManager private constructor() {
 
     private external fun nativeGetInstalledPlugins(): List<Plugin>?
 
-    private external fun nativeUninstallPlugin(id: String): List<Plugin>?
+    private external fun nativeUninstallPlugin(id: String)
 
     private external fun nativeRequestDataset(
         pluginId: String,
