@@ -12,15 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core::data::plugin::{Dataset, Plugin};
+use core::data::plugin::Plugin;
 
 use crate::{
     cache::CacheManager,
     database::{connection_pool::get_pooled_connection, dataset_dao, plugin_dao},
-    repository::model::{
-        dataset::{dataset_entity_to_external_model, datasets_entities_to_external_models},
-        plugin,
-    },
+    repository::model::{dataset::datasets_entities_to_external_models, plugin},
 };
 
 pub(crate) struct PluginRepository {}
