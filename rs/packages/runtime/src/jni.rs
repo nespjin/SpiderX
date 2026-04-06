@@ -42,10 +42,10 @@ pub extern "system" fn JNI_OnLoad(
     vm: jni::JavaVM,
     _reserved: *mut std::ffi::c_void,
 ) -> jni::sys::jint {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
+    // env_logger::Builder::new()
         // 仅关闭 jni 库日志，保留其他日志
-        .filter_module("jni", LevelFilter::Off)
-        .init();
+        // .filter_module("jni::wrapper", LevelFilter::Off)
+        // .init();
     let jni_version = vm
         .get_env()
         .expect("Failed to create JNIEnv")
