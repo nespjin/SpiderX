@@ -96,6 +96,19 @@ pub fn find_by_plugin_id(
         .load(conn)
 }
 
+/// Fetch datasets for multiple plugins in a single query (optimizes N+1 problem)
+pub fn find_by_plugin_ids(
+    conn: &mut SqliteConnection,
+    plugin_ids: &[String],
+) -> QueryResult<Vec<DatasetEntity>> {
+    if plugin_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    dataset::table
+        .filter(dataset::plugin_id.eq_any(plugin_ids))
+        .load(conn)
+}
+
 pub fn find_by_id_in_plugin(
     conn: &mut SqliteConnection,
     plugin_id: &str,
