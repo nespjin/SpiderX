@@ -31,26 +31,38 @@ use crate::{
     repository::{dataset_repository::DatasetRepository, plugin_repository::PluginRepository},
 };
 
+/// Configuration for PluginManager
 #[derive(Debug, Clone)]
 pub struct PluginManagerConfig {
+    /// Path to the SQLite database file
     pub database_path: String,
 }
 
+/// Source type for plugin installation
 #[derive(Debug, Clone)]
 pub enum PluginSource {
+    /// Plugin manifest as a JSON string
     ManifestJson(String),
+    /// Path to a plugin manifest JSON file
     ManifestJsonFile(String),
 }
 
 /// Custom error type for PluginManager operations
 #[derive(Debug)]
 pub enum PluginManagerError {
+    /// PluginManager has not been initialized
     NotInitialized,
+    /// Initialization failed with a specific error message
     InitializationFailed(String),
+    /// Failed to access repository (lock errors, etc.)
     RepositoryAccessFailed(String),
+    /// Database operation failed
     DatabaseError(String),
+    /// I/O operation failed
     IoError(String),
+    /// Plugin compilation failed
     CompilationError(String),
+    /// General operation failed
     OperationFailed(String),
 }
 
@@ -76,6 +88,8 @@ impl std::fmt::Display for PluginManagerError {
     }
 }
 
+impl std::error::Error for PluginManagerError {}
+
 impl From<String> for PluginManagerError {
     fn from(error: String) -> Self {
         PluginManagerError::InitializationFailed(error)
@@ -88,14 +102,26 @@ impl From<std::io::Error> for PluginManagerError {
     }
 }
 
+/// Manages plugin lifecycle including installation, uninstallation, and dataset requests
+/// 
+/// The PluginManager is a singleton that handles:
+/// - Plugin installation from JSON manifests
+/// - Plugin uninstallation with cleanup
+/// - Dataset requests to installed plugins
+/// - Repository and cache management
 pub struct PluginManager {
+    /// Configuration (set once during initialization)
     config: OnceLock<PluginManagerConfig>,
+    /// Repository for dataset operations (protected by RwLock for concurrent reads)
     dataset_repository: RwLock<Option<DatasetRepository>>,
+    /// Repository for plugin operations (protected by RwLock for concurrent reads)
     plugin_repository: RwLock<Option<PluginRepository>>,
+    /// Configuration for JavaScript dataset requests
     request_javascript_dataset_config: RwLock<Option<RequestJavaScriptDatasetConfigArc>>,
 }
 
 impl PluginManager {
+    /// Get the singleton instance of PluginManager
     pub fn get_instance() -> &'static PluginManager {
         static INSTANCE: OnceLock<PluginManager> = OnceLock::new();
         INSTANCE.get_or_init(|| PluginManager {
@@ -106,6 +132,7 @@ impl PluginManager {
         })
     }
 
+    /// Initialize the PluginManager with the given configuration
     pub fn init(&self, config: PluginManagerConfig) -> Result<(), PluginManagerError> {
         // Check if already initialized
         if self.config.get().is_some() {
@@ -143,21 +170,8 @@ impl PluginManager {
         log::info!("Cache manager initialized");
 
         // Initialize repositories
-        {
-            let mut plugin_repo = self
-                .plugin_repository
-                .write()
-                .map_err(|e| PluginManagerError::RepositoryAccessFailed(e.to_string()))?;
-            *plugin_repo = Some(PluginRepository::new());
-        }
-
-        {
-            let mut dataset_repo = self
-                .dataset_repository
-                .write()
-                .map_err(|e| PluginManagerError::RepositoryAccessFailed(e.to_string()))?;
-            *dataset_repo = Some(DatasetRepository::new());
-        }
+        self.init_plugin_repository()?;
+        self.init_dataset_repository()?;
 
         // Run migrations using pooled connection
         let pool = DatabasePool::get_instance()
@@ -174,6 +188,63 @@ impl PluginManager {
         Ok(())
     }
 
+    /// Initialize the plugin repository
+    fn init_plugin_repository(&self) -> Result<(), PluginManagerError> {
+        let mut plugin_repo = self
+            .plugin_repository
+            .write()
+            .map_err(|e| PluginManagerError::RepositoryAccessFailed(format!("Failed to acquire write lock for plugin repository: {}", e)))?;
+        *plugin_repo = Some(PluginRepository::new());
+        log::debug!("Plugin repository initialized");
+        Ok(())
+    }
+
+    /// Initialize the dataset repository
+    fn init_dataset_repository(&self) -> Result<(), PluginManagerError> {
+        let mut dataset_repo = self
+            .dataset_repository
+            .write()
+            .map_err(|e| PluginManagerError::RepositoryAccessFailed(format!("Failed to acquire write lock for dataset repository: {}", e)))?;
+        *dataset_repo = Some(DatasetRepository::new());
+        log::debug!("Dataset repository initialized");
+        Ok(())
+    }
+
+    /// Helper method to safely access the plugin repository
+    fn with_plugin_repository<F, R>(&self, f: F) -> Result<R, PluginManagerError>
+    where
+        F: FnOnce(&PluginRepository) -> Result<R, PluginManagerError>,
+    {
+        let repo_guard = self
+            .plugin_repository
+            .read()
+            .map_err(|e| PluginManagerError::RepositoryAccessFailed(format!("Failed to acquire read lock for plugin repository: {}", e)))?;
+        
+        let repo = repo_guard
+            .as_ref()
+            .ok_or(PluginManagerError::NotInitialized)?;
+        
+        f(repo)
+    }
+
+    /// Helper method to safely access the dataset repository
+    fn with_dataset_repository<F, R>(&self, f: F) -> Result<R, PluginManagerError>
+    where
+        F: FnOnce(&DatasetRepository) -> Result<R, PluginManagerError>,
+    {
+        let repo_guard = self
+            .dataset_repository
+            .read()
+            .map_err(|e| PluginManagerError::RepositoryAccessFailed(format!("Failed to acquire read lock for dataset repository: {}", e)))?;
+        
+        let repo = repo_guard
+            .as_ref()
+            .ok_or(PluginManagerError::NotInitialized)?;
+        
+        f(repo)
+    }
+
+    /// Set the JavaScript dataset request configuration
     pub fn set_request_javascript_dataset_config(
         &self,
         request_javascript_dataset_config: RequestJavaScriptDatasetConfigArc,
@@ -181,19 +252,21 @@ impl PluginManager {
         let mut cfg = self
             .request_javascript_dataset_config
             .write()
-            .expect("Failed to acquire write lock");
+            .expect("Failed to acquire write lock for request_javascript_dataset_config");
         *cfg = Some(request_javascript_dataset_config);
     }
 
+    /// Get the JavaScript dataset request configuration
     pub fn get_request_javascript_dataset_config(
         &self,
     ) -> Option<RequestJavaScriptDatasetConfigArc> {
         self.request_javascript_dataset_config
             .read()
-            .expect("Failed to acquire read lock")
+            .expect("Failed to acquire read lock for request_javascript_dataset_config")
             .clone()
     }
 
+    /// Install a plugin from a manifest JSON string or file path
     pub fn install_plugin(&self, source: &PluginSource) -> Result<(), PluginManagerError> {
         match source {
             PluginSource::ManifestJson(json) => self.install_plugin_from_manifest_json(json),
@@ -205,97 +278,83 @@ impl PluginManager {
         }
     }
 
+    /// Install a plugin from a JSON manifest string
     fn install_plugin_from_manifest_json(&self, json: &str) -> Result<(), PluginManagerError> {
         let compiler = JsonPluginCompiler::parse(json)
-            .map_err(|e| PluginManagerError::CompilationError(e.to_string()))?;
+            .map_err(|e| PluginManagerError::CompilationError(format!("Failed to parse plugin manifest: {}", e)))?;
         self.do_install_plugin(compiler.compile()?)
     }
 
+    /// Internal method to perform the actual plugin installation
     fn do_install_plugin(&self, plugin: Plugin) -> Result<(), PluginManagerError> {
         self.ensure_initialized()?;
         let plugin_id = plugin.id.to_string();
         let datasets = plugin.datasets.clone();
 
-        {
-            let repo = self
-                .plugin_repository
-                .read()
-                .map_err(|e| PluginManagerError::RepositoryAccessFailed(e.to_string()))?;
-            let repo = repo
-                .as_ref()
-                .ok_or(PluginManagerError::NotInitialized)?;
-            repo.save_plugin(plugin)?;
-        }
+        // Save plugin to repository
+        self.with_plugin_repository(|repo| {
+            repo.save_plugin(plugin)
+                .map_err(PluginManagerError::OperationFailed)
+        })?;
 
-        {
-            let repo = self
-                .dataset_repository
-                .read()
-                .map_err(|e| PluginManagerError::RepositoryAccessFailed(e.to_string()))?;
-            let repo = repo
-                .as_ref()
-                .ok_or(PluginManagerError::NotInitialized)?;
-            repo.save_datasets(&plugin_id, datasets)?;
-        }
+        // Save datasets to repository
+        self.with_dataset_repository(|repo| {
+            repo.save_datasets(&plugin_id, datasets)
+                .map_err(PluginManagerError::OperationFailed)
+        })?;
 
+        log::info!("Plugin installed successfully: {}", plugin_id);
         Ok(())
     }
 
+    /// Check if a plugin is installed by its ID
     pub fn is_plugin_installed(&self, id: &str) -> Result<bool, PluginManagerError> {
         self.ensure_initialized()?;
-        let repo = self
-            .plugin_repository
-            .read()
-            .map_err(|e| PluginManagerError::RepositoryAccessFailed(e.to_string()))?;
-        let repo = repo.as_ref().ok_or(PluginManagerError::NotInitialized)?;
-        repo.is_plugin_exists(id).map_err(PluginManagerError::OperationFailed)
+        self.with_plugin_repository(|repo| {
+            repo.is_plugin_exists(id)
+                .map_err(PluginManagerError::OperationFailed)
+        })
     }
 
+    /// Get an installed plugin by its ID
     pub fn get_installed_plugin(&self, id: &str) -> Result<Option<Plugin>, PluginManagerError> {
         self.ensure_initialized()?;
-        let repo = self
-            .plugin_repository
-            .read()
-            .map_err(|e| PluginManagerError::RepositoryAccessFailed(e.to_string()))?;
-        let repo = repo.as_ref().ok_or(PluginManagerError::NotInitialized)?;
-        repo.get_plugin(id).map_err(PluginManagerError::OperationFailed)
+        self.with_plugin_repository(|repo| {
+            repo.get_plugin(id)
+                .map_err(PluginManagerError::OperationFailed)
+        })
     }
 
+    /// Get all installed plugins
     pub fn get_installed_plugins(&self) -> Result<Vec<Plugin>, PluginManagerError> {
         self.ensure_initialized()?;
-        let repo = self
-            .plugin_repository
-            .read()
-            .map_err(|e| PluginManagerError::RepositoryAccessFailed(e.to_string()))?;
-        let repo = repo.as_ref().ok_or(PluginManagerError::NotInitialized)?;
-        repo.get_plugins().map_err(PluginManagerError::OperationFailed)
+        self.with_plugin_repository(|repo| {
+            repo.get_plugins()
+                .map_err(PluginManagerError::OperationFailed)
+        })
     }
 
-    /// Uninstall a plugin by id
+    /// Uninstall a plugin by its ID
     pub fn uninstall_plugin(&self, id: &str) -> Result<(), PluginManagerError> {
         self.ensure_initialized()?;
 
-        {
-            let repo = self
-                .plugin_repository
-                .read()
-                .map_err(|e| PluginManagerError::RepositoryAccessFailed(e.to_string()))?;
-            let repo = repo.as_ref().ok_or(PluginManagerError::NotInitialized)?;
-            repo.delete_plugin(id)?;
-        }
+        // Delete plugin from repository
+        self.with_plugin_repository(|repo| {
+            repo.delete_plugin(id)
+                .map_err(PluginManagerError::OperationFailed)
+        })?;
 
-        {
-            let repo = self
-                .dataset_repository
-                .read()
-                .map_err(|e| PluginManagerError::RepositoryAccessFailed(e.to_string()))?;
-            let repo = repo.as_ref().ok_or(PluginManagerError::NotInitialized)?;
-            repo.delete_datasets(id)?;
-        }
+        // Delete associated datasets
+        self.with_dataset_repository(|repo| {
+            repo.delete_datasets(id)
+                .map_err(PluginManagerError::OperationFailed)
+        })?;
 
+        log::info!("Plugin uninstalled successfully: {}", id);
         Ok(())
     }
 
+    /// Request a dataset from a plugin
     pub fn request_dataset(
         &self,
         plugin_id: &str,
@@ -305,34 +364,34 @@ impl PluginManager {
     ) -> Result<String, PluginManagerError> {
         self.ensure_initialized()?;
         
+        // Get JavaScript config once
         let config = self
-            .request_javascript_dataset_config
-            .read()
-            .map_err(|e| PluginManagerError::RepositoryAccessFailed(e.to_string()))?
-            .clone();
+            .get_request_javascript_dataset_config()
+            .ok_or(PluginManagerError::InitializationFailed(
+                "JavaScript dataset config not set".to_string(),
+            ))?;
 
-        let repo = self
-            .dataset_repository
-            .read()
-            .map_err(|e| PluginManagerError::RepositoryAccessFailed(e.to_string()))?;
-        let repo = repo.as_ref().ok_or(PluginManagerError::NotInitialized)?;
-        repo.request_dataset(plugin_id, dataset_id, r#type, listener, config).map_err(PluginManagerError::OperationFailed)
+        // Request dataset from repository
+        self.with_dataset_repository(|repo| {
+            repo.request_dataset(plugin_id, dataset_id, r#type, listener, Some(config))
+                .map_err(PluginManagerError::OperationFailed)
+        })
     }
 
+    /// Determine the automatic request type for a dataset
     pub fn auto_request_type(
         &self,
         plugin_id: &str,
         dataset_id: &str,
     ) -> Result<RequestType, PluginManagerError> {
         self.ensure_initialized()?;
-        let repo = self
-            .dataset_repository
-            .read()
-            .map_err(|e| PluginManagerError::RepositoryAccessFailed(e.to_string()))?;
-        let repo = repo.as_ref().ok_or(PluginManagerError::NotInitialized)?;
-        repo.auto_request_type(plugin_id, dataset_id).map_err(PluginManagerError::OperationFailed)
+        self.with_dataset_repository(|repo| {
+            repo.auto_request_type(plugin_id, dataset_id)
+                .map_err(PluginManagerError::OperationFailed)
+        })
     }
 
+    /// Check if the PluginManager has been initialized
     fn ensure_initialized(&self) -> Result<(), PluginManagerError> {
         if self.config.get().is_none() {
             return Err(PluginManagerError::NotInitialized);
@@ -341,11 +400,15 @@ impl PluginManager {
     }
 }
 
+/// Request type for dataset execution
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(i32)]
 pub enum RequestType {
+    /// Automatically determine the request type
     Auto = 0,
+    /// Use JavaScript executor
     JavaScript = 1,
+    /// Use DSL executor
     Dsl = 2,
 }
 
