@@ -71,7 +71,7 @@ impl PluginManager {
             use android_logger::Config;
             android_logger::init_once(
                 Config::default()
-                    .with_tag("PluginManager")
+                    .with_tag("SpiderX")
                     .with_max_level(log::LevelFilter::Trace),
             );
         }
