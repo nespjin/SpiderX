@@ -66,6 +66,16 @@ impl PluginManager {
             return Err("PluginManager has been initialized.".to_string());
         }
 
+        #[cfg(target_os = "android")]
+        {
+            use android_logger::Config;
+            android_logger::init_once(
+                Config::default()
+                    .with_tag("PluginManager")
+                    .with_max_level(log::LevelFilter::Trace),
+            );
+        }
+
         let database_path_str = &config.database_path;
         let database_path = Path::new(database_path_str);
 
