@@ -82,7 +82,7 @@ impl std::fmt::Display for PluginManagerError {
             PluginManagerError::IoError(msg) => write!(f, "IO error: {}", msg),
             PluginManagerError::CompilationError(msg) => {
                 write!(f, "Compilation error: {}", msg)
-            },
+            }
             PluginManagerError::OperationFailed(msg) => write!(f, "Operation error: {}", msg),
         }
     }
@@ -103,7 +103,7 @@ impl From<std::io::Error> for PluginManagerError {
 }
 
 /// Manages plugin lifecycle including installation, uninstallation, and dataset requests
-/// 
+///
 /// The PluginManager is a singleton that handles:
 /// - Plugin installation from JSON manifests
 /// - Plugin uninstallation with cleanup
@@ -174,15 +174,15 @@ impl PluginManager {
         self.init_dataset_repository()?;
 
         // Run migrations using pooled connection
-        let pool = DatabasePool::get_instance()
-            .get()
-            .ok_or_else(|| PluginManagerError::DatabaseError("Failed to get database pool instance".to_string()))?;
+        let pool = DatabasePool::get_instance().get().ok_or_else(|| {
+            PluginManagerError::DatabaseError("Failed to get database pool instance".to_string())
+        })?;
         pool.run_migrations()?;
 
         // Store config last (signals successful initialization)
-        self.config
-            .set(config)
-            .map_err(|_| PluginManagerError::InitializationFailed("Failed to set config".to_string()))?;
+        self.config.set(config).map_err(|_| {
+            PluginManagerError::InitializationFailed("Failed to set config".to_string())
+        })?;
 
         log::info!("PluginManager initialized successfully with connection pooling and caching");
         Ok(())
@@ -190,10 +190,12 @@ impl PluginManager {
 
     /// Initialize the plugin repository
     fn init_plugin_repository(&self) -> Result<(), PluginManagerError> {
-        let mut plugin_repo = self
-            .plugin_repository
-            .write()
-            .map_err(|e| PluginManagerError::RepositoryAccessFailed(format!("Failed to acquire write lock for plugin repository: {}", e)))?;
+        let mut plugin_repo = self.plugin_repository.write().map_err(|e| {
+            PluginManagerError::RepositoryAccessFailed(format!(
+                "Failed to acquire write lock for plugin repository: {}",
+                e
+            ))
+        })?;
         *plugin_repo = Some(PluginRepository::new());
         log::debug!("Plugin repository initialized");
         Ok(())
@@ -201,10 +203,12 @@ impl PluginManager {
 
     /// Initialize the dataset repository
     fn init_dataset_repository(&self) -> Result<(), PluginManagerError> {
-        let mut dataset_repo = self
-            .dataset_repository
-            .write()
-            .map_err(|e| PluginManagerError::RepositoryAccessFailed(format!("Failed to acquire write lock for dataset repository: {}", e)))?;
+        let mut dataset_repo = self.dataset_repository.write().map_err(|e| {
+            PluginManagerError::RepositoryAccessFailed(format!(
+                "Failed to acquire write lock for dataset repository: {}",
+                e
+            ))
+        })?;
         *dataset_repo = Some(DatasetRepository::new());
         log::debug!("Dataset repository initialized");
         Ok(())
@@ -215,15 +219,17 @@ impl PluginManager {
     where
         F: FnOnce(&PluginRepository) -> Result<R, PluginManagerError>,
     {
-        let repo_guard = self
-            .plugin_repository
-            .read()
-            .map_err(|e| PluginManagerError::RepositoryAccessFailed(format!("Failed to acquire read lock for plugin repository: {}", e)))?;
-        
+        let repo_guard = self.plugin_repository.read().map_err(|e| {
+            PluginManagerError::RepositoryAccessFailed(format!(
+                "Failed to acquire read lock for plugin repository: {}",
+                e
+            ))
+        })?;
+
         let repo = repo_guard
             .as_ref()
             .ok_or(PluginManagerError::NotInitialized)?;
-        
+
         f(repo)
     }
 
@@ -232,15 +238,17 @@ impl PluginManager {
     where
         F: FnOnce(&DatasetRepository) -> Result<R, PluginManagerError>,
     {
-        let repo_guard = self
-            .dataset_repository
-            .read()
-            .map_err(|e| PluginManagerError::RepositoryAccessFailed(format!("Failed to acquire read lock for dataset repository: {}", e)))?;
-        
+        let repo_guard = self.dataset_repository.read().map_err(|e| {
+            PluginManagerError::RepositoryAccessFailed(format!(
+                "Failed to acquire read lock for dataset repository: {}",
+                e
+            ))
+        })?;
+
         let repo = repo_guard
             .as_ref()
             .ok_or(PluginManagerError::NotInitialized)?;
-        
+
         f(repo)
     }
 
@@ -271,8 +279,12 @@ impl PluginManager {
         match source {
             PluginSource::ManifestJson(json) => self.install_plugin_from_manifest_json(json),
             PluginSource::ManifestJsonFile(path) => {
-                let json = fs::read_to_string(path)
-                    .map_err(|err| PluginManagerError::IoError(format!("Failed to read plugin manifest file: {}", err)))?;
+                let json = fs::read_to_string(path).map_err(|err| {
+                    PluginManagerError::IoError(format!(
+                        "Failed to read plugin manifest file: {}",
+                        err
+                    ))
+                })?;
                 self.install_plugin_from_manifest_json(&json)
             }
         }
@@ -280,8 +292,9 @@ impl PluginManager {
 
     /// Install a plugin from a JSON manifest string
     fn install_plugin_from_manifest_json(&self, json: &str) -> Result<(), PluginManagerError> {
-        let compiler = JsonPluginCompiler::parse(json)
-            .map_err(|e| PluginManagerError::CompilationError(format!("Failed to parse plugin manifest: {}", e)))?;
+        let compiler = JsonPluginCompiler::parse(json).map_err(|e| {
+            PluginManagerError::CompilationError(format!("Failed to parse plugin manifest: {}", e))
+        })?;
         self.do_install_plugin(compiler.compile()?)
     }
 
@@ -363,17 +376,13 @@ impl PluginManager {
         listener: Option<RequestDatasetListenerWrpper>,
     ) -> Result<String, PluginManagerError> {
         self.ensure_initialized()?;
-        
-        // Get JavaScript config once
-        let config = self
-            .get_request_javascript_dataset_config()
-            .ok_or(PluginManagerError::InitializationFailed(
-                "JavaScript dataset config not set".to_string(),
-            ))?;
+
+        // Get JavaScript config
+        let config = self.get_request_javascript_dataset_config();
 
         // Request dataset from repository
         self.with_dataset_repository(|repo| {
-            repo.request_dataset(plugin_id, dataset_id, r#type, listener, Some(config))
+            repo.request_dataset(plugin_id, dataset_id, r#type, listener, config)
                 .map_err(PluginManagerError::OperationFailed)
         })
     }
@@ -437,7 +446,7 @@ mod test {
         };
         let result = plugin_manager.init(config.clone());
         assert!(result.is_ok());
-        
+
         let result = plugin_manager.init(config.clone());
         assert!(result.is_err());
         assert!(matches!(
