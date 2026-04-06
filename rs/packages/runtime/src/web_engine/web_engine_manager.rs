@@ -66,7 +66,7 @@ impl WebEngineManager {
                 .write()
                 .map_err(|e| e.to_string())?
                 .pop_front();
-            let mut engine = engine.expect("Pool indicated non-empty but pop_front returned None");
+            let engine = engine.expect("Pool indicated non-empty but pop_front returned None");
             engine.write().map_err(|e| e.to_string())?.set_id(id);
             engine
         } else {
@@ -116,7 +116,7 @@ impl WebEngineManager {
                 self.webengine_pool
                     .write()
                     .map_err(|e| e.to_string())?
-                    .push(engine);
+                    .push_back(engine);
             } else {
                 engine.write().unwrap().destroy()?;
             }
