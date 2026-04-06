@@ -21,7 +21,6 @@ use once_cell::sync::OnceCell;
 
 use crate::{
     jni::jni_handler::{JniFieldInfo, JniHandler, JniMethodInfo},
-    utils::log_utils,
     web_engine::{
         web_engine::{WebEngine, WebEngineListenerArc, WebEngineMut},
         web_engine_manager::WebEngineManager,
@@ -86,7 +85,7 @@ impl JniWebView {
 
 impl WebEngine for JniWebView {
     fn init(&mut self) -> Result<(), String> {
-        log_utils::logd(&format!("init webview: {}", self.id));
+        log::debug!("init webview: {}", self.id);
         let mut jni_handler = JniHandler::new();
         jni_handler.call_method(&self.webview_java_obj, METHOD_INIT, &[]);
         Ok(())

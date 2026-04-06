@@ -29,7 +29,7 @@ use crate::{
     },
     plugin_manager::RequestType,
     repository::model::dataset,
-    utils::{log_utils, screen_typed_value::ScreenTypedValue},
+    utils::screen_typed_value::ScreenTypedValue,
 };
 
 pub struct DatasetRepository {}
@@ -302,10 +302,12 @@ impl DatasetRepository {
 
         let result = dataset_ds.request();
 
-        log_utils::logd(&format!(
+        log::debug!(
             "DatasetRepository::request_dataset {} {} {:?}",
-            plugin_id, dataset_id, result
-        ));
+            plugin_id,
+            dataset_id,
+            result
+        );
 
         result
     }

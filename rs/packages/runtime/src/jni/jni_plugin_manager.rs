@@ -39,7 +39,6 @@ use crate::plugin_manager::PluginManager;
 use crate::plugin_manager::PluginManagerConfig;
 use crate::plugin_manager::PluginSource;
 use crate::plugin_manager::RequestType;
-use crate::utils::log_utils;
 use crate::web_engine::web_engine_manager::WebEngineManager;
 
 pub const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON: jint = 0;
@@ -292,10 +291,12 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
         plugin_manager.request_dataset(&plugin_id, &dataset_id, request_type, listener)
     };
 
-    log_utils::logd(&format!(
+    log::debug!(
         "Java_com_nesp_spiderx_runtime_PluginManager_nativeRequestDataset {} {} {:?}",
-        plugin_id, dataset_id, data
-    ));
+        plugin_id,
+        dataset_id,
+        data
+    );
 
     handler
         .throw_java_exception_if_error(data)

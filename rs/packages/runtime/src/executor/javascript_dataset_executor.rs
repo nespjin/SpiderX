@@ -28,7 +28,6 @@ use crate::{
         request_dataset_listener::RequestJavaScriptDatasetListenerArc,
         request_javascript_dataset_config::RequestJavaScriptDatasetConfigArc,
     },
-    utils::log_utils,
     web_engine::{
         web_engine::{WebEngineListener, WebEngineMut},
         web_engine_manager::WebEngineManager,
@@ -98,10 +97,10 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
     fn request(&self) -> Result<String, String> {
         let (tx, rx) = mpsc::channel::<WebEngineEvent>();
         let webengine = {
-            log_utils::logd(&format!(
+            log::debug!(
                 "JavaScriptDatasetExecutor::request on thread {:?}",
                 thread::current().id()
-            ));
+            );
             let mut wm = WebEngineManager::get_instance()
                 .lock()
                 .map_err(|e| e.to_string())?;
@@ -109,11 +108,11 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
         };
 
         let callback: WebEngineCallback = Box::new(move |e| {
-            log_utils::logd(&format!(
+            log::debug!(
                 "WebEngineCallback {} on thread {:?}",
                 e.clone(),
                 thread::current().id()
-            ));
+            );
             tx.send(e).expect("Send message to channel failed.");
         });
 
@@ -132,20 +131,20 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
         loop {
             match rx.recv_timeout(Duration::from_secs(10)) {
                 Ok(received) => {
-                    log_utils::logd(&format!(
+                    log::debug!(
                         "JavaScriptDatasetExecutor::request received {} on thread {:?}",
                         &received,
                         thread::current().id()
-                    ));
+                    );
                     match received {
                         WebEngineEvent::PageFinished(url, _document) => {
                             if url == self.url {
                                 let ret = webengine.write().unwrap().evaluate(self.js)?;
-                                log_utils::logd(&format!(
+                                log::debug!(
                                     "JavaScriptDatasetExecutor::request evaluate {} {}",
                                     self.js,
                                     ret
-                                ));
+                                );
                                 result = Ok(ret);
                                 break;
                             }
@@ -160,12 +159,12 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
                     }
                 }
                 Err(RecvTimeoutError::Timeout) => {
-                    log_utils::logd("JavaScriptDatasetExecutor::request timeout");
+                    log::debug!("JavaScriptDatasetExecutor::request timeout");
                     result = Err("JavaScriptDatasetExecutor::request timeout".to_string());
                     break;
                 }
                 Err(RecvTimeoutError::Disconnected) => {
-                    log_utils::logd("JavaScriptDatasetExecutor::request disconnected");
+                    log::debug!("JavaScriptDatasetExecutor::request disconnected");
                     result = Err("JavaScriptDatasetExecutor::request disconnected".to_string());
                     break;
                 }
@@ -182,10 +181,12 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
             wm.remove_webengine(id)?;
         }
 
-        log_utils::logd(&format!(
+        log::debug!(
             "JavaScriptDatasetExecutor::request end {} {} {:?}",
-            self.id, self.url, result
-        ));
+            self.id,
+            self.url,
+            result
+        );
 
         return result;
     }
@@ -224,7 +225,7 @@ impl WebEngineListener for WebEngineListenerImpl {
         let callback = &self.callback;
         callback(WebEngineEvent::PageStarted(url.to_string()));
 
-        log_utils::logd(&format!("on_page_started {}", url))
+        log::debug!("on_page_started {}", url);
     }
 
     fn on_page_cancelled(&self, _engine: WebEngineMut, url: &str) {
@@ -236,7 +237,7 @@ impl WebEngineListener for WebEngineListenerImpl {
         let callback = &self.callback;
         callback(WebEngineEvent::PageCancelled(url.to_string()));
 
-        log_utils::logd(&format!("on_page_cancelled {}", url))
+        log::debug!("on_page_cancelled {}", url);
     }
 
     fn on_page_finished(&self, _engine: WebEngineMut, url: &str, document: &str) {
@@ -251,7 +252,7 @@ impl WebEngineListener for WebEngineListenerImpl {
             document.to_string(),
         ));
 
-        log_utils::logd(&format!("on_page_finished {} {}", url, ""))
+        log::debug!("on_page_finished {}", url);
     }
 
     fn on_page_error(&self, _engine: WebEngineMut, url: &str, error: &str) {
@@ -266,7 +267,7 @@ impl WebEngineListener for WebEngineListenerImpl {
             error.to_string(),
         ));
 
-        log_utils::logd(&format!("on_page_error {} {}", url, error))
+        log::debug!("on_page_error {}", url);
     }
 
     fn on_load_progress(&self, _engine: WebEngineMut, url: &str, progress: i32) {
@@ -278,7 +279,7 @@ impl WebEngineListener for WebEngineListenerImpl {
         let callback = &self.callback;
         callback(WebEngineEvent::LoadProgress(url.to_string(), progress));
 
-        log_utils::logd(&format!("on_load_progress {} {}", url, progress))
+        log::debug!("on_load_progress {}", url);
     }
 
     fn should_override_url_loading(&self, _engine: WebEngineMut, url: &str) -> bool {
@@ -293,7 +294,7 @@ impl WebEngineListener for WebEngineListenerImpl {
                 return ret;
             }
         }
-        log_utils::logd(&format!("should_override_url_loading {}", url));
+        log::debug!("should_override_url_loading {}", url);
         false
     }
 
@@ -309,7 +310,7 @@ impl WebEngineListener for WebEngineListenerImpl {
                 return Some(ret);
             }
         }
-        log_utils::logd(&format!("should_intercept_request {}", url));
+        log::debug!("should_intercept_request {}", url);
         None
     }
 
@@ -325,7 +326,7 @@ impl WebEngineListener for WebEngineListenerImpl {
             data.to_string(),
         ));
 
-        log_utils::logd(&format!("on_receive_data {} {}", url, data))
+        log::debug!("on_receive_data {}", url);
     }
 
     fn on_received_error(&self, _engine: WebEngineMut, url: &str, error: &str) {
@@ -340,6 +341,6 @@ impl WebEngineListener for WebEngineListenerImpl {
             error.to_string(),
         ));
 
-        log_utils::logd(&format!("on_receive_error {} {}", url, error))
+        log::debug!("on_receive_error {}", url);
     }
 }
