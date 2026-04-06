@@ -54,7 +54,7 @@ impl<'local> JniScreenType<'local> {
             FILED_EXPANDED
         } else {
             let msg = format!("Invalid screen type: {}", enum_value);
-            self.handler.throw_java_expception_msg(&msg);
+            self.handler.throw_java_exception_msg(&msg);
             FILED_COMPACT
         };
         let ret = self.handler.get_static_field(CLASS_NAME, field_info);
@@ -70,7 +70,7 @@ impl<'local> JniScreenType<'local> {
             ScreenType::Expanded
         } else {
             let msg = format!("Invalid screen type: {}", enum_value);
-            self.handler.throw_java_expception_msg(&msg);
+            self.handler.throw_java_exception_msg(&msg);
             ScreenType::Compact
         }
     }

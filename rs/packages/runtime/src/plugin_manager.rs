@@ -65,13 +65,14 @@ impl PluginManager {
             return Err("PluginManager has been initialized.".to_string());
         }
 
-        let database_path_str = config.database_path.clone();
-        let database_path = Path::new(&database_path_str);
-        let database_parent_path = database_path.parent();
-        let is_database_parent_path_exists =
-            &database_path.parent().map(|e| e.exists()).unwrap_or(true);
-        if !is_database_parent_path_exists {
-            fs::create_dir_all(&database_parent_path.unwrap()).map_err(|e| e.to_string())?;
+        let database_path_str = &config.database_path;
+        let database_path = Path::new(database_path_str);
+        
+        // Create parent directory if it doesn't exist
+        if let Some(parent) = database_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+            }
         }
 
         self.plugin_repository = Some(PluginRepository::new(database_path_str.clone()));
@@ -79,7 +80,7 @@ impl PluginManager {
 
         // Initialize the database.
         let mut conn: diesel::SqliteConnection =
-            database::open(&database_path_str.clone()).map_err(|e| e.to_string())?;
+            database::open(database_path_str).map_err(|e| e.to_string())?;
         database::run_migrations(&mut conn).map_err(|e| e.to_string())?;
 
         self.config = Some(config);
@@ -103,13 +104,15 @@ impl PluginManager {
     pub fn install_plugin(&self, source: &PluginSource) -> Result<(), String> {
         match source {
             PluginSource::ManifestJson(json) => self.install_plugin_from_manifest_json(json),
-            PluginSource::ManifestJsonFile(path) => fs::read_to_string(path)
-                .map_err(|err| format!("Failed to read plugin manifest file: {}", err))
-                .and_then(|json| self.install_plugin_from_manifest_json(&json)),
+            PluginSource::ManifestJsonFile(path) => {
+                let json = fs::read_to_string(path)
+                    .map_err(|err| format!("Failed to read plugin manifest file: {}", err))?;
+                self.install_plugin_from_manifest_json(&json)
+            }
         }
     }
 
-    fn install_plugin_from_manifest_json(&self, json: &String) -> Result<(), String> {
+    fn install_plugin_from_manifest_json(&self, json: &str) -> Result<(), String> {
         let compiler = JsonPluginCompiler::parse(json).map_err(|e| e.to_string())?;
         self.do_install_plugin(compiler.compile()?)?;
         Ok(())
@@ -117,54 +120,60 @@ impl PluginManager {
 
     fn do_install_plugin(&self, plugin: Plugin) -> Result<(), String> {
         self.ensure_initialized()?;
-        let plugin_id = &plugin.id.to_string();
+        let plugin_id = plugin.id.to_string();
         let datasets = plugin.datasets.clone();
-        match self.plugin_repository.as_ref() {
-            Some(repo) => repo.save_plugin(plugin),
-            None => Err("PluginRepository is not initialized".to_string()),
-        }?;
-        match self.dataset_repository.as_ref() {
-            Some(repo) => repo.save_datasets(plugin_id, datasets),
-            None => Err("DatasetRepository is not initialized".to_string()),
-        }?;
+        
+        self.plugin_repository
+            .as_ref()
+            .ok_or("PluginRepository is not initialized".to_string())?
+            .save_plugin(plugin)?;
+            
+        self.dataset_repository
+            .as_ref()
+            .ok_or("DatasetRepository is not initialized".to_string())?
+            .save_datasets(&plugin_id, datasets)?;
+            
         Ok(())
     }
 
     pub fn is_plugin_installed(&self, id: &str) -> Result<bool, String> {
         self.ensure_initialized()?;
-        match self.plugin_repository.as_ref() {
-            Some(repo) => repo.is_plugin_exists(id),
-            None => Err("PluginRepository is not initialized".to_string()),
-        }
+        self.plugin_repository
+            .as_ref()
+            .ok_or("PluginRepository is not initialized".to_string())?
+            .is_plugin_exists(id)
     }
 
     pub fn get_installed_plugin(&self, id: &str) -> Result<Option<Plugin>, String> {
         self.ensure_initialized()?;
-        match self.plugin_repository.as_ref() {
-            Some(repo) => repo.get_plugin(id),
-            None => Err("PluginRepository is not initialized".to_string()),
-        }
+        self.plugin_repository
+            .as_ref()
+            .ok_or("PluginRepository is not initialized".to_string())?
+            .get_plugin(id)
     }
 
     pub fn get_installed_plugins(&self) -> Result<Vec<Plugin>, String> {
         self.ensure_initialized()?;
-        match self.plugin_repository.as_ref() {
-            Some(repo) => repo.get_plugins(),
-            None => Err("PluginRepository is not initialized".to_string()),
-        }
+        self.plugin_repository
+            .as_ref()
+            .ok_or("PluginRepository is not initialized".to_string())?
+            .get_plugins()
     }
 
     /// Uninstall a plugin by id
     pub fn uninstall_plugin(&mut self, id: &str) -> Result<(), String> {
         self.ensure_initialized()?;
-        match self.plugin_repository.as_ref() {
-            Some(repo) => repo.delete_plugin(id),
-            None => Err("PluginRepository is not initialized".to_string()),
-        }?;
-        match self.dataset_repository.as_ref() {
-            Some(repo) => repo.delete_datasets(id),
-            None => Err("DatasetRepository is not initialized".to_string()),
-        }?;
+        
+        self.plugin_repository
+            .as_ref()
+            .ok_or("PluginRepository is not initialized".to_string())?
+            .delete_plugin(id)?;
+            
+        self.dataset_repository
+            .as_ref()
+            .ok_or("DatasetRepository is not initialized".to_string())?
+            .delete_datasets(id)?;
+            
         Ok(())
     }
 
@@ -176,17 +185,16 @@ impl PluginManager {
         listener: Option<RequestDatasetListenerWrpper>,
     ) -> Result<String, String> {
         self.ensure_initialized()?;
-        let result = match self.dataset_repository.as_ref() {
-            Some(repo) => repo.request_dataset(
+        self.dataset_repository
+            .as_ref()
+            .ok_or("DatasetRepository is not initialized".to_string())?
+            .request_dataset(
                 plugin_id,
                 dataset_id,
                 r#type,
                 listener,
                 self.request_javascript_dataset_config.clone(),
-            ),
-            None => Err("DatasetRepository is not initialized".to_string()),
-        };
-        result
+            )
     }
 
     pub fn auto_request_type(
@@ -195,10 +203,10 @@ impl PluginManager {
         dataset_id: &str,
     ) -> Result<RequestType, String> {
         self.ensure_initialized()?;
-        match self.dataset_repository.as_ref() {
-            Some(repo) => repo.auto_request_type(plugin_id, dataset_id),
-            None => Err("DatasetRepository is not initialized".to_string()),
-        }
+        self.dataset_repository
+            .as_ref()
+            .ok_or("DatasetRepository is not initialized".to_string())?
+            .auto_request_type(plugin_id, dataset_id)
     }
 
     fn ensure_initialized(&self) -> Result<(), String> {

@@ -161,33 +161,33 @@ impl<'local> JniHandler<'local> {
         self.get_string(&name)
     }
 
-    pub fn throw_java_expception_if_error<T>(&mut self, error: Result<T, String>) -> Option<T> {
+    pub fn throw_java_exception_if_error<T>(&mut self, error: Result<T, String>) -> Option<T> {
         if let Err(e) = &error {
-            println!("throw java expception {}", e.as_str());
+            eprintln!("Throwing Java exception: {}", e);
             self.env
                 .throw_new("java/lang/Exception", e.as_str())
-                .unwrap();
+                .ok()?;
             return None;
         }
         Some(error.unwrap())
     }
 
-    pub fn throw_java_expception_msg(&mut self, msg: &str) {
-        self.env.throw_new("java/lang/Exception", msg).unwrap();
+    pub fn throw_java_exception_msg(&mut self, msg: &str) {
+        self.env.throw_new("java/lang/Exception", msg).ok();
     }
 
     pub fn throw_jni_exception_if_error<T>(&mut self, result: errors::Result<T>) -> Option<T> {
-        if let Err(_) = result {
+        if result.is_err() {
             if let Some(msg) = self.check_jni_exception() {
-                println!("throw_jni_exception_if_error {}", msg);
-                self.throw_java_expception_msg(&msg);
+                eprintln!("throw_jni_exception_if_error: {}", msg);
+                self.throw_java_exception_msg(&msg);
                 return None;
             }
-            println!("throw_jni_exception_if_error {}", "Unknown JNI Exception");
-            self.throw_java_expception_msg("Unknown JNI Exception");
+            eprintln!("throw_jni_exception_if_error: Unknown JNI Exception");
+            self.throw_java_exception_msg("Unknown JNI Exception");
             return None;
         }
-        return result.ok();
+        result.ok()
     }
 
     /// 检查并处理JNI异常

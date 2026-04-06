@@ -52,8 +52,9 @@ impl DatasetRepository {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
         let entities = dataset::datasets_to_entities(plugin_id.to_string(), datasets)?;
-        dataset_dao::upsert_all(&mut sqlite_connection, &entities).map_err(|e| e.to_string())?;
-        Ok(())
+        dataset_dao::upsert_all(&mut sqlite_connection, &entities)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
     }
 
     pub fn get_datasets(&self, plugin_id: &str) -> Result<Vec<Dataset>, String> {
@@ -61,7 +62,7 @@ impl DatasetRepository {
             database::open(&self.database_path).map_err(|e| e.to_string())?;
         let entities = dataset_dao::find_by_plugin_id(&mut sqlite_connection, plugin_id)
             .map_err(|e| e.to_string())?;
-        Ok(dataset::datasets_entities_to_external_models(entities)?)
+        dataset::datasets_entities_to_external_models(entities)
     }
 
     pub fn get_dataset(&self, id: &str) -> Result<Option<Dataset>, String> {
@@ -100,16 +101,17 @@ impl DatasetRepository {
     pub fn delete_dataset(&self, id: &str) -> Result<(), String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
-        dataset_dao::delete_by_id(&mut sqlite_connection, id).map_err(|e| e.to_string())?;
-        Ok(())
+        dataset_dao::delete_by_id(&mut sqlite_connection, id)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
     }
 
     pub fn delete_datasets(&self, plugin_id: &str) -> Result<(), String> {
         let mut sqlite_connection =
             database::open(&self.database_path).map_err(|e| e.to_string())?;
         dataset_dao::delete_by_plugin_id(&mut sqlite_connection, plugin_id)
-            .map_err(|e| e.to_string())?;
-        Ok(())
+            .map(|_| ())
+            .map_err(|e| e.to_string())
     }
 
     pub fn request_dataset(
@@ -206,7 +208,7 @@ impl DatasetRepository {
             plugin_id, dataset_id, result
         ));
 
-        Ok(result?)
+        result
     }
 
     pub fn auto_request_type(

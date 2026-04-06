@@ -88,13 +88,13 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     {
         let config = PluginManagerConfig { database_path };
         let mut plugin_manager = PluginManager::get_instance().lock().unwrap();
-        handler.throw_java_expception_if_error(plugin_manager.init(config));
+        handler.throw_java_exception_if_error(plugin_manager.init(config));
     }
 
     {
         let mut jni_plugin_manager = JniPluginManager::get_instance().lock().unwrap();
         let wv_java_class_global = handler.new_global_ref(&webviewClass);
-        handler.throw_java_expception_if_error(jni_plugin_manager.init(wv_java_class_global));
+        handler.throw_java_exception_if_error(jni_plugin_manager.init(wv_java_class_global));
     }
 
     {
@@ -151,13 +151,13 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
             }
         }
         _ => {
-            handler.throw_java_expception_msg(&format!("Invalid source type {}.", sourceType));
+            handler.throw_java_exception_msg(&format!("Invalid source type {}.", sourceType));
             return;
         }
     };
 
     let plugin_manager = PluginManager::get_instance().lock().unwrap();
-    handler.throw_java_expception_if_error(plugin_manager.install_plugin(&plugin_source));
+    handler.throw_java_exception_if_error(plugin_manager.install_plugin(&plugin_source));
 }
 
 #[unsafe(no_mangle)]
@@ -175,7 +175,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     };
 
     handler
-        .throw_java_expception_if_error(is_installed)
+        .throw_java_exception_if_error(is_installed)
         .map(|e| e.into())
         .unwrap_or(JNI_FALSE)
 }
@@ -195,7 +195,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     };
 
     handler
-        .throw_java_expception_if_error(installed_plugin)
+        .throw_java_exception_if_error(installed_plugin)
         .flatten()
         .map(|e| JniPlugin::clone_from_plugin(&mut handler, &e))
         .map(|e| e.unsafe_jobject())
@@ -212,7 +212,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
 
     let plugins = {
         let plugin_manager = PluginManager::get_instance().lock().unwrap();
-        match handler.throw_java_expception_if_error(plugin_manager.get_installed_plugins()) {
+        match handler.throw_java_exception_if_error(plugin_manager.get_installed_plugins()) {
             Some(p) => p,
             None => return JObject::null().into_raw(),
         }
@@ -243,7 +243,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     let id = handler.get_string(&id);
 
     let mut plugin_manager = PluginManager::get_instance().lock().unwrap();
-    handler.throw_java_expception_if_error(plugin_manager.uninstall_plugin(&id));
+    handler.throw_java_exception_if_error(plugin_manager.uninstall_plugin(&id));
 }
 
 #[unsafe(no_mangle)]
@@ -298,7 +298,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     ));
 
     handler
-        .throw_java_expception_if_error(data)
+        .throw_java_exception_if_error(data)
         .map(|e| handler.new_string(&e))
         .map(|e| e.into_raw())
         .unwrap_or(JObject::null().into_raw())
@@ -376,24 +376,22 @@ impl RequestDatasetListener for JniRequestDatasetListener {
 }
 
 struct JniRequestJavaScriptDatasetListener {
-    jniListener: GlobalRef,
+    jni_listener: GlobalRef,
 }
 
 impl JniRequestJavaScriptDatasetListener {
     fn new(jni_listener: GlobalRef) -> Self {
-        Self {
-            jniListener: jni_listener,
-        }
+        Self { jni_listener }
     }
 }
 
 impl RequestDatasetListener for JniRequestJavaScriptDatasetListener {
     fn on_receive_data(&self, url: &str, data: &str) {
-        handle_on_receive_data(&self.jniListener, url, data);
+        handle_on_receive_data(&self.jni_listener, url, data);
     }
 
     fn on_receive_error(&self, url: &str, error: &str) {
-        handle_on_receive_error(&self.jniListener, url, error);
+        handle_on_receive_error(&self.jni_listener, url, error);
     }
 }
 
@@ -403,7 +401,7 @@ impl RequestJavaScriptDatasetListener for JniRequestJavaScriptDatasetListener {
         let url_obj = jni_handler.new_string(url);
 
         jni_handler.call_method(
-            &self.jniListener,
+            &self.jni_listener,
             REQUEST_DATASET_LISTENER_ON_PAGE_STARTED,
             &[JValueGen::Object(&url_obj)],
         );
@@ -416,7 +414,7 @@ impl RequestJavaScriptDatasetListener for JniRequestJavaScriptDatasetListener {
         let url_obj = jni_handler.new_string(url);
 
         jni_handler.call_method(
-            &self.jniListener,
+            &self.jni_listener,
             REQUEST_DATASET_LISTENER_ON_PAGE_CANCELLED,
             &[JValueGen::Object(&url_obj)],
         );
@@ -430,7 +428,7 @@ impl RequestJavaScriptDatasetListener for JniRequestJavaScriptDatasetListener {
         let document_obj = jni_handler.new_string(document);
 
         jni_handler.call_method(
-            &self.jniListener,
+            &self.jni_listener,
             REQUEST_DATASET_LISTENER_ON_PAGE_FINISHED,
             &[
                 JValueGen::Object(&url_obj),
@@ -448,7 +446,7 @@ impl RequestJavaScriptDatasetListener for JniRequestJavaScriptDatasetListener {
         let error_obj = jni_handler.new_string(error);
 
         jni_handler.call_method(
-            &self.jniListener,
+            &self.jni_listener,
             REQUEST_DATASET_LISTENER_ON_PAGE_ERROR,
             &[JValueGen::Object(&url_obj), JValueGen::Object(&error_obj)],
         );
@@ -462,7 +460,7 @@ impl RequestJavaScriptDatasetListener for JniRequestJavaScriptDatasetListener {
         let url_obj = jni_handler.new_string(url);
 
         jni_handler.call_method(
-            &self.jniListener,
+            &self.jni_listener,
             REQUEST_DATASET_LISTENER_ON_LOAD_PROGRESS,
             &[JValueGen::Object(&url_obj), JValueGen::Int(progress)],
         );
@@ -475,7 +473,7 @@ impl RequestJavaScriptDatasetListener for JniRequestJavaScriptDatasetListener {
         let url_obj = jni_handler.new_string(url);
 
         jni_handler.call_method(
-            &self.jniListener,
+            &self.jni_listener,
             REQUEST_DATASET_LISTENER_ON_SHOULD_OVERRIDE_URL_LOADING,
             &[JValueGen::Object(&url_obj)],
         );
@@ -488,7 +486,7 @@ impl RequestJavaScriptDatasetListener for JniRequestJavaScriptDatasetListener {
         let url_obj = jni_handler.new_string(url);
 
         jni_handler.call_method(
-            &self.jniListener,
+            &self.jni_listener,
             REQUEST_DATASET_LISTENER_ON_SHOULD_INTERCEPT_REQUEST,
             &[JValueGen::Object(&url_obj)],
         );
