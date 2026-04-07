@@ -19,4 +19,3 @@ pub(crate) mod entities;
 pub(crate) mod plugin_dao;
 pub(crate) mod schema;
 
-pub use connection_pool::DatabasePool;

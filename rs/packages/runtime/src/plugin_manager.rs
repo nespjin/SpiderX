@@ -23,7 +23,7 @@ use compiler::{json_plugin_compiler::JsonPluginCompiler, plugin_compiler::Plugin
 
 use crate::{
     cache::CacheManager,
-    database::{connection_pool::DatabasePool, entities::plugin::PluginEntity},
+    database::connection_pool::DatabasePool,
     executor::{
         request_dataset_listener::RequestDatasetListenerWrpper,
         request_javascript_dataset_config::RequestJavaScriptDatasetConfigArc,
