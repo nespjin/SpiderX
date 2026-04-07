@@ -14,7 +14,10 @@
 
 use std::{
     collections::{HashMap, VecDeque},
-    sync::{Arc, Mutex, OnceLock, RwLock},
+    sync::{
+        Arc, OnceLock, RwLock,
+        atomic::{AtomicBool, AtomicI64, Ordering},
+    },
 };
 
 use crate::{jni::jni_webview, web_engine::web_engine::WebEngineMut};
@@ -22,37 +25,35 @@ use crate::{jni::jni_webview, web_engine::web_engine::WebEngineMut};
 const MAX_WV_POOL_SIZE: usize = 10;
 
 pub struct WebEngineManager {
-    webengine_id: i64,
+    webengine_id: Arc<AtomicI64>,
     webengines: Arc<RwLock<HashMap<i64, WebEngineMut>>>,
     webengine_pool: Arc<RwLock<VecDeque<WebEngineMut>>>,
-    is_cache_engine: bool,
+    is_cache_engine: Arc<AtomicBool>,
 }
 
 impl WebEngineManager {
-    pub fn get_instance() -> &'static Mutex<WebEngineManager> {
-        static INSTANCE: OnceLock<Mutex<WebEngineManager>> = OnceLock::new();
-        INSTANCE.get_or_init(|| {
-            Mutex::new(WebEngineManager {
-                webengine_id: 0,
-                webengines: Arc::new(RwLock::new(HashMap::new())),
-                webengine_pool: Arc::new(RwLock::new(VecDeque::new())),
-                is_cache_engine: false,
-            })
+    pub fn get_instance() -> &'static WebEngineManager {
+        static INSTANCE: OnceLock<WebEngineManager> = OnceLock::new();
+        INSTANCE.get_or_init(|| WebEngineManager {
+            webengine_id: Arc::new(AtomicI64::new(0)),
+            webengines: Arc::new(RwLock::new(HashMap::new())),
+            webengine_pool: Arc::new(RwLock::new(VecDeque::new())),
+            is_cache_engine: Arc::new(AtomicBool::new(false)),
         })
     }
 
-    pub fn init(&mut self, is_cache_engine: bool) -> Result<(), String> {
-        self.is_cache_engine = is_cache_engine;
+    pub fn init(&self, is_cache_engine: bool) -> Result<(), String> {
+        self.is_cache_engine
+            .store(is_cache_engine, Ordering::SeqCst);
         Ok(())
     }
 
     pub fn is_cache_engine(&self) -> bool {
-        self.is_cache_engine
+        self.is_cache_engine.load(Ordering::SeqCst)
     }
 
-    pub fn new_webengine(&mut self) -> Result<WebEngineMut, String> {
-        let id: i64 = self.webengine_id;
-        let next_id = self.webengine_id + 1;
+    pub fn new_webengine(&self) -> Result<WebEngineMut, String> {
+        let id = self.webengine_id.fetch_add(1, Ordering::SeqCst);
 
         let engine = if !self
             .webengine_pool
@@ -78,7 +79,6 @@ impl WebEngineManager {
             engine.write().map_err(|e| e.to_string())?.init()?;
         }
 
-        self.webengine_id = next_id;
         self.webengines
             .write()
             .map_err(|e| e.to_string())?
@@ -98,7 +98,7 @@ impl WebEngineManager {
             .map(|wv| wv.clone())
     }
 
-    pub fn remove_webengine(&mut self, id: i64) -> Result<(), String> {
+    pub fn remove_webengine(&self, id: i64) -> Result<(), String> {
         let engine = {
             self.webengines
                 .write()
@@ -112,7 +112,7 @@ impl WebEngineManager {
             }
             let is_pool_not_full =
                 self.webengine_pool.read().map_err(|e| e.to_string())?.len() < MAX_WV_POOL_SIZE;
-            if self.is_cache_engine && is_pool_not_full {
+            if self.is_cache_engine.load(Ordering::SeqCst) && is_pool_not_full {
                 self.webengine_pool
                     .write()
                     .map_err(|e| e.to_string())?

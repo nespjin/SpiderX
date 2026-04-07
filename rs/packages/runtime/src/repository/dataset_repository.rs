@@ -228,9 +228,7 @@ impl DatasetRepository {
         };
 
         let screen_type = {
-            let dm = DeviceManager::get_instance()
-                .lock()
-                .map_err(|e| e.to_string())?;
+            let dm = DeviceManager::get_instance();
             &dm.screen_type().ok_or("Screen type is not set")?
         };
 
@@ -324,9 +322,7 @@ impl DatasetRepository {
         };
 
         let screen_type = {
-            let dm = DeviceManager::get_instance()
-                .lock()
-                .map_err(|e| e.to_string())?;
+            let dm = DeviceManager::get_instance();
             &dm.screen_type().ok_or("Screen type is not set")?
         };
 

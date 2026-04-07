@@ -97,14 +97,14 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     }
 
     {
-        let mut wm = WebEngineManager::get_instance().lock().unwrap();
-        wm.init(isCacheEngine == JNI_TRUE).unwrap();
+        let wm = WebEngineManager::get_instance();
+        handler.throw_java_exception_if_error(wm.init(isCacheEngine == JNI_TRUE));
     }
 
     {
         let mut jni_screen_type = JniScreenType::new(&mut handler);
         let screen_type = jni_screen_type.java_object_to_screen_type(screenType);
-        let mut dm = DeviceManager::get_instance().lock().unwrap();
+        let dm = DeviceManager::get_instance();
         dm.set_screen_type(screen_type);
     }
 }
@@ -120,7 +120,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     let mut jni_screen_type = JniScreenType::new(&mut handler);
     let screen_type = jni_screen_type.java_object_to_screen_type(screenType);
 
-    let mut dm = DeviceManager::get_instance().lock().unwrap();
+    let dm = DeviceManager::get_instance();
     dm.set_screen_type(screen_type);
 }
 
