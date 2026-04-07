@@ -1,9 +1,7 @@
 #[cfg(target_os = "android")]
 use std::ffi::{CString, c_char};
 
-use jni::objects::JValueGen;
-
-use crate::jni::{jni_handler::JniHandler, jni_thread};
+use jni::objects::JValue;
 
 ///
 /// Author: <a href="jinzhaoluns@qq.com">JinZhaolu</a>
@@ -18,20 +16,35 @@ pub fn jni_log(msg: &str) {
 
     #[cfg(not(target_os = "android"))]
     {
-        let mut jni_handler = JniHandler::new();
-        let out =
-            jni_handler.get_static_field("java/lang/System", ("out", "Ljava/io/PrintStream;"));
-        let msg_obj = jni_handler.new_string(format!(
-            "[{} {}]\t{}",
-            chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
-            jni_thread::current_thread_name(),
-            msg
-        ));
-        jni_handler.call_method(
-            &out,
-            ("println", "(Ljava/lang/String;)V"),
-            &[JValueGen::Object(&msg_obj)],
-        );
+        use crate::jni::jni_utils;
+
+        jni_utils::attach_current_thread(|env| -> Result<(), jni::errors::Error> {
+            use jni::{jni_sig, jni_str};
+
+            let out = env.get_static_field(
+                jni_str!("java/lang/System"),
+                jni_str!("out"),
+                jni_sig!(java.io.PrintStream),
+            )?;
+            let out_obj = out.l()?;
+
+            let thread_name = jni_utils::current_thread_name(env);
+            let msg_obj = env.new_string(format!(
+                "[{} {}]\t{}",
+                chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
+                thread_name,
+                msg
+            ))?;
+
+            env.call_method(
+                &out_obj,
+                jni_str!("println"),
+                jni_sig!((java.lang.String) -> void),
+                &[JValue::Object(&msg_obj)],
+            )?;
+            Ok(())
+        })
+        .expect("Failed to print message");
     }
 }
 

@@ -12,28 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use jni::objects::{JObject, JValueGen};
+// use jni::objects::{JObject, JValue};
 
-use crate::jni::{jni_classes, jni_handler::JniHandler, jni_methods};
+// use crate::jni::{jni_classes, jni_handler::JniHandler, jni_methods};
 
-pub struct JniMap<'local> {
-    handler: JniHandler<'local>,
-    map: JObject<'local>,
-}
+// pub struct JniMap<'local> {
+//     handler: JniHandler<'local>,
+//     map: JObject<'local>,
+// }
 
-impl<'local> JniMap<'local> {
-    pub fn new(handler: &mut JniHandler<'local>) -> Self {
-        Self {
-            handler: handler.clone(),
-            map: handler.new_object(jni_classes::HASH_MAP_CONSTOR, &[]),
-        }
-    }
+// impl<'local> JniMap<'local> {
+//     pub fn new(handler: &mut JniHandler<'local>) -> Self {
+//         Self {
+//             handler: handler.clone(),
+//             map: handler.new_object(jni_classes::HASH_MAP_CONSTOR, &[]),
+//         }
+//     }
 
-    pub fn put(&mut self, key: &JObject, value: &JObject) {
-        self.handler.call_method(
-            &self.map,
-            jni_methods::MAP_PUT,
-            &[JValueGen::Object(&key), JValueGen::Object(&value)],
-        );
-    }
-}
+//     pub fn put(&mut self, key: &JObject, value: &JObject) {
+//         self.handler.call_method(
+//             &self.map,
+//             jni_methods::MAP_PUT,
+//             &[JValue::Object(&key), JValue::Object(&value)],
+//         );
+//     }
+// }

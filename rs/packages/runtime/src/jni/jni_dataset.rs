@@ -14,174 +14,275 @@
 
 use core::data::plugin::Dataset;
 
-use jni::objects::{JObject, JValueGen};
-
-use crate::jni::{
-    jni_handler::JniHandler,
-    jni_handler::{JniConstructorInfo, JniFieldInfo},
-    jni_json::JniJson,
+use jni::{
+    JValue, jni_sig, jni_str, objects::JObject, refs::Global, signature::MethodSignature,
+    strings::JNIStr,
 };
 
-pub const DATASET: &str = "com/nesp/spiderx/runtime/model/Dataset";
-pub const DATASET_CONSTOR: JniConstructorInfo = (DATASET, "()V");
+use crate::jni::{
+    jni_json::JniJson,
+    jni_utils::{self, JniFieldDetail},
+};
 
-pub const FIELD_ID: JniFieldInfo = ("id", "Ljava/lang/String;");
-pub const FIELD_URL: JniFieldInfo = ("url", "Ljava/lang/String;");
-pub const FIELD_URL_COMPACT: JniFieldInfo = ("urlCompact", "Ljava/lang/String;");
-pub const FIELD_URL_MEDIUM: JniFieldInfo = ("urlMedium", "Ljava/lang/String;");
-pub const FIELD_URL_EXPANDED: JniFieldInfo = ("urlExpanded", "Ljava/lang/String;");
-pub const FIELD_JS: JniFieldInfo = ("js", "Ljava/lang/String;");
-pub const FIELD_JS_COMPACT: JniFieldInfo = ("jsCompact", "Ljava/lang/String;");
-pub const FIELD_JS_MEDIUM: JniFieldInfo = ("jsMedium", "Ljava/lang/String;");
-pub const FIELD_JS_EXPANDED: JniFieldInfo = ("jsExpanded", "Ljava/lang/String;");
-pub const FIELD_DSL: JniFieldInfo = ("dsl", &"Ljava/util/Map;");
-pub const FIELD_DSL_COMPACT: JniFieldInfo = ("dslCompact", "Ljava/util/Map;");
-pub const FIELD_DSL_MEDIUM: JniFieldInfo = ("dslMedium", "Ljava/util/Map;");
-pub const FIELD_DSL_EXPANDED: JniFieldInfo = ("dslExpanded", "Ljava/util/Map;");
+pub const CLASS_NAME: &'static JNIStr = jni_str!("com/nesp/spiderx/runtime/model/Dataset");
+pub const CONSTOR_SIG: MethodSignature = jni_sig!(()->void);
 
-pub struct JniDataset<'local> {
-    handler: JniHandler<'local>,
-    dataset: JObject<'local>,
-    jni_json: JniJson<'local>,
+pub const FIELD_ID: JniFieldDetail = (
+    jni_str!("id"),
+    jni_sig!(java.lang.String), // Ljava/lang/String;
+);
+pub const FIELD_URL: JniFieldDetail = (
+    jni_str!("url"),
+    jni_sig!(java.lang.String), // Ljava/lang/String;
+);
+
+pub const FIELD_URL_COMPACT: JniFieldDetail = (
+    jni_str!("urlCompact"),
+    jni_sig!(java.lang.String), // Ljava/lang/String;
+);
+pub const FIELD_URL_MEDIUM: JniFieldDetail = (
+    jni_str!("urlMedium"),
+    jni_sig!(java.lang.String), // Ljava/lang/String;
+);
+pub const FIELD_URL_EXPANDED: JniFieldDetail = (
+    jni_str!("urlExpanded"),
+    jni_sig!(java.lang.String), // Ljava/lang/String;
+);
+pub const FIELD_JS: JniFieldDetail = (
+    jni_str!("js"),
+    jni_sig!(java.lang.String), // Ljava/lang/String;
+);
+pub const FIELD_JS_COMPACT: JniFieldDetail = (
+    jni_str!("jsCompact"),
+    jni_sig!(java.lang.String), // Ljava/lang/String;
+);
+pub const FIELD_JS_MEDIUM: JniFieldDetail = (
+    jni_str!("jsMedium"),
+    jni_sig!(java.lang.String), // Ljava/lang/String;
+);
+pub const FIELD_JS_EXPANDED: JniFieldDetail = (
+    jni_str!("jsExpanded"),
+    jni_sig!(java.lang.String), // Ljava/lang/String;
+);
+pub const FIELD_DSL: JniFieldDetail = (
+    jni_str!("dsl"),
+    jni_sig!(java.util.Map), // Ljava/util/Map;
+);
+pub const FIELD_DSL_COMPACT: JniFieldDetail = (
+    jni_str!("dslCompact"),
+    jni_sig!(java.util.Map), // Ljava/util/Map;
+);
+pub const FIELD_DSL_MEDIUM: JniFieldDetail = (
+    jni_str!("dslMedium"),
+    jni_sig!(java.util.Map), // Ljava/util/Map;
+);
+pub const FIELD_DSL_EXPANDED: JniFieldDetail = (
+    jni_str!("dslExpanded"),
+    jni_sig!(java.util.Map), // Ljava/util/Map;
+);
+
+pub struct JniDataset {
+    dataset: Global<JObject<'static>>,
+    jni_json: JniJson,
 }
 
-impl<'local> JniDataset<'local> {
-    pub fn new(handler: &mut JniHandler<'local>) -> Self {
+impl JniDataset {
+    pub fn new() -> Self {
+        let jdataset = jni_utils::attach_current_thread(
+            |env| -> Result<Global<JObject<'_>>, jni::errors::Error> {
+                let jobj = env.new_object(CLASS_NAME, CONSTOR_SIG, &[])?;
+                let jobj_ref = env.new_global_ref(jobj)?;
+                Ok(jobj_ref)
+            },
+        )
+        .expect("Failed to create JDataset");
         Self {
-            handler: handler.clone(),
-            dataset: handler.new_object(DATASET_CONSTOR, &[]),
-            jni_json: JniJson::new(handler.clone()),
+            dataset: jdataset,
+            jni_json: JniJson::new(),
         }
     }
 
-    pub fn jobject_ref(&self) -> &JObject<'local> {
+    pub fn jobject_ref(&self) -> &JObject<'_> {
         &self.dataset
     }
 
-    pub fn unsafe_jobject(&self) -> JObject<'local> {
-        unsafe { JObject::from_raw(*self.dataset) }
-    }
+    // pub fn unsafe_jobject(&self, env: &Env<'local>) -> JObject<'local> {
+    //     unsafe { JObject::from_raw(env, *self.dataset) }
+    // }
 
-    pub fn set_id(&mut self, id: &str) -> &mut Self {
-        let id_obj = self.handler.new_string(id);
-        self.handler
-            .set_field(&self.dataset, FIELD_ID, JValueGen::Object(&id_obj));
-        self.handler.delete_local_ref(id_obj);
+    pub fn set_id(&mut self, value: &str) -> &mut Self {
+        jni_utils::current_java_vm()
+            .attach_current_thread(|env| -> Result<(), jni::errors::Error> {
+                let id_obj = env.new_string(value)?;
+                let (name, sig) = FIELD_ID;
+                env.set_field(&self.dataset, name, sig, JValue::Object(&id_obj))?;
+                env.delete_local_ref(id_obj);
+                Ok(())
+            })
+            .expect("Failed to set id");
         self
     }
 
     pub fn set_url(&mut self, url: &str) -> &mut Self {
-        let url_obj = self.handler.new_string(url);
-        self.handler
-            .set_field(&self.dataset, FIELD_URL, JValueGen::Object(&url_obj));
-        self.handler.delete_local_ref(url_obj);
+        jni_utils::current_java_vm()
+            .attach_current_thread(|env| -> Result<(), jni::errors::Error> {
+                let url_obj = env.new_string(url)?;
+                let (name, sig) = FIELD_URL;
+                env.set_field(&self.dataset, name, sig, JValue::Object(&url_obj))?;
+                env.delete_local_ref(url_obj);
+                Ok(())
+            })
+            .expect("Failed to set url");
         self
     }
 
     pub fn set_url_compact(&mut self, url: &str) -> &mut Self {
-        let url_obj = self.handler.new_string(url);
-        self.handler.set_field(
-            &self.dataset,
-            FIELD_URL_COMPACT,
-            JValueGen::Object(&url_obj),
-        );
-        self.handler.delete_local_ref(url_obj);
+        jni_utils::current_java_vm()
+            .attach_current_thread(|env| -> Result<(), jni::errors::Error> {
+                let url_obj = env.new_string(url)?;
+                let (name, sig) = FIELD_URL_COMPACT;
+                env.set_field(&self.dataset, name, sig, JValue::Object(&url_obj))?;
+                env.delete_local_ref(url_obj);
+                Ok(())
+            })
+            .expect("Failed to set url compact");
         self
     }
 
     pub fn set_url_medium(&mut self, url: &str) -> &mut Self {
-        let url_obj = self.handler.new_string(url);
-        self.handler
-            .set_field(&self.dataset, FIELD_URL_MEDIUM, JValueGen::Object(&url_obj));
-        self.handler.delete_local_ref(url_obj);
+        jni_utils::current_java_vm()
+            .attach_current_thread(|env| -> Result<(), jni::errors::Error> {
+                let url_obj = env.new_string(url)?;
+                let (name, sig) = FIELD_URL_MEDIUM;
+                env.set_field(&self.dataset, name, sig, JValue::Object(&url_obj))?;
+                env.delete_local_ref(url_obj);
+                Ok(())
+            })
+            .expect("Failed to set url medium");
         self
     }
 
     pub fn set_url_expanded(&mut self, url: &str) -> &mut Self {
-        let url_obj = self.handler.new_string(url);
-        self.handler.set_field(
-            &self.dataset,
-            FIELD_URL_EXPANDED,
-            JValueGen::Object(&url_obj),
-        );
-        self.handler.delete_local_ref(url_obj);
+        jni_utils::current_java_vm()
+            .attach_current_thread(|env| -> Result<(), jni::errors::Error> {
+                let url_obj = env.new_string(url)?;
+                let (name, sig) = FIELD_URL_EXPANDED;
+                env.set_field(&self.dataset, name, sig, JValue::Object(&url_obj))?;
+                env.delete_local_ref(url_obj);
+                Ok(())
+            })
+            .expect("Failed to set url expanded");
         self
     }
 
     pub fn set_js(&mut self, js: &str) -> &mut Self {
-        let js_obj = self.handler.new_string(js);
-        self.handler
-            .set_field(&self.dataset, FIELD_JS, JValueGen::Object(&js_obj));
-        self.handler.delete_local_ref(js_obj);
+        jni_utils::current_java_vm()
+            .attach_current_thread(|env| -> Result<(), jni::errors::Error> {
+                let js_obj = env.new_string(js)?;
+                let (name, sig) = FIELD_JS;
+                env.set_field(&self.dataset, name, sig, JValue::Object(&js_obj))?;
+                env.delete_local_ref(js_obj);
+                Ok(())
+            })
+            .expect("Failed to set js");
         self
     }
 
     pub fn set_js_compact(&mut self, js: &str) -> &mut Self {
-        let js_obj = self.handler.new_string(js);
-        self.handler
-            .set_field(&self.dataset, FIELD_JS_COMPACT, JValueGen::Object(&js_obj));
-        self.handler.delete_local_ref(js_obj);
+        jni_utils::current_java_vm()
+            .attach_current_thread(|env| -> Result<(), jni::errors::Error> {
+                let js_obj = env.new_string(js)?;
+                let (name, sig) = FIELD_JS_COMPACT;
+                env.set_field(&self.dataset, name, sig, JValue::Object(&js_obj))?;
+                env.delete_local_ref(js_obj);
+                Ok(())
+            })
+            .expect("Failed to set js compact");
         self
     }
 
     pub fn set_js_medium(&mut self, js: &str) -> &mut Self {
-        let js_obj = self.handler.new_string(js);
-        self.handler
-            .set_field(&self.dataset, FIELD_JS_MEDIUM, JValueGen::Object(&js_obj));
-        self.handler.delete_local_ref(js_obj);
+        jni_utils::current_java_vm()
+            .attach_current_thread(|env| -> Result<(), jni::errors::Error> {
+                let js_obj = env.new_string(js)?;
+                let (name, sig) = FIELD_JS_MEDIUM;
+                env.set_field(&self.dataset, name, sig, JValue::Object(&js_obj))?;
+                env.delete_local_ref(js_obj);
+                Ok(())
+            })
+            .expect("Failed to set js medium");
         self
     }
 
     pub fn set_js_expanded(&mut self, js: &str) -> &mut Self {
-        let js_obj = self.handler.new_string(js);
-        self.handler
-            .set_field(&self.dataset, FIELD_JS_EXPANDED, JValueGen::Object(&js_obj));
-        self.handler.delete_local_ref(js_obj);
+        jni_utils::current_java_vm()
+            .attach_current_thread(|env| -> Result<(), jni::errors::Error> {
+                let js_obj = env.new_string(js)?;
+                let (name, sig) = FIELD_JS_EXPANDED;
+                env.set_field(&self.dataset, name, sig, JValue::Object(&js_obj))?;
+                env.delete_local_ref(js_obj);
+                Ok(())
+            })
+            .expect("Failed to set js expanded");
         self
     }
 
     pub fn set_dsl(&mut self, dsl: &serde_json::Value) -> &mut Self {
-        let dsl_obj = self.jni_json.json_value_to_hash_map(dsl);
-        self.handler
-            .set_field(&self.dataset, FIELD_DSL, JValueGen::Object(&dsl_obj));
-        self.handler.delete_local_ref(dsl_obj);
+        jni_utils::current_java_vm()
+            .attach_current_thread(|env| -> Result<(), jni::errors::Error> {
+                let dsl_obj = self.jni_json.json_value_to_hash_map(env, dsl);
+                let (name, sig) = FIELD_DSL;
+                env.set_field(&self.dataset, name, sig, JValue::Object(&dsl_obj))?;
+                env.delete_local_ref(dsl_obj);
+                Ok(())
+            })
+            .expect("Failed to set dsl");
         self
     }
 
     pub fn set_dsl_compact(&mut self, dsl: &serde_json::Value) -> &mut Self {
-        let dsl_obj = self.jni_json.json_value_to_hash_map(dsl);
-        self.handler.set_field(
-            &self.dataset,
-            FIELD_DSL_COMPACT,
-            JValueGen::Object(&dsl_obj),
-        );
-        self.handler.delete_local_ref(dsl_obj);
+        jni_utils::current_java_vm()
+            .attach_current_thread(|env| -> Result<(), jni::errors::Error> {
+                let dsl_obj = self.jni_json.json_value_to_hash_map(env, dsl);
+                let (name, sig) = FIELD_DSL_COMPACT;
+                env.set_field(&self.dataset, name, sig, JValue::Object(&dsl_obj))?;
+                env.delete_local_ref(dsl_obj);
+                Ok(())
+            })
+            .expect("Failed to set dsl compact");
         self
     }
 
     pub fn set_dsl_medium(&mut self, dsl: &serde_json::Value) -> &mut Self {
-        let dsl_obj = self.jni_json.json_value_to_hash_map(dsl);
-        self.handler
-            .set_field(&self.dataset, FIELD_DSL_MEDIUM, JValueGen::Object(&dsl_obj));
-        self.handler.delete_local_ref(dsl_obj);
+        jni_utils::current_java_vm()
+            .attach_current_thread(|env| -> Result<(), jni::errors::Error> {
+                let dsl_obj = self.jni_json.json_value_to_hash_map(env, dsl);
+                let (name, sig) = FIELD_DSL_MEDIUM;
+                env.set_field(&self.dataset, name, sig, JValue::Object(&dsl_obj))?;
+                env.delete_local_ref(dsl_obj);
+                Ok(())
+            })
+            .expect("Failed to set dsl medium");
         self
     }
 
     pub fn set_dsl_expanded(&mut self, dsl: &serde_json::Value) -> &mut Self {
-        let dsl_obj = self.jni_json.json_value_to_hash_map(dsl);
-        self.handler.set_field(
-            &self.dataset,
-            FIELD_DSL_EXPANDED,
-            JValueGen::Object(&dsl_obj),
-        );
-        self.handler.delete_local_ref(dsl_obj);
+        jni_utils::current_java_vm()
+            .attach_current_thread(|env| -> Result<(), jni::errors::Error> {
+                let dsl_obj = self.jni_json.json_value_to_hash_map(env, dsl);
+                let (name, sig) = FIELD_DSL_EXPANDED;
+                env.set_field(&self.dataset, name, sig, JValue::Object(&dsl_obj))?;
+                env.delete_local_ref(dsl_obj);
+                Ok(())
+            })
+            .expect("Failed to set dsl expanded");
         self
     }
 }
 
-impl<'local> JniDataset<'local> {
-    pub fn clone_from_dataset(handler: &mut JniHandler<'local>, dataset: &Dataset) -> Self {
-        let mut obj = JniDataset::new(handler);
+impl JniDataset {
+    pub fn clone_from_dataset(dataset: &Dataset) -> Self {
+        let mut obj = JniDataset::new();
         obj.set_id(&dataset.id);
         obj.set_url(&dataset.url);
         if let Some(url_compact) = &dataset.url_compact {

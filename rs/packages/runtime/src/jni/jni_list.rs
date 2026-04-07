@@ -12,32 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use jni::{
-    objects::{JObject, JValue},
-    sys::jboolean,
-};
+// use jni::{
+//     objects::{JObject, JValue},
+//     sys::jboolean,
+// };
 
-use crate::jni::{jni_classes, jni_handler::JniHandler, jni_methods};
+// use crate::jni::{jni_classes, jni_handler::JniHandler, jni_methods};
 
-pub struct JniList<'local> {
-    handler: JniHandler<'local>,
-    list: JObject<'local>,
-}
+// pub struct JniList<'local> {
+//     handler: JniHandler<'local>,
+//     list: JObject<'local>,
+// }
 
-impl<'local> JniList<'local> {
-    pub fn new(handler: &mut JniHandler<'local>) -> Self {
-        Self {
-            handler: handler.clone(),
-            list: handler.new_object(jni_classes::ARRAY_LIST_CONSTOR, &[]),
-        }
-    }
+// impl<'local> JniList<'local> {
+//     pub fn new(handler: &mut JniHandler<'local>) -> Self {
+//         Self {
+//             handler: handler.clone(),
+//             list: handler.new_object(jni_classes::ARRAY_LIST_CONSTOR, &[]),
+//         }
+//     }
 
-    pub fn add_obj(&mut self, element: &JObject) -> jboolean {
-        let ret: JObject<'_> = self.handler.call_method(
-            &self.list,
-            jni_methods::LIST_ADD,
-            &[JValue::Object(element)],
-        );
-        self.handler.get_boolean(&ret)
-    }
-}
+//     pub fn add_obj(&mut self, element: &JObject) -> jboolean {
+//         let ret: JObject<'_> = self.handler.call_method(
+//             &self.list,
+//             jni_methods::LIST_ADD,
+//             &[JValue::Object(element)],
+//         );
+//         self.handler.get_boolean(&ret)
+//     }
+// }

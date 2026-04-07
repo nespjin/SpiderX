@@ -12,22 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::jni::jni_handler::JniConstructorInfo;
+// use crate::jni::jni_handler::JniConstructorInfo;
 
+// pub const LIST: &'static str = "java/util/List";
+// pub const ARRAY_LIST: &'static str = "java/util/ArrayList";
+// pub const ARRAY_LIST_CONSTOR: JniConstructorInfo = (ARRAY_LIST, "()V");
 
-pub const LIST: &str = "java/util/List";
-pub const ARRAY_LIST: &str = "java/util/ArrayList";
-pub const ARRAY_LIST_CONSTOR: JniConstructorInfo = (ARRAY_LIST, "()V");
+// pub const MAP: &'static str = "java/util/Map";
+// pub const HASH_MAP: &'static str = "java/util/HashMap";
+// pub const HASH_MAP_CONSTOR: JniConstructorInfo = (HASH_MAP, "()V");
 
-pub const MAP: &str = "java/util/Map";
-pub const HASH_MAP: &str = "java/util/HashMap";
-pub const HASH_MAP_CONSTOR: JniConstructorInfo = (HASH_MAP, "()V");
+// pub const BOOLEAN: &'static str = "java/lang/Boolean";
+// pub const BOOLEAN_CONSTOR: JniConstructorInfo = (BOOLEAN, "(Z)V");
 
-pub const BOOLEAN: &str = "java/lang/Boolean";
-pub const BOOLEAN_CONSTOR: JniConstructorInfo = (BOOLEAN, "(Z)V");
+// pub const LONG: &'static str = "java/lang/Long";
+// pub const LONG_CONSTOR: JniConstructorInfo = (LONG, "(J)V");
 
-pub const LONG: &str = "java/lang/Long";
-pub const LONG_CONSTOR: JniConstructorInfo = (LONG, "(J)V");
-
-pub const DOUBLE: &str = "java/lang/Double";
-pub const DOUBLE_CONSTOR: JniConstructorInfo = (LONG, "(D)V");
+// pub const DOUBLE: &'static str = "java/lang/Double";
+// pub const DOUBLE_CONSTOR: JniConstructorInfo = (DOUBLE, "(D)V");

@@ -13,38 +13,47 @@
 // limitations under the License.
 
 use jni::{
-    objects::{JObject, JString, JValueGen},
-    sys::{JNI_FALSE, JNI_TRUE},
+    Env,
+    objects::{JObject, JString, JValue},
 };
 
-use crate::jni::{jni_classes, jni_handler::JniHandler, jni_methods};
+use crate::jni::jni_utils;
 
 #[derive(Clone)]
-pub struct JniJson<'local> {
-    handler: JniHandler<'local>,
-}
+pub struct JniJson {}
 
-impl<'local> JniJson<'local> {
-    pub fn new(handler: JniHandler<'local>) -> Self {
-        Self { handler }
+impl JniJson {
+    pub fn new() -> Self {
+        Self {}
     }
 
-    pub fn json_value_to_hash_map(&mut self, value: &serde_json::Value) -> JObject<'local> {
+    pub fn json_value_to_hash_map<'local>(
+        &self,
+        env: &mut Env<'local>,
+        value: &serde_json::Value,
+    ) -> JObject<'local> {
         match value {
             serde_json::Value::Object(map) => {
-                let hash_map_obj = self.handler.new_object(jni_classes::HASH_MAP_CONSTOR, &[]);
+                let (name, sig) = jni_utils::HASH_MAP_CONSTOR;
+                let hash_map_obj = env
+                    .new_object(name, sig, &[])
+                    .expect("Failed to new HashMap");
 
                 for (key, value) in map {
-                    let key_obj: JString<'local> = self.handler.new_string(key);
-                    let value = self.json_value_to_obj(value);
+                    let key_obj: JString<'local> =
+                        env.new_string(key).expect("Faild to new String");
+                    let value = self.json_value_to_obj(env, value);
 
-                    self.handler.call_method(
+                    let (name, sig) = jni_utils::MAP_PUT;
+                    env.call_method(
                         &hash_map_obj,
-                        jni_methods::MAP_PUT,
-                        &[JValueGen::Object(&key_obj), JValueGen::Object(&value)],
-                    );
-                    self.handler.delete_local_ref(key_obj);
-                    self.handler.delete_local_ref(value);
+                        name,
+                        sig,
+                        &[JValue::Object(&key_obj), JValue::Object(&value)],
+                    )
+                    .expect("Failed to call Map.put");
+                    env.delete_local_ref(key_obj);
+                    env.delete_local_ref(value);
                 }
 
                 hash_map_obj
@@ -53,57 +62,85 @@ impl<'local> JniJson<'local> {
         }
     }
 
-    pub fn json_value_to_obj(&mut self, value: &serde_json::Value) -> JObject<'local> {
+    pub fn json_value_to_obj<'local>(
+        &self,
+        env: &mut Env<'local>,
+        value: &serde_json::Value,
+    ) -> JObject<'local> {
         match value {
             serde_json::Value::Null => JObject::null(),
-            serde_json::Value::Bool(value) => self.handler.new_object(
-                jni_classes::BOOLEAN_CONSTOR,
-                &[JValueGen::Bool(if *value { JNI_TRUE } else { JNI_FALSE })],
-            ),
+            serde_json::Value::Bool(value) => env
+                .new_object(
+                    jni_utils::BOOLEAN_CONSTOR.0,
+                    jni_utils::BOOLEAN_CONSTOR.1,
+                    &[JValue::Bool(*value)],
+                )
+                .expect("Failed to new Boolean"),
             serde_json::Value::Number(number) => {
                 if number.is_i64() || number.is_u64() {
-                    self.handler.new_object(
-                        jni_classes::LONG_CONSTOR,
-                        &[JValueGen::Long(number.as_i64().unwrap())],
+                    env.new_object(
+                        jni_utils::LONG_CONSTOR.0,
+                        jni_utils::LONG_CONSTOR.1,
+                        &[JValue::Long(number.as_i64().unwrap())],
                     )
+                    .expect("Failed to new Long")
                 } else if number.is_f64() {
-                    self.handler.new_object(
-                        jni_classes::DOUBLE_CONSTOR,
-                        &[JValueGen::Double(number.as_f64().unwrap())],
+                    env.new_object(
+                        jni_utils::DOUBLE_CONSTOR.0,
+                        jni_utils::DOUBLE_CONSTOR.1,
+                        &[JValue::Double(number.as_f64().unwrap())],
                     )
+                    .expect("Failed to new Double")
                 } else {
                     let value = &number.to_string();
-                    self.handler.new_string(value).into()
+                    env.new_string(value).expect("Failed to new String").into()
                 }
             }
-            serde_json::Value::String(value) => self.handler.new_string(&value).into(),
+            serde_json::Value::String(value) => {
+                env.new_string(&value).expect("Failed to new String").into()
+            }
             serde_json::Value::Array(values) => {
-                let arr_list = self
-                    .handler
-                    .new_object(jni_classes::ARRAY_LIST_CONSTOR, &[]);
+                let arr_list = env
+                    .new_object(
+                        jni_utils::ARRAY_LIST_CONSTOR.0,
+                        jni_utils::ARRAY_LIST_CONSTOR.1,
+                        &[],
+                    )
+                    .expect("Failed to new ArrayList");
 
                 for value in values {
-                    let obj = self.json_value_to_obj(value);
-                    self.handler.call_method(
+                    let obj = self.json_value_to_obj(env, value);
+
+                    env.call_method(
                         &arr_list,
-                        jni_methods::LIST_ADD,
-                        &[JValueGen::Object(&obj)],
-                    );
+                        jni_utils::LIST_ADD.0,
+                        jni_utils::LIST_ADD.1,
+                        &[JValue::Object(&obj)],
+                    )
+                    .expect("Failed to call ArrayList.add");
                 }
                 arr_list
             }
             serde_json::Value::Object(map) => {
-                let hash_map_obj = self.handler.new_object(jni_classes::HASH_MAP_CONSTOR, &[]);
+                let hash_map_obj = env
+                    .new_object(
+                        jni_utils::HASH_MAP_CONSTOR.0,
+                        jni_utils::HASH_MAP_CONSTOR.1,
+                        &[],
+                    )
+                    .expect("Failed to new HashMap");
                 for (key, value) in map {
-                    let key = self.handler.new_string(key);
-                    let obj = self.json_value_to_obj(value);
-                    self.handler.call_method(
+                    let key = env.new_string(key).expect("Failed to new String");
+                    let obj = self.json_value_to_obj(env, value);
+                    env.call_method(
                         &hash_map_obj,
-                        jni_methods::MAP_PUT,
-                        &[JValueGen::Object(&key), JValueGen::Object(&obj)],
-                    );
-                    self.handler.delete_local_ref(key);
-                    self.handler.delete_local_ref(obj);
+                        jni_utils::MAP_PUT.0,
+                        jni_utils::MAP_PUT.1,
+                        &[JValue::Object(&key), JValue::Object(&obj)],
+                    )
+                    .expect("Failed to call Map.put");
+                    env.delete_local_ref(key);
+                    env.delete_local_ref(obj);
                 }
                 hash_map_obj
             }
