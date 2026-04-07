@@ -18,7 +18,6 @@ use std::{
         Arc,
         mpsc::{self, RecvTimeoutError},
     },
-    thread::{self},
     time::Duration,
 };
 
@@ -28,6 +27,7 @@ use crate::{
         request_dataset_listener::RequestJavaScriptDatasetListenerArc,
         request_javascript_dataset_config::RequestJavaScriptDatasetConfigArc,
     },
+    utils::url_utils,
     web_engine::{
         web_engine::{WebEngineListener, WebEngineMut},
         web_engine_manager::WebEngineManager,
@@ -50,8 +50,9 @@ impl Display for WebEngineEvent {
         match self {
             WebEngineEvent::PageStarted(value) => write!(f, "PageStarted {}", value),
             WebEngineEvent::PageCancelled(value) => write!(f, "PageCancelled {}", value),
-            WebEngineEvent::PageFinished(url, document) => {
-                write!(f, "PageFinished {} {}", url, document)
+            WebEngineEvent::PageFinished(url, _document) => {
+                // write!(f, "PageFinished {} {}", url, document)
+                write!(f, "PageFinished {}", url)
             }
             WebEngineEvent::PageError(value, error) => write!(f, "PageError {} {}", value, error),
             WebEngineEvent::LoadProgress(url, value) => write!(f, "LoadProgress {} {}", url, value),
@@ -96,28 +97,13 @@ impl<'local> JavaScriptDatasetExecutor<'local> {
 impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
     fn request(&self) -> Result<String, String> {
         let (tx, rx) = mpsc::channel::<WebEngineEvent>();
-        let webengine = {
-            log::debug!(
-                "JavaScriptDatasetExecutor::request on thread {:?}",
-                thread::current().id()
-            );
-            let mut wm = WebEngineManager::get_instance()
-                .lock()
-                .map_err(|e| e.to_string())?;
-            wm.new_webengine()?
-        };
+        let wm = WebEngineManager::get_instance();
+        let webengine = wm.new_webengine()?;
 
         let callback: WebEngineCallback = Box::new(move |e| {
-            log::debug!(
-                "WebEngineCallback {} on thread {:?}",
-                e.clone(),
-                thread::current().id()
-            );
-            let ret = tx.send(e);
-            if ret.is_err() {
-                log::error!("WebEngineCallback send error {}", ret.err().unwrap());
+            if let Err(e) = tx.send(e) {
+                log::error!("WebEngineCallback send error: {:?}", e)
             }
-            log::debug!("WebEngineCallback end on thread {:?}", thread::current().id());
         });
 
         let listener = Arc::new(WebEngineListenerImpl::new(
@@ -130,43 +116,27 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
         webengine.write().unwrap().set_listener(listener);
         webengine.read().unwrap().load_url(self.url)?;
 
-        let mut result: Result<String, String> = Ok(String::new());
+        let result: Result<String, String>;
 
         loop {
-            match rx.recv_timeout(Duration::from_secs(30)) {
-                Ok(received) => {
-                    log::debug!(
-                        "JavaScriptDatasetExecutor::request received {} on thread {:?}",
-                        &received,
-                        thread::current().id()
-                    );
-                    match received {
-                        WebEngineEvent::PageFinished(url, _document) => {
-                            log::debug!(
-                                "JavaScriptDatasetExecutor::request page finished {} {}",
-                                url,
-                                self.url
-                            );
-                            if url == self.url {
-                                let ret = webengine.write().unwrap().evaluate(self.js)?;
-                                log::debug!(
-                                    "JavaScriptDatasetExecutor::request evaluate {} {}",
-                                    self.js,
-                                    ret
-                                );
-                                result = Ok(ret);
-                                break;
-                            }
+            match rx.recv_timeout(Duration::from_secs(20)) {
+                Ok(received) => match received {
+                    WebEngineEvent::PageFinished(url, _document) => {
+                        if url_utils::url_equals(&url, &self.url) {
+                            let ret = webengine.write().unwrap().evaluate(self.js)?;
+                            log::debug!("JavaScriptDatasetExecutor::request evaluate {}", ret);
+                            result = Ok(ret.into());
+                            break;
                         }
-                        WebEngineEvent::PageError(url, error) => {
-                            if url == self.url {
-                                result = Err(error.to_string());
-                                break;
-                            }
-                        }
-                        _ => (),
                     }
-                }
+                    WebEngineEvent::PageError(url, error) => {
+                        if url_utils::url_equals(&url, &self.url) {
+                            result = Err(error.to_string());
+                            break;
+                        }
+                    }
+                    _ => (),
+                },
                 Err(RecvTimeoutError::Timeout) => {
                     log::debug!("JavaScriptDatasetExecutor::request timeout");
                     result = Err("JavaScriptDatasetExecutor::request timeout".to_string());
@@ -180,15 +150,9 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
             }
         }
 
-        {
-            let mut wm = WebEngineManager::get_instance()
-                .lock()
-                .map_err(|e| e.to_string())?;
-
-            // Release lock
-            let id = { webengine.read().unwrap().id() };
-            wm.remove_webengine(id)?;
-        }
+        // Release lock
+        let id = { webengine.read().unwrap().id() };
+        wm.remove_webengine(id)?;
 
         log::debug!(
             "JavaScriptDatasetExecutor::request end {} {} {:?}",
@@ -250,7 +214,6 @@ impl WebEngineListener for WebEngineListenerImpl {
     }
 
     fn on_page_finished(&self, _engine: WebEngineMut, url: &str, document: &str) {
-        log::debug!("on_page_finished >>>>>>>>>>>>>>>>>>>>>>> {}", url);
         let listener = &self.listener;
         if let Some(listener) = listener.as_ref() {
             listener.on_page_finished(url, document);
