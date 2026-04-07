@@ -144,10 +144,16 @@ impl PluginManager {
         #[cfg(target_os = "android")]
         {
             use android_logger::Config;
+            use android_logger::FilterBuilder;
+            use log::LevelFilter;
             android_logger::init_once(
                 Config::default()
                     .with_tag("SpiderX")
-                    .with_max_level(log::LevelFilter::Trace),
+                    .with_max_level(log::LevelFilter::Trace), // .with_filter(
+                                                              //     FilterBuilder::new()
+                                                              //         .parse("runtime=debug,jni::wrapper=off")
+                                                              //         .build(),
+                                                              // ),
             );
         }
 
