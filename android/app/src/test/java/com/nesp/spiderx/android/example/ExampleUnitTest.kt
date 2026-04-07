@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022.  NESP Technology.
+ * Copyright (c) 2026.  NESP Technology.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.nesp.fishplugin.sample.android
+package com.nesp.spiderx.android.example
 
+import org.junit.Assert
 import org.junit.Test
-
-import org.junit.Assert.*
 
 /**
  * Example local unit test, which will execute on the development machine (host).
@@ -28,6 +27,6 @@ import org.junit.Assert.*
 class ExampleUnitTest {
     @Test
     fun addition_isCorrect() {
-        assertEquals(4, 2 + 2)
+        Assert.assertEquals(4, 2 + 2)
     }
 }

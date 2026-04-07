@@ -20,10 +20,12 @@ plugins {
 }
 
 android {
-    compileSdkVersion 35
+    compileSdkVersion 36
+
+    namespace 'com.nesp.spiderx.android.example'
 
     defaultConfig {
-        applicationId "com.nesp.fishplugin.sample.android"
+        applicationId "com.nesp.spiderx.android.example"
         minSdk 26
         targetSdk 31
         versionCode 1
@@ -53,7 +55,6 @@ android {
     kotlinOptions {
         jvmTarget = '17'
     }
-    namespace 'com.nesp.fishplugin.sample.android'
 }
 
 dependencies {

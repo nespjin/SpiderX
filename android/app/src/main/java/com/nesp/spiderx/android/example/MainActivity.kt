@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022.  NESP Technology.
+ * Copyright (c) 2026.  NESP Technology.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.nesp.fishplugin.sample.android
+package com.nesp.spiderx.android.example
 
 import android.content.SharedPreferences
 import android.os.Bundle
@@ -26,9 +26,10 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.Button
 import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
+import com.nesp.spiderx.android.example.R
 import com.nesp.spiderx.runtime.PluginManager
 import com.nesp.spiderx.runtime.RequestJavaScriptDatasetListener
 import com.nesp.spiderx.runtime.android.AndroidWebView
@@ -36,7 +37,6 @@ import com.nesp.spiderx.runtime.model.ScreenType
 import org.apache.logging.log4j.core.util.internal.HttpInputStreamUtil.readStream
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
-import androidx.core.content.edit
 
 class MainActivity : AppCompatActivity() {
 
