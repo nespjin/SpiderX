@@ -13,24 +13,26 @@
 // limitations under the License.
 
 use core::data::screen_type::ScreenType;
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, OnceLock, RwLock};
 
 pub struct DeviceManager {
     /// The screen type in current device.
-    screen_type: Option<ScreenType>,
+    screen_type: Arc<RwLock<Option<ScreenType>>>,
 }
 
 impl DeviceManager {
-    pub fn get_instance() -> &'static Mutex<DeviceManager> {
-        static INSTANCE: OnceLock<Mutex<DeviceManager>> = OnceLock::new();
-        INSTANCE.get_or_init(|| Mutex::new(DeviceManager { screen_type: None }))
+    pub fn get_instance() -> &'static DeviceManager {
+        static INSTANCE: OnceLock<DeviceManager> = OnceLock::new();
+        INSTANCE.get_or_init(|| DeviceManager {
+            screen_type: Arc::new(RwLock::new(None)),
+        })
     }
 
-    pub fn set_screen_type(&mut self, screen_type: ScreenType) {
-        self.screen_type = Some(screen_type);
+    pub fn set_screen_type(&self, screen_type: ScreenType) {
+        self.screen_type.write().unwrap().replace(screen_type);
     }
 
     pub fn screen_type(&self) -> Option<ScreenType> {
-        self.screen_type.clone()
+        self.screen_type.read().unwrap().clone()
     }
 }
