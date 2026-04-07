@@ -57,7 +57,7 @@ class AndroidWebView : JniWebView() {
             clearFocus()
             settings.defaultTextEncodingName = "utf-8"
             settings.userAgentString = pluginManager.getUserAgent()
-            settings.cacheMode = WebSettings.LOAD_NO_CACHE
+            settings.cacheMode = WebSettings.LOAD_DEFAULT
             settings.pluginState = WebSettings.PluginState.OFF
             settings.displayZoomControls = false
             settings.allowFileAccess = true
@@ -181,6 +181,9 @@ class AndroidWebView : JniWebView() {
             view: WebView?,
             request: WebResourceRequest?
         ): WebResourceResponse? {
+            if (request?.url?.toString()?.contains("google-analytics") == true) {
+                return null
+            }
             Log.d(TAG, "shouldInterceptRequest: ${request?.url}")
             webView.notifyOnShouldInterceptRequest(request?.url?.toString() ?: "")
             return super.shouldInterceptRequest(view, request)
