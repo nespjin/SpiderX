@@ -13,32 +13,24 @@
 // limitations under the License.
 
 pub(crate) mod bind_jni_plugin_manager;
-pub(crate) mod jni_classes;
 pub(crate) mod jni_dataset;
-pub(crate) mod jni_handler;
 pub(crate) mod jni_json;
-pub(crate) mod jni_list;
 pub(crate) mod jni_log;
-pub(crate) mod jni_map;
-pub(crate) mod jni_methods;
-pub(crate) mod jni_object;
-pub(crate) mod jni_object_owned;
 pub(crate) mod jni_plugin;
 pub(crate) mod jni_plugin_manager;
 pub(crate) mod jni_screen_type;
-pub(crate) mod jni_thread;
 pub(crate) mod jni_utils;
 pub(crate) mod jni_webview;
 
-#[unsafe(no_mangle)]
-pub extern "system" fn JNI_OnLoad(
-    vm: jni::JavaVM,
-    _reserved: *mut std::ffi::c_void,
-) -> jni::sys::jint {
-    let jni_version = vm
-        .attach_current_thread(|env| env.version())
-        .expect("Failed to get jni version");
-    let jni_version_int: jni::sys::jint = jni_version.into();
-    log::info!("JNI_OnLoad: {}", jni_version_int);
-    jni_version_int
-}
+// #[unsafe(no_mangle)]
+// pub extern "system" fn JNI_OnLoad(
+//     vm: jni::JavaVM,
+//     _reserved: *mut std::ffi::c_void,
+// ) -> jni::sys::jint {
+//     let jni_version = vm
+//         .attach_current_thread(|env| env.version())
+//         .expect("Failed to get jni version");
+//     let jni_version_int: jni::sys::jint = jni_version.into();
+//     log::info!("JNI_OnLoad: {}", jni_version_int);
+//     jni_version_int
+// }
