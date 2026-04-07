@@ -85,7 +85,7 @@ pub fn new_webview_obj() -> Result<Global<JObject<'static>>, jni::errors::Error>
 pub fn new_jni_webview(id: i64) -> Result<JniWebView, jni::errors::Error> {
     jni_utils::attach_current_thread(|env| -> Result<JniWebView, jni::errors::Error> {
         let webview_obj = env.new_global_ref(new_webview_obj()?)?;
-        env.set_field(&webview_obj, FIELD_PTR.0, FIELD_PTR.1, JValue::Long(id));
+        env.set_field(&webview_obj, FIELD_PTR.0, FIELD_PTR.1, JValue::Long(id))?;
         Ok(JniWebView::new(id, webview_obj))
     })
 }
@@ -114,7 +114,7 @@ impl WebEngine for JniWebView {
     fn init(&mut self) -> Result<(), String> {
         log::debug!("init webview: {}", self.id);
         jni_utils::attach_current_thread(|env| -> Result<(), jni::errors::Error> {
-            env.call_method(&self.webview_java_obj, METHOD_INIT.0, METHOD_INIT.1, &[]);
+            env.call_method(&self.webview_java_obj, METHOD_INIT.0, METHOD_INIT.1, &[])?;
             Ok(())
         })
         .map_err(|e| e.to_string())
