@@ -1,6 +1,6 @@
 // kkcechi.com
 (function () {
-    const sliders = document.querySelectorAll('#swiper-wrapper-a4ac78673ec105de7 > div');
+    const sliders = document.querySelector('div.swiper-wrapper').querySelectorAll('div.swiper-slide');
     const sliderMovies = [];
 
     for (const slider of sliders) {
