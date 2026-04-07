@@ -18,6 +18,12 @@ ANDROID_ABIS = {
     "arm64": "aarch64-linux-android",
 }
 
+ANDROID_LANCHUNER_ACTIVITY = "com.nesp.fishplugin.sample.android/.MainActivity"
+
+def build_and_launch_android_app(work_dir):
+    android_project_dir = os.path.join(work_dir,"..","android","app")
+    os.system(f"cd {android_project_dir} && ../gradlew installDebug && adb shell am start -n {ANDROID_LANCHUNER_ACTIVITY}")
+
 def prepare_android_compile_env(arch="arm64"):
     ndk_home = os.environ["ANDROID_NDK_HOME"]
     if not ndk_home:
@@ -225,6 +231,7 @@ def main():
         default=default_include_dirs,
         help="The include directories.",
     )
+    argparser.add_argument("--launch", action="store_true", help="Whether starts app")
     args = argparser.parse_args()
     output = args.output
     if args.clear and os.path.exists(output):
@@ -246,6 +253,9 @@ def main():
         build(args.android, arch, args.release, work_dir, 
                 args.include_dirs, new_output)
         print("")
+
+    if args.android and args.launch:
+        build_and_launch_android_app(work_dir)
 
 
 if __name__ == "__main__":
