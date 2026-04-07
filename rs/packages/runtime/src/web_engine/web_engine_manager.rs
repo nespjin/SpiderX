@@ -72,7 +72,9 @@ impl WebEngineManager {
             engine
         } else {
             // TODO: Add other platform impl
-            Arc::new(RwLock::new(jni_webview::new_jni_webview(id)?))
+            Arc::new(RwLock::new(
+                jni_webview::new_jni_webview(id).map_err(|e| e.to_string())?,
+            ))
         };
 
         {
