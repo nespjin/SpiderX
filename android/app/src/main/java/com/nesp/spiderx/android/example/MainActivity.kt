@@ -54,7 +54,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var etReqPluginId: EditText
     private lateinit var etReqDatasetId: EditText
     private lateinit var etUninstallPluginId: EditText
-    private lateinit var wvTest: WebView
+    // private lateinit var wvTest: WebView
 
     private lateinit var sharedPreferences: SharedPreferences
 
@@ -98,34 +98,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.get_installed_plugins).setOnClickListener { getInstalledPlugins() }
 
         tvResult = findViewById(R.id.tv_result)
-        wvTest = findViewById(R.id.wv_test)
-        wvTest.apply {
-            // visibility = WebView.INVISIBLE
-            // layoutParams = LinearLayout.LayoutParams(1, 1)
-            clearFocus()
-            settings.defaultTextEncodingName = "utf-8"
-            settings.userAgentString = pluginManager.getUserAgent()
-            settings.cacheMode = WebSettings.LOAD_NO_CACHE
-            settings.pluginState = WebSettings.PluginState.OFF
-            settings.displayZoomControls = false
-            settings.allowFileAccess = true
-            settings.allowContentAccess = true
-            settings.savePassword = false
-            settings.saveFormData = false
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.setSupportMultipleWindows(true)
-            settings.mediaPlaybackRequiresUserGesture = false
-            settings.allowFileAccessFromFileURLs = true
-            settings.allowUniversalAccessFromFileURLs = true
-            settings.javaScriptCanOpenWindowsAutomatically = false
-            // settings.loadsImagesAutomatically = false
-            // settings.blockNetworkImage = true
-            // settings.blockNetworkLoads = false
-            settings.databaseEnabled = true
-
-            setLayerType(WebView.LAYER_TYPE_HARDWARE, null)
-        }
+        // initWebView()
         etReqPluginId = findViewById(R.id.et_req_plugin_id)
         etReqDatasetId = findViewById(R.id.et_req_dataset_id)
         etUninstallPluginId = findViewById(R.id.et_uninstall_plugin_id)
@@ -135,6 +108,37 @@ class MainActivity : AppCompatActivity() {
         etReqDatasetId.setText(sharPer.getString(SHAR_PER_KEY_REQ_DATASET_ID, ""))
         etUninstallPluginId.setText(sharPer.getString(SHAR_PER_KEY_UNINSTALL_PLUGIN_ID, ""))
     }
+
+    // private fun initWebView() {
+    //     wvTest = findViewById(R.id.wv_test)
+    //     wvTest.apply {
+    //         // visibility = WebView.INVISIBLE
+    //         // layoutParams = LinearLayout.LayoutParams(1, 1)
+    //         clearFocus()
+    //         settings.defaultTextEncodingName = "utf-8"
+    //         settings.userAgentString = pluginManager.getUserAgent()
+    //         settings.cacheMode = WebSettings.LOAD_NO_CACHE
+    //         settings.pluginState = WebSettings.PluginState.OFF
+    //         settings.displayZoomControls = false
+    //         settings.allowFileAccess = true
+    //         settings.allowContentAccess = true
+    //         settings.savePassword = false
+    //         settings.saveFormData = false
+    //         settings.javaScriptEnabled = true
+    //         settings.domStorageEnabled = true
+    //         settings.setSupportMultipleWindows(true)
+    //         settings.mediaPlaybackRequiresUserGesture = false
+    //         settings.allowFileAccessFromFileURLs = true
+    //         settings.allowUniversalAccessFromFileURLs = true
+    //         settings.javaScriptCanOpenWindowsAutomatically = false
+    //         // settings.loadsImagesAutomatically = false
+    //         // settings.blockNetworkImage = true
+    //         // settings.blockNetworkLoads = false
+    //         settings.databaseEnabled = true
+    //
+    //         setLayerType(WebView.LAYER_TYPE_HARDWARE, null)
+    //     }
+    // }
 
     private fun installPlugin() {
         try {
@@ -162,7 +166,7 @@ class MainActivity : AppCompatActivity() {
     private fun request() {
         val pluginId = etReqPluginId.text.toString()
         val datasetId = etReqDatasetId.text.toString()
-        wvTest.loadUrl("https://www.kkcechi.com")
+        // wvTest.loadUrl("https://www.kkcechi.com")
 
         sharedPreferences.edit {
             putString(SHAR_PER_KEY_REQ_PLUGIN_ID, pluginId)
