@@ -28,3 +28,6 @@ expect_used = "warn"
 # Style improvements
 manual_strip = "warn"
 match_like_matches_macro = "warn"
+
+[workspace.lints.rust]
+dead_code = "allow"
