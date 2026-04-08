@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashMap;
+
 use jni::{
     Env, JValue, jni_sig, jni_str,
-    objects::{JObject, JString},
+    objects::{JObject, JObjectArray, JString},
     signature::{FieldSignature, MethodSignature},
     strings::{JNIStr, JNIString},
     vm::JavaVM,
@@ -34,8 +36,18 @@ pub const MAP_PUT: JniMethodDetail<'_, '_> = (
     jni_str!("put"),
     jni_sig!((java.lang.Object, java.lang.Object) -> java.lang.Object),
 );
+pub const MAP_KEY_SET: JniMethodDetail<'_, '_> =
+    (jni_str!("keySet"), jni_sig!(() -> java.util.Set));
+pub const MAP_GET: JniMethodDetail<'_, '_> = (
+    jni_str!("get"),
+    jni_sig!((java.lang.Object) -> java.lang.Object),
+);
 pub const HASH_MAP_CLASS: &JNIStr = jni_str!("java/util/HashMap");
 pub const HASH_MAP_CONSTOR: JniMethodDetail<'_, '_> = (HASH_MAP_CLASS, jni_sig!(() -> void));
+
+pub const SET_SIZE: JniMethodDetail<'_, '_> = (jni_str!("size"), jni_sig!(() -> jint));
+pub const SET_TO_ARRAY: JniMethodDetail<'_, '_> =
+    (jni_str!("toArray"), jni_sig!(() -> java.lang.Object[]));
 
 pub const BOOLEAN_CLASS: &JNIStr = jni_str!("java/lang/Boolean");
 pub const BOOLEAN_CONSTOR: JniMethodDetail<'_, '_> = (BOOLEAN_CLASS, jni_sig!((jboolean) -> void));
@@ -157,20 +169,18 @@ pub fn json_value_to_hash_map<'local>(
 ) -> JObject<'local> {
     match value {
         serde_json::Value::Object(map) => {
-            let (name, sig) = HASH_MAP_CONSTOR;
             let hash_map_obj = env
-                .new_object(name, sig, &[])
+                .new_object(HASH_MAP_CONSTOR.0, HASH_MAP_CONSTOR.1, &[])
                 .expect("Failed to new HashMap");
 
             for (key, value) in map {
                 let key_obj: JString<'local> = env.new_string(key).expect("Faild to new String");
                 let value = json_value_to_obj(env, value);
 
-                let (name, sig) = MAP_PUT;
                 env.call_method(
                     &hash_map_obj,
-                    name,
-                    sig,
+                    MAP_PUT.0,
+                    MAP_PUT.1,
                     &[JValue::Object(&key_obj), JValue::Object(&value)],
                 )
                 .expect("Failed to call Map.put");
@@ -253,4 +263,54 @@ pub fn json_value_to_obj<'local>(
             hash_map_obj
         }
     }
+}
+
+pub fn from_string_hash_map<'local>(
+    env: &mut Env<'_>,
+    map_obj: JObject<'local>,
+) -> Result<HashMap<String, String>, jni::errors::Error> {
+    let mut map = HashMap::new();
+
+    let key_set_obj = env
+        .call_method(&map_obj, MAP_KEY_SET.0, MAP_KEY_SET.1, &[])
+        .map(|e| e.into_object())
+        .flatten()?;
+
+    let key_size = env
+        .call_method(&key_set_obj, SET_SIZE.0, SET_SIZE.1, &[])
+        .map(|e| e.into_int())
+        .flatten()?;
+
+    let key_array_obj = env
+        .call_method(&key_set_obj, SET_TO_ARRAY.0, SET_TO_ARRAY.1, &[])
+        .map(|e| e.into_object())
+        .flatten()
+        .map(|e| JObjectArray::<JObject<'_>>::cast_local(env, e))
+        .flatten()?;
+
+    for i in 0..key_size {
+        let key_obj = key_array_obj
+            .get_element(env, i as usize)
+            .map(|e| JString::cast_local(env, e))
+            .flatten()?;
+        let key = key_obj.to_string();
+
+        let value_obj = env
+            .call_method(&map_obj, MAP_GET.0, MAP_GET.1, &[JValue::Object(&key_obj)])
+            .map(|e| e.into_object())
+            .flatten()
+            .map(|e| JString::cast_local(env, e))
+            .flatten()?;
+        let value = value_obj.to_string();
+
+        map.insert(key, value);
+
+        env.delete_local_ref(key_obj);
+        env.delete_local_ref(value_obj);
+    }
+
+    env.delete_local_ref(key_set_obj);
+    env.delete_local_ref(key_array_obj);
+
+    Ok(map)
 }
