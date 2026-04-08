@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::time;
-
 use crate::{
-    constants::DEFAULT_REQUEST_TIMEOUT, executor::{
+    constants::DEFAULT_REQUEST_TIMEOUT,
+    executor::{
         request_dataset_listener::RequestDatasetListenerWrpper,
         request_javascript_dataset_config::RequestJavaScriptDatasetConfigArc,
-    }, plugin_manager::RequestType
+    },
+    plugin_manager::RequestType,
 };
 
 pub struct RequestDatasetOptions {
