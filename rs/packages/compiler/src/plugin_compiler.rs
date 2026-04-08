@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core::data::plugin::Plugin;
+use spiderx_core::data::plugin::Plugin;
 
 pub trait PluginCompiler {
     fn compile(&self) -> Result<Plugin, String>;

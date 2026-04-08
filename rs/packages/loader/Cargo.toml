@@ -7,4 +7,4 @@ edition = "2024"
 workspace = true
 
 [dependencies]
-core = { path = "../core" }
+spiderx_core = { path = "../core" }

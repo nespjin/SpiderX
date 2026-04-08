@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core::data::{
+use spiderx_core::data::{
     json::plugin_manifest_json_data::PluginManifestJsonData,
     plugin::{Dataset, Plugin},
     screen_type::ScreenType,
