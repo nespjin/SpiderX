@@ -28,6 +28,58 @@ use crate::{
     utils::screen_typed_value::ScreenTypedValue,
 };
 
+macro_rules! new_javascript_executor {
+    ($dataset_id:expr, $url_str:expr, $js:expr, $req_timeout:expr, $js_dataset_listener:expr, $config:expr) => {{
+        let mut executor = JavaScriptDatasetExecutor::new($dataset_id, $url_str, $js);
+        executor
+            .with_timeout($req_timeout)
+            .with_opt_listener($js_dataset_listener)
+            .with_opt_config($config);
+        Box::new(executor)
+    }};
+}
+
+macro_rules! new_option_javascript_executor {
+    ($dataset_id:expr, $url_str:expr, $js:expr, $req_timeout:expr, $js_dataset_listener:expr, $config:expr) => {
+        $js.as_ref().map(|js| {
+            let mut executor = JavaScriptDatasetExecutor::new($dataset_id, $url_str, js);
+            executor
+                .with_timeout($req_timeout)
+                .with_opt_listener($js_dataset_listener)
+                .with_opt_config($config);
+            Box::new(executor)
+        })
+    };
+}
+
+macro_rules! new_auto_executor {
+    ($dataset_id:expr, $url_str:expr, $dsl:expr, $js:expr, $req_timeout:expr, $js_dataset_listener:expr, $config:expr) => {{
+        if let Some(_) = $dsl {
+            // Box::new(DslDatasetExecutor::new(dataset_id, url_value, &dsl))
+            // TODO: Remove this
+            new_javascript_executor!(
+                $dataset_id,
+                $url_str,
+                "",
+                $req_timeout,
+                $js_dataset_listener,
+                $config
+            )
+        } else if let Some(js) = $js {
+            new_javascript_executor!(
+                $dataset_id,
+                $url_str,
+                js,
+                $req_timeout,
+                $js_dataset_listener,
+                $config
+            )
+        } else {
+            return Err("The dsl and js is both empty".to_string());
+        }
+    }};
+}
+
 pub struct DatasetRepository {}
 
 impl DatasetRepository {
@@ -226,7 +278,8 @@ impl DatasetRepository {
             url: url_override,
             listener,
             config,
-            ..
+            req_type,
+            // ..
         } = options;
 
         let screen_type = {
@@ -273,27 +326,47 @@ impl DatasetRepository {
             })
             .flatten();
 
-        let dataset_ds: Box<dyn DatasetExecutor> = if let Some(_) = dsl {
-            // Box::new(DslDatasetExecutor::new(dataset_id, url_value, &dsl))
-            // TODO: Remove this
-            let mut executor = JavaScriptDatasetExecutor::new(dataset_id, url_str, "");
-            executor
-                .with_timeout(req_timeout)
-                .with_opt_listener(js_dataset_listener)
-                .with_opt_config(config);
-            Box::new(executor)
-        } else if let Some(js) = &js {
-            let mut executor = JavaScriptDatasetExecutor::new(dataset_id, url_str, js);
-            executor
-                .with_timeout(req_timeout)
-                .with_opt_listener(js_dataset_listener)
-                .with_opt_config(config);
-            Box::new(executor)
-        } else {
-            return Err("The dsl and js is both empty".to_string());
+        let dataset_executor: Box<dyn DatasetExecutor> = match req_type {
+            RequestType::Auto => {
+                new_auto_executor!(
+                    dataset_id,
+                    url_str,
+                    dsl,
+                    &js,
+                    req_timeout,
+                    js_dataset_listener,
+                    config
+                )
+            }
+            RequestType::JavaScript => {
+                let ret = new_option_javascript_executor!(
+                    dataset_id,
+                    url_str,
+                    js,
+                    req_timeout,
+                    js_dataset_listener,
+                    config
+                );
+                match ret {
+                    Some(executor) => executor,
+                    None => {
+                        return Err("Request is set to JavaScript but the js is empty".to_string());
+                    }
+                }
+            }
+            RequestType::Dsl => {
+                new_javascript_executor!(
+                    dataset_id,
+                    url_str,
+                    "",
+                    req_timeout,
+                    js_dataset_listener,
+                    config
+                )
+            }
         };
 
-        let result = dataset_ds.request();
+        let result = dataset_executor.request();
 
         log::debug!(
             "DatasetRepository::request_dataset {} {} {:?}",
