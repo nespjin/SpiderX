@@ -30,7 +30,7 @@ pub fn url_equals(a: &str, b: &str) -> bool {
 pub fn url_replace_placeholders(url: &str, placeholders: &HashMap<String, String>) -> String {
     let mut url = url.to_string();
     for (key, value) in placeholders {
-        url = url.replace(&format!("{{{}}}", key), value);
+        url = url.replace(&format!("${{{}}}", key), value);
     }
     url
 }
@@ -41,7 +41,7 @@ mod tests {
 
     #[test]
     fn test_url_replace_placeholders() {
-        let url = "https://www.example.com/{user_id}";
+        let url = "https://www.example.com/${user_id}";
         let mut placeholders = HashMap::new();
         placeholders.insert("user_id".to_string(), "123".to_string());
            
