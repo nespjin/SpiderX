@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core::data::plugin::Dataset;
+use spiderx_core::data::plugin::Dataset;
 
 use crate::database::entities::dataset::DatasetEntity;
 

@@ -14,6 +14,7 @@
 
 // use jni::bind_java_type;
 
+
 // bind_java_type! {
 //     JCustomType => "com.example.BindJavaTypeOverview$CustomType",
 //     constructors {

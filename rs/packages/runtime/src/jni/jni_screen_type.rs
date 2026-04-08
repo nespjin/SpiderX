@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core::data::screen_type::ScreenType;
+use spiderx_core::data::screen_type::ScreenType;
 
 use jni::{
     Env, jni_sig, jni_str,
