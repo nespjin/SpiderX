@@ -2,6 +2,13 @@
 resolver = "3"
 members = ["packages/*"]
 
+[workspace.package]
+rust-version = "1.85.0"
+edition = "2024"
+license = "Apache-2.0"
+authors = ["NESP"]
+repository = "https://github.com/nespjin/SpiderX"
+
 [profile.release]
 strip = true
 opt-level = "z"
