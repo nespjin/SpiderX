@@ -114,3 +114,26 @@ macro_rules! jni_set_json_value_field {
         .expect(&format!("Failed to set field {:?}", $field));
     };
 }
+
+#[macro_export]
+macro_rules! jni_new_global_ref_obj {
+    ($env:expr, $class_name:expr, $ctor_sig:expr) => {
+        (|env: &mut Env| -> Result<Global<JObject<'_>>, jni::errors::Error> {
+            let jobj = env.new_object($class_name, $ctor_sig, &[])?;
+            let jobj_ref = env.new_global_ref(jobj)?;
+            Ok(jobj_ref)
+        })($env)
+    };
+}
+
+#[macro_export]
+macro_rules! jni_attach_and_new_global_ref_obj {
+    ($class_name:expr, $ctor_sig:expr) => {
+        jni_utils::attach_current_thread(
+            |env: &mut Env| -> Result<Global<JObject<'_>>, jni::errors::Error> {
+                $crate::jni_new_global_ref_obj!(env, $class_name, $ctor_sig)
+            },
+        )
+        .expect(&format!("Failed to create object {:?}", $class_name))
+    };
+}

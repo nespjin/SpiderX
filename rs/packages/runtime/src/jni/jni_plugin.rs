@@ -27,7 +27,8 @@ use crate::{
         jni_screen_type::JniScreenType,
         jni_utils::{self, JniFieldDetail},
     },
-    jni_set_obj_list_field, jni_set_str_field, jni_set_str_list_field,
+    jni_attach_and_new_global_ref_obj, jni_set_obj_list_field, jni_set_str_field,
+    jni_set_str_list_field,
 };
 
 pub const CLASS_NAME: &'static JNIStr = jni_str!("com/nesp/spiderx/runtime/model/Plugin");
@@ -51,14 +52,7 @@ pub struct JniPlugin {
 
 impl JniPlugin {
     pub fn new() -> Self {
-        let jplugin = jni_utils::attach_current_thread(
-            |env| -> Result<Global<JObject<'_>>, jni::errors::Error> {
-                let jobj = env.new_object(CLASS_NAME, CONSTOR_SIG, &[])?;
-                let jobj_ref = env.new_global_ref(jobj)?;
-                Ok(jobj_ref)
-            },
-        )
-        .expect("Failed to create JPlugin");
+        let jplugin = jni_attach_and_new_global_ref_obj!(CLASS_NAME, CONSTOR_SIG);
         Self { plugin: jplugin }
     }
 

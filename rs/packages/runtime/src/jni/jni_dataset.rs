@@ -21,7 +21,7 @@ use jni::{
 
 use crate::{
     jni::jni_utils::{self, JniFieldDetail},
-    jni_set_json_value_field, jni_set_str_field,
+    jni_attach_and_new_global_ref_obj, jni_set_json_value_field, jni_set_str_field,
 };
 
 pub const CLASS_NAME: &'static JNIStr = jni_str!("com/nesp/spiderx/runtime/model/Dataset");
@@ -87,14 +87,7 @@ pub struct JniDataset {
 
 impl JniDataset {
     pub fn new() -> Self {
-        let jdataset = jni_utils::attach_current_thread(
-            |env| -> Result<Global<JObject<'_>>, jni::errors::Error> {
-                let jobj = env.new_object(CLASS_NAME, CONSTOR_SIG, &[])?;
-                let jobj_ref = env.new_global_ref(jobj)?;
-                Ok(jobj_ref)
-            },
-        )
-        .expect("Failed to create JDataset");
+        let jdataset = jni_attach_and_new_global_ref_obj!(CLASS_NAME, CONSTOR_SIG);
         Self { dataset: jdataset }
     }
 

@@ -70,21 +70,17 @@ pub fn get_java_webview_class() -> Result<&'static Global<JClass<'static>>, Stri
         .ok_or_else(|| "Java WebView class not initialized".to_string())
 }
 
-pub fn new_webview_obj() -> Result<Global<JObject<'static>>, jni::errors::Error> {
-    jni_utils::attach_current_thread(
-        |env| -> Result<Global<JObject<'static>>, jni::errors::Error> {
-            let clazz =
-                get_java_webview_class().map_err(|_| jni::errors::Error::ClassNotFound {
-                    name: "JniWebView".into(),
-                })?;
-            let obj = env.new_object(clazz, JAVA_WV_CTOR_SIG, &[])?;
-            env.new_global_ref(obj)
-        },
-    )
+pub fn new_webview_obj(env: &mut Env<'_>) -> Result<Global<JObject<'static>>, jni::errors::Error> {
+    let clazz = get_java_webview_class().map_err(|_| jni::errors::Error::ClassNotFound {
+        name: "JniWebView".into(),
+    })?;
+    let obj = env.new_object(clazz, JAVA_WV_CTOR_SIG, &[])?;
+    env.new_global_ref(obj)
 }
 pub fn new_jni_webview(id: i64) -> Result<JniWebView, jni::errors::Error> {
     jni_utils::attach_current_thread(|env| -> Result<JniWebView, jni::errors::Error> {
-        let webview_obj = env.new_global_ref(new_webview_obj()?)?;
+        let webview_obj = new_webview_obj(env)?;
+        // let ptr = webview_obj.as_raw() as i64;
         env.set_field(&webview_obj, FIELD_PTR.0, FIELD_PTR.1, JValue::Long(id))?;
         Ok(JniWebView::new(id, webview_obj))
     })
