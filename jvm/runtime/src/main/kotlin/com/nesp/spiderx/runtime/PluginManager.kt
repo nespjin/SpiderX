@@ -111,6 +111,7 @@ class PluginManager private constructor() {
     fun requestDataset(
         pluginId: String,
         datasetId: String,
+        timeout: UShort = 20u,
         type: RequestType = RequestType.AUTO,
         listener: RequestDatasetListener? = null,
     ): String? {
@@ -119,7 +120,7 @@ class PluginManager private constructor() {
                 throw IllegalArgumentException("The listener must be RequestJavaScriptDatasetListener when type is JavaScript")
             }
         }
-        return nativeRequestDataset(pluginId, datasetId, type.value, listener)
+        return nativeRequestDataset(pluginId, datasetId, timeout.toShort(), type.value, listener)
     }
 
 
@@ -145,6 +146,7 @@ class PluginManager private constructor() {
     private external fun nativeRequestDataset(
         pluginId: String,
         datasetId: String,
+        timeout: Short,
         type: Int,
         listener: RequestDatasetListener?
     ): String?
