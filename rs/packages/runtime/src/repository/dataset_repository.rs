@@ -20,15 +20,11 @@ use crate::{
     database::{connection_pool::get_pooled_connection, dataset_dao},
     device::device_manager::DeviceManager,
     executor::{
-        dataset_executor::DatasetExecutor,
-        javascript_dataset_executor::JavaScriptDatasetExecutor,
-        request_dataset_listener::{
-            RequestDatasetListenerWrpper, RequestJavaScriptDatasetListenerArc,
-        },
-        request_javascript_dataset_config::RequestJavaScriptDatasetConfigArc,
+        dataset_executor::DatasetExecutor, javascript_dataset_executor::JavaScriptDatasetExecutor,
+        request_dataset_listener::RequestDatasetListenerWrpper,
     },
     plugin_manager::RequestType,
-    repository::model::dataset,
+    repository::{model::dataset, request_dataset_options::RequestDatasetOptions},
     utils::screen_typed_value::ScreenTypedValue,
 };
 
@@ -217,15 +213,20 @@ impl DatasetRepository {
         &self,
         plugin_id: &str,
         dataset_id: &str,
-        _type: RequestType,
-        listener: Option<RequestDatasetListenerWrpper>,
-        config: Option<RequestJavaScriptDatasetConfigArc>,
+        options: RequestDatasetOptions,
     ) -> Result<String, String> {
         let dataset = self.get_dataset_in_plugin(plugin_id, dataset_id)?;
         let dataset = match dataset {
             Some(dataset) => dataset,
             None => return Err(format!("Dataset {}.{} not found", plugin_id, dataset_id)),
         };
+
+        let RequestDatasetOptions {
+            timeout: req_timeout,
+            listener,
+            config,
+            ..
+        } = options;
 
         let screen_type = {
             let dm = DeviceManager::get_instance();
@@ -257,43 +258,36 @@ impl DatasetRepository {
             .with_option_expanded(dataset.dsl_expanded.clone());
         let dsl_value = dsl.value(screen_type);
 
-        let _dsl = if let Some(dsl) = dsl_value {
-            let dsl_map: HashMap<String, serde_json::Value> =
-                serde_json::from_value(dsl.clone()).map_err(|e| e.to_string())?;
-            dsl_map
-        } else {
-            HashMap::new()
-        };
+        let _dsl = dsl_value
+            .map(|e| e.clone())
+            .map(|e| serde_json::from_value::<HashMap<String, serde_json::Value>>(e))
+            .map(|e| e.ok())
+            .flatten();
 
-        let request_javascript_dataset_listener: Option<RequestJavaScriptDatasetListenerArc> =
-            match listener {
-                Some(listener) => match listener {
-                    RequestDatasetListenerWrpper::JavaScriptDataset(listener) => {
-                        Some(listener.clone())
-                    }
-                    _ => None,
-                },
-                None => None,
-            };
+        let js_dataset_listener = listener
+            .map(|e| match e {
+                RequestDatasetListenerWrpper::JavaScriptDataset(l) => Some(l.clone()),
+                _ => None,
+            })
+            .flatten();
 
         let dataset_ds: Box<dyn DatasetExecutor> = if let Some(_) = dsl_value {
             // Box::new(DslDatasetExecutor::new(dataset_id, url_value, &dsl))
             // TODO: Remove this
-            Box::new(JavaScriptDatasetExecutor::new(
-                dataset_id,
-                url_value,
-                js_value.unwrap(),
-                request_javascript_dataset_listener,
-                config,
-            ))
+            let mut executor =
+                JavaScriptDatasetExecutor::new(dataset_id, url_value, js_value.unwrap());
+            executor
+                .with_timeout(req_timeout)
+                .with_opt_listener(js_dataset_listener)
+                .with_opt_config(config);
+            Box::new(executor)
         } else if let Some(js) = js_value {
-            Box::new(JavaScriptDatasetExecutor::new(
-                dataset_id,
-                url_value,
-                js,
-                request_javascript_dataset_listener,
-                config,
-            ))
+            let mut executor = JavaScriptDatasetExecutor::new(dataset_id, url_value, js);
+            executor
+                .with_timeout(req_timeout)
+                .with_opt_listener(js_dataset_listener)
+                .with_opt_config(config);
+            Box::new(executor)
         } else {
             return Err("The dsl and js is both empty".to_string());
         };

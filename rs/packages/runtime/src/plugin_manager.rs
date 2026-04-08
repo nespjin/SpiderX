@@ -24,11 +24,11 @@ use compiler::{json_plugin_compiler::JsonPluginCompiler, plugin_compiler::Plugin
 use crate::{
     cache::CacheManager,
     database::connection_pool::DatabasePool,
-    executor::{
-        request_dataset_listener::RequestDatasetListenerWrpper,
-        request_javascript_dataset_config::RequestJavaScriptDatasetConfigArc,
+    executor::request_javascript_dataset_config::RequestJavaScriptDatasetConfigArc,
+    repository::{
+        dataset_repository::DatasetRepository, plugin_repository::PluginRepository,
+        request_dataset_options::RequestDatasetOptions,
     },
-    repository::{dataset_repository::DatasetRepository, plugin_repository::PluginRepository},
 };
 
 /// Configuration for PluginManager
@@ -378,17 +378,17 @@ impl PluginManager {
         &self,
         plugin_id: &str,
         dataset_id: &str,
-        r#type: RequestType,
-        listener: Option<RequestDatasetListenerWrpper>,
+        mut options: RequestDatasetOptions,
     ) -> Result<String, PluginManagerError> {
         self.ensure_initialized()?;
 
         // Get JavaScript config
         let config = self.get_request_javascript_dataset_config();
+        options.with_opt_config(config);
 
         // Request dataset from repository
         self.with_dataset_repository(|repo| {
-            repo.request_dataset(plugin_id, dataset_id, r#type, listener, config)
+            repo.request_dataset(plugin_id, dataset_id, options)
                 .map_err(PluginManagerError::OperationFailed)
         })
     }

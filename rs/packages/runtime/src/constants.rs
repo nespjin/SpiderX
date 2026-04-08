@@ -1,4 +1,4 @@
-// Copyright (c) 2025. NESP Technology Corporation.
+// Copyright (c) 2026. NESP Technology Corporation.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub(crate) mod dataset_repository;
-pub(crate) mod model;
-pub(crate) mod plugin_repository;
-pub(crate) mod request_dataset_options;
+pub const DEFAULT_REQUEST_TIMEOUT: u16 = 10;

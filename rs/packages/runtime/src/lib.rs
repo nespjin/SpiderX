@@ -26,6 +26,7 @@ mod frb_generated; /* AUTO INJECTED BY flutter_rust_bridge. This line may not be
 compile_error!("Only Android, Windows, MacOS, Linux are supported");
 
 pub(crate) mod cache;
+pub(crate) mod constants;
 pub(crate) mod database;
 pub(crate) mod device;
 pub(crate) mod dsl_engine;

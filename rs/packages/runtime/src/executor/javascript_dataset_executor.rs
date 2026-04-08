@@ -22,6 +22,7 @@ use std::{
 };
 
 use crate::{
+    constants::DEFAULT_REQUEST_TIMEOUT,
     executor::{
         dataset_executor::DatasetExecutor,
         request_dataset_listener::RequestJavaScriptDatasetListenerArc,
@@ -70,6 +71,7 @@ type WebEngineCallback = Box<dyn Fn(WebEngineEvent) + Send + Sync>;
 
 pub struct JavaScriptDatasetExecutor<'local> {
     id: &'local str,
+    timeout: u16,
     url: &'local str,
     js: &'local str,
     listener: Option<RequestJavaScriptDatasetListenerArc>,
@@ -77,20 +79,46 @@ pub struct JavaScriptDatasetExecutor<'local> {
 }
 
 impl<'local> JavaScriptDatasetExecutor<'local> {
-    pub fn new(
-        id: &'local str,
-        url: &'local str,
-        js: &'local str,
-        listener: Option<RequestJavaScriptDatasetListenerArc>,
-        config: Option<RequestJavaScriptDatasetConfigArc>,
-    ) -> Self {
+    pub fn new(id: &'local str, url: &'local str, js: &'local str) -> Self {
         Self {
             id,
+            timeout: DEFAULT_REQUEST_TIMEOUT,
             url,
             js,
-            listener,
-            config,
+            listener: None,
+            config: None,
         }
+    }
+
+    pub fn with_timeout(&mut self, timeout: u16) -> &mut Self {
+        self.timeout = timeout;
+        self
+    }
+
+    pub fn with_opt_listener(
+        &mut self,
+        listener: Option<RequestJavaScriptDatasetListenerArc>,
+    ) -> &mut Self {
+        self.listener = listener;
+        self
+    }
+
+    pub fn with_listener(&mut self, listener: RequestJavaScriptDatasetListenerArc) -> &mut Self {
+        self.listener.replace(listener);
+        self
+    }
+
+    pub fn with_opt_config(
+        &mut self,
+        config: Option<RequestJavaScriptDatasetConfigArc>,
+    ) -> &mut Self {
+        self.config = config;
+        self
+    }
+
+    pub fn with_config(&mut self, config: RequestJavaScriptDatasetConfigArc) -> &mut Self {
+        self.config.replace(config);
+        self
     }
 }
 
@@ -119,7 +147,7 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
         let result: Result<String, String>;
 
         loop {
-            match rx.recv_timeout(Duration::from_secs(20)) {
+            match rx.recv_timeout(Duration::from_secs(self.timeout as u64)) {
                 Ok(received) => match received {
                     WebEngineEvent::PageFinished(url, _document) => {
                         if url_utils::url_equals(&url, &self.url) {

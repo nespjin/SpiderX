@@ -21,6 +21,7 @@ use jni::sys::JNI_TRUE;
 use jni::sys::jboolean;
 use jni::sys::jint;
 use jni::sys::jobject;
+use jni::sys::jshort;
 use jni::sys::jstring;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -39,6 +40,7 @@ use crate::plugin_manager::PluginManager;
 use crate::plugin_manager::PluginManagerConfig;
 use crate::plugin_manager::PluginSource;
 use crate::plugin_manager::RequestType;
+use crate::repository::request_dataset_options::RequestDatasetOptions;
 use crate::web_engine::web_engine_manager::WebEngineManager;
 
 pub const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON: jint = 0;
@@ -293,6 +295,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     _this: JObject,
     pluginId: JString,
     datasetId: JString,
+    timeout: jshort,
     r#type: jint,
     listener: JObject,
 ) -> jstring {
@@ -332,7 +335,12 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
                     }
                 };
 
-                plugin_manager.request_dataset(&plugin_id, &dataset_id, request_type, listener)
+                let mut options = RequestDatasetOptions::new();
+                options
+                    .with_timeout(timeout as u16)
+                    .with_type(request_type)
+                    .with_opt_listener(listener);
+                plugin_manager.request_dataset(&plugin_id, &dataset_id, options)
             };
 
             log::debug!(
