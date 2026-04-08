@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod plugin_compiler;
 pub mod json_plugin_compiler;
+pub mod plugin_compiler;

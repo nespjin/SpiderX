@@ -69,7 +69,7 @@ impl CacheManager {
     pub fn remove_plugin(&self, plugin_id: &str) {
         let mut cache = self.plugin_cache.lock().unwrap();
         cache.pop(plugin_id);
-        
+
         // Also remove associated datasets
         self.remove_plugin_datasets(plugin_id);
     }
@@ -85,7 +85,9 @@ impl CacheManager {
     /// Get a dataset from cache
     pub fn get_dataset(&self, plugin_id: &str, dataset_id: &str) -> Option<Dataset> {
         let mut cache = self.dataset_cache.lock().unwrap();
-        cache.get(&(plugin_id.to_string(), dataset_id.to_string())).cloned()
+        cache
+            .get(&(plugin_id.to_string(), dataset_id.to_string()))
+            .cloned()
     }
 
     /// Insert a dataset into cache
@@ -138,7 +140,7 @@ impl CacheManager {
     pub fn clear_dataset_cache(&self) {
         let mut cache = self.dataset_cache.lock().unwrap();
         cache.clear();
-        
+
         let mut cache = self.plugin_datasets_cache.lock().unwrap();
         cache.clear();
     }
