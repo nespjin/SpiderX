@@ -295,6 +295,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     _this: JObject,
     pluginId: JString,
     datasetId: JString,
+    url: JString,
     timeout: jshort,
     r#type: jint,
     listener: JObject,
@@ -303,6 +304,11 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
         .with_env(|env| -> Result<jstring, jni::errors::Error> {
             let plugin_id = pluginId.to_string();
             let dataset_id = datasetId.to_string();
+            let url = if url.is_null() {
+                None
+            } else {
+                Some(url.to_string())
+            };
 
             let data = {
                 let plugin_manager = PluginManager::get_instance();
@@ -337,8 +343,9 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
 
                 let mut options = RequestDatasetOptions::new();
                 options
-                    .with_timeout(timeout as u16)
                     .with_type(request_type)
+                    .with_opt_url(url)
+                    .with_timeout(timeout as u16)
                     .with_opt_listener(listener);
                 plugin_manager.request_dataset(&plugin_id, &dataset_id, options)
             };

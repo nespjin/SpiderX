@@ -24,6 +24,7 @@ use crate::{
 pub struct RequestDatasetOptions {
     pub timeout: u16,
     pub req_type: RequestType,
+    pub url: Option<String>,
     pub listener: Option<RequestDatasetListenerWrpper>,
     pub config: Option<RequestJavaScriptDatasetConfigArc>,
 }
@@ -33,6 +34,7 @@ impl RequestDatasetOptions {
         Self {
             timeout: DEFAULT_REQUEST_TIMEOUT,
             req_type: RequestType::Auto,
+            url: None,
             listener: None,
             config: None,
         }
@@ -45,6 +47,11 @@ impl RequestDatasetOptions {
 
     pub fn with_type(&mut self, r#type: RequestType) -> &mut Self {
         self.req_type = r#type;
+        self
+    }
+
+    pub fn with_opt_url(&mut self, url: Option<String>) -> &mut Self {
+        self.url = url;
         self
     }
 

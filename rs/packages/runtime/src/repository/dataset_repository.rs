@@ -223,6 +223,7 @@ impl DatasetRepository {
 
         let RequestDatasetOptions {
             timeout: req_timeout,
+            url: url_override,
             listener,
             config,
             ..
@@ -233,32 +234,33 @@ impl DatasetRepository {
             &dm.screen_type().ok_or("Screen type is not set")?
         };
 
-        let url = ScreenTypedValue::new()
-            .with_value(dataset.url.clone())
-            .with_option_compact(dataset.url_compact.clone())
-            .with_option_medium(dataset.url_medium.clone())
-            .with_option_expanded(dataset.url_expanded.clone());
-        let url_value = if let Some(url) = url.value(screen_type) {
-            url
-        } else {
+        let url_str = url_override.or_else(|| {
+            ScreenTypedValue::new()
+                .with_value(dataset.url.clone())
+                .with_option_compact(dataset.url_compact.clone())
+                .with_option_medium(dataset.url_medium.clone())
+                .with_option_expanded(dataset.url_expanded.clone())
+                .into_value(screen_type)
+        });
+
+        if url_str.is_none() {
             return Err("The url is empty".to_string());
         };
+        let url_str = &url_str.expect("The url is empty");
 
         let js = ScreenTypedValue::new()
             .with_option_value(dataset.js.clone())
             .with_option_compact(dataset.js_compact.clone())
             .with_option_medium(dataset.js_medium.clone())
-            .with_option_expanded(dataset.js_expanded.clone());
-        let js_value = js.value(screen_type);
+            .with_option_expanded(dataset.js_expanded.clone())
+            .into_value(screen_type);
 
         let dsl = ScreenTypedValue::new()
             .with_option_value(dataset.dsl.clone())
             .with_option_compact(dataset.dsl_compact.clone())
             .with_option_medium(dataset.dsl_medium.clone())
-            .with_option_expanded(dataset.dsl_expanded.clone());
-        let dsl_value = dsl.value(screen_type);
-
-        let _dsl = dsl_value
+            .with_option_expanded(dataset.dsl_expanded.clone())
+            .into_value(screen_type)
             .map(|e| e.clone())
             .map(|e| serde_json::from_value::<HashMap<String, serde_json::Value>>(e))
             .map(|e| e.ok())
@@ -271,18 +273,17 @@ impl DatasetRepository {
             })
             .flatten();
 
-        let dataset_ds: Box<dyn DatasetExecutor> = if let Some(_) = dsl_value {
+        let dataset_ds: Box<dyn DatasetExecutor> = if let Some(_) = dsl {
             // Box::new(DslDatasetExecutor::new(dataset_id, url_value, &dsl))
             // TODO: Remove this
-            let mut executor =
-                JavaScriptDatasetExecutor::new(dataset_id, url_value, js_value.unwrap());
+            let mut executor = JavaScriptDatasetExecutor::new(dataset_id, url_str, "");
             executor
                 .with_timeout(req_timeout)
                 .with_opt_listener(js_dataset_listener)
                 .with_opt_config(config);
             Box::new(executor)
-        } else if let Some(js) = js_value {
-            let mut executor = JavaScriptDatasetExecutor::new(dataset_id, url_value, js);
+        } else if let Some(js) = &js {
+            let mut executor = JavaScriptDatasetExecutor::new(dataset_id, url_str, js);
             executor
                 .with_timeout(req_timeout)
                 .with_opt_listener(js_dataset_listener)
