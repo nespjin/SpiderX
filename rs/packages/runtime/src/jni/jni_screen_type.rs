@@ -64,8 +64,9 @@ impl JniScreenType {
 
     pub fn screen_type_to_java_object(
         &mut self,
+        env: &mut Env,
         screen_type: &ScreenType,
-    ) -> Global<JObject<'static>> {
+    ) -> Result<Global<JObject<'static>>, jni::errors::Error> {
         let enum_value = JniScreenType::get_enum_value_name(screen_type);
         let field_info = if enum_value == FILED_COMPACT.0.to_string() {
             FILED_COMPACT
@@ -78,15 +79,11 @@ impl JniScreenType {
             jni_utils::attach_and_throw_java_exception_msg(&msg);
             FILED_COMPACT
         };
-        jni_utils::attach_current_thread(
-            |env| -> Result<Global<JObject<'static>>, jni::errors::Error> {
-                let obj = env
-                    .get_static_field(CLASS_NAME, field_info.0, field_info.1)?
-                    .into_object()?;
-                env.new_global_ref(obj)
-            },
-        )
-        .expect("Failed to new ScreenType")
+
+        let obj = env
+            .get_static_field(CLASS_NAME, field_info.0, field_info.1)?
+            .into_object()?;
+        env.new_global_ref(obj)
     }
 
     pub fn enum_value_to_screen_type(&mut self, enum_value: &str) -> ScreenType {

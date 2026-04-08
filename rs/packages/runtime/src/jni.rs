@@ -14,8 +14,8 @@
 
 pub(crate) mod bind_jni_plugin_manager;
 pub(crate) mod jni_dataset;
-pub(crate) mod jni_json;
 pub(crate) mod jni_log;
+pub(crate) mod jni_macros;
 pub(crate) mod jni_plugin;
 pub(crate) mod jni_plugin_manager;
 pub(crate) mod jni_screen_type;

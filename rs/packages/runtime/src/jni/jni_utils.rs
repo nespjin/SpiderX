@@ -58,16 +58,6 @@ where
     current_java_vm().attach_current_thread(callback)
 }
 
-pub fn set_field(
-    env: &mut Env,
-    obj: &JObject,
-    field: JniFieldDetail,
-    value: &JObject,
-) -> Result<(), jni::errors::Error> {
-    let (name, sig) = field;
-    env.set_field(obj, name, sig, JValue::Object(value))
-}
-
 pub fn attach_and_throw_java_exception_msg(msg: &str) {
     attach_current_thread(|env| -> Result<(), jni::errors::Error> {
         throw_java_exception_msg(env, msg);
@@ -159,4 +149,108 @@ pub fn current_thread_name(env: &mut Env) -> String {
     JString::cast_local(env, thread_name)
         .expect("Cant cast object to string")
         .to_string()
+}
+
+pub fn json_value_to_hash_map<'local>(
+    env: &mut Env<'local>,
+    value: &serde_json::Value,
+) -> JObject<'local> {
+    match value {
+        serde_json::Value::Object(map) => {
+            let (name, sig) = HASH_MAP_CONSTOR;
+            let hash_map_obj = env
+                .new_object(name, sig, &[])
+                .expect("Failed to new HashMap");
+
+            for (key, value) in map {
+                let key_obj: JString<'local> = env.new_string(key).expect("Faild to new String");
+                let value = json_value_to_obj(env, value);
+
+                let (name, sig) = MAP_PUT;
+                env.call_method(
+                    &hash_map_obj,
+                    name,
+                    sig,
+                    &[JValue::Object(&key_obj), JValue::Object(&value)],
+                )
+                .expect("Failed to call Map.put");
+                env.delete_local_ref(key_obj);
+                env.delete_local_ref(value);
+            }
+
+            hash_map_obj
+        }
+        _ => JObject::null(),
+    }
+}
+
+pub fn json_value_to_obj<'local>(
+    env: &mut Env<'local>,
+    value: &serde_json::Value,
+) -> JObject<'local> {
+    match value {
+        serde_json::Value::Null => JObject::null(),
+        serde_json::Value::Bool(value) => env
+            .new_object(
+                BOOLEAN_CONSTOR.0,
+                BOOLEAN_CONSTOR.1,
+                &[JValue::Bool(*value)],
+            )
+            .expect("Failed to new Boolean"),
+        serde_json::Value::Number(number) => {
+            if number.is_i64() || number.is_u64() {
+                env.new_object(
+                    LONG_CONSTOR.0,
+                    LONG_CONSTOR.1,
+                    &[JValue::Long(number.as_i64().unwrap())],
+                )
+                .expect("Failed to new Long")
+            } else if number.is_f64() {
+                env.new_object(
+                    DOUBLE_CONSTOR.0,
+                    DOUBLE_CONSTOR.1,
+                    &[JValue::Double(number.as_f64().unwrap())],
+                )
+                .expect("Failed to new Double")
+            } else {
+                let value = &number.to_string();
+                env.new_string(value).expect("Failed to new String").into()
+            }
+        }
+        serde_json::Value::String(value) => {
+            env.new_string(&value).expect("Failed to new String").into()
+        }
+        serde_json::Value::Array(values) => {
+            let arr_list = env
+                .new_object(ARRAY_LIST_CONSTOR.0, ARRAY_LIST_CONSTOR.1, &[])
+                .expect("Failed to new ArrayList");
+
+            for value in values {
+                let obj = json_value_to_obj(env, value);
+
+                env.call_method(&arr_list, LIST_ADD.0, LIST_ADD.1, &[JValue::Object(&obj)])
+                    .expect("Failed to call ArrayList.add");
+            }
+            arr_list
+        }
+        serde_json::Value::Object(map) => {
+            let hash_map_obj = env
+                .new_object(HASH_MAP_CONSTOR.0, HASH_MAP_CONSTOR.1, &[])
+                .expect("Failed to new HashMap");
+            for (key, value) in map {
+                let key = env.new_string(key).expect("Failed to new String");
+                let obj = json_value_to_obj(env, value);
+                env.call_method(
+                    &hash_map_obj,
+                    MAP_PUT.0,
+                    MAP_PUT.1,
+                    &[JValue::Object(&key), JValue::Object(&obj)],
+                )
+                .expect("Failed to call Map.put");
+                env.delete_local_ref(key);
+                env.delete_local_ref(obj);
+            }
+            hash_map_obj
+        }
+    }
 }

@@ -17,18 +17,17 @@ use core::data::{
     screen_type::ScreenType,
 };
 use jni::{
-    jni_sig, jni_str,
-    objects::{JObject, JValue},
-    refs::Global,
-    signature::MethodSignature,
-    strings::JNIStr,
-    sys::jobject,
+    Env, jni_sig, jni_str, objects::JObject, refs::Global, signature::MethodSignature,
+    strings::JNIStr, sys::jobject,
 };
 
-use crate::jni::{
-    jni_dataset::JniDataset,
-    jni_screen_type::JniScreenType,
-    jni_utils::{self, JniFieldDetail},
+use crate::{
+    jni::{
+        jni_dataset::JniDataset,
+        jni_screen_type::JniScreenType,
+        jni_utils::{self, JniFieldDetail},
+    },
+    jni_set_obj_list_field, jni_set_str_field, jni_set_str_list_field,
 };
 
 pub const CLASS_NAME: &'static JNIStr = jni_str!("com/nesp/spiderx/runtime/model/Plugin");
@@ -75,187 +74,84 @@ impl JniPlugin {
     //     self.handler.object_from_raw(*self.plugin)
     // }
 
-    pub fn set_id(&mut self, value: &str) -> &mut Self {
-        jni_utils::attach_current_thread(|env| -> Result<(), jni::errors::Error> {
-            let id_obj = env.new_string(value)?;
-            let (name, sig) = FIELD_ID;
-            env.set_field(&self.plugin, name, sig, JValue::Object(&id_obj))?;
-            env.delete_local_ref(id_obj);
-            Ok(())
-        })
-        .expect("Failed to set id");
+    pub fn set_id(&mut self, env: &mut Env, value: &str) -> &mut Self {
+        jni_set_str_field!(&self.plugin, env, FIELD_ID, value);
         self
     }
 
-    pub fn set_name(&mut self, name: &str) -> &mut Self {
-        jni_utils::attach_current_thread(|env| -> Result<(), jni::errors::Error> {
-            let name_obj = env.new_string(name)?;
-            let (name, sig) = FIELD_NAME;
-            env.set_field(&self.plugin, name, sig, JValue::Object(&name_obj))?;
-            env.delete_local_ref(name_obj);
-            Ok(())
-        })
-        .expect("Failed to set name");
+    pub fn set_name(&mut self, env: &mut Env, name: &str) -> &mut Self {
+        jni_set_str_field!(&self.plugin, env, FIELD_NAME, name);
         self
     }
 
-    pub fn set_author(&mut self, author: &str) -> &mut Self {
-        jni_utils::attach_current_thread(|env| -> Result<(), jni::errors::Error> {
-            let author_obj = env.new_string(author)?;
-            let (name, sig) = FIELD_AUTHOR;
-            env.set_field(&self.plugin, name, sig, JValue::Object(&author_obj))?;
-            env.delete_local_ref(author_obj);
-            Ok(())
-        })
-        .expect("Failed to set author");
+    pub fn set_author(&mut self, env: &mut Env, author: &str) -> &mut Self {
+        jni_set_str_field!(&self.plugin, env, FIELD_AUTHOR, author);
         self
     }
 
-    pub fn set_version(&mut self, version: &str) -> &mut Self {
-        jni_utils::attach_current_thread(|env| -> Result<(), jni::errors::Error> {
-            let version_obj = env.new_string(version)?;
-            let (name, sig) = FIELD_VERSION;
-            env.set_field(&self.plugin, name, sig, JValue::Object(&version_obj))?;
-            env.delete_local_ref(version_obj);
-            Ok(())
-        })
-        .expect("Failed to set version");
+    pub fn set_version(&mut self, env: &mut Env, version: &str) -> &mut Self {
+        jni_set_str_field!(&self.plugin, env, FIELD_VERSION, version);
         self
     }
 
-    pub fn set_runtime_version(&mut self, runtime_version: &str) -> &mut Self {
-        jni_utils::attach_current_thread(|env| -> Result<(), jni::errors::Error> {
-            let version_obj = env.new_string(runtime_version)?;
-            let (name, sig) = FIELD_RUNTIME_VERSION;
-            env.set_field(&self.plugin, name, sig, JValue::Object(&version_obj))?;
-            env.delete_local_ref(version_obj);
-            Ok(())
-        })
-        .expect("Failed to set runtime version");
+    pub fn set_runtime_version(&mut self, env: &mut Env, runtime_version: &str) -> &mut Self {
+        jni_set_str_field!(&self.plugin, env, FIELD_RUNTIME_VERSION, runtime_version);
         self
     }
 
-    pub fn set_description(&mut self, description: &str) -> &mut Self {
-        jni_utils::attach_current_thread(|env| -> Result<(), jni::errors::Error> {
-            let description_obj = env.new_string(description)?;
-            let (name, sig) = FIELD_DESCRIPTION;
-            env.set_field(&self.plugin, name, sig, JValue::Object(&description_obj))?;
-            env.delete_local_ref(description_obj);
-            Ok(())
-        })
-        .expect("Failed to set description");
+    pub fn set_description(&mut self, env: &mut Env, description: &str) -> &mut Self {
+        jni_set_str_field!(&self.plugin, env, FIELD_DESCRIPTION, description);
         self
     }
 
-    pub fn set_tag_list(&mut self, tag_list: &[String]) -> &mut Self {
-        jni_utils::attach_current_thread(|env| -> Result<(), jni::errors::Error> {
-            let tags_arr_list = env.new_object(
-                jni_utils::ARRAY_LIST_CONSTOR.0,
-                jni_utils::ARRAY_LIST_CONSTOR.1,
-                &[],
-            )?;
-
-            for tag in tag_list {
-                let tag_str = env.new_string(tag)?;
-                env.call_method(
-                    &tags_arr_list,
-                    jni_utils::LIST_ADD.0,
-                    jni_utils::LIST_ADD.1,
-                    &[JValue::Object(&tag_str)],
-                )?;
-                env.delete_local_ref(tag_str);
-            }
-            env.set_field(
-                &self.plugin,
-                FIELD_TAGS.0,
-                FIELD_TAGS.1,
-                JValue::Object(&tags_arr_list),
-            )?;
-            env.delete_local_ref(tags_arr_list);
-            Ok(())
-        })
-        .expect("Failed to set tag list");
+    pub fn set_tag_list(&mut self, env: &mut Env, tag_list: &[String]) -> &mut Self {
+        jni_set_str_list_field!(&self.plugin, env, FIELD_TAGS, tag_list);
         self
     }
 
-    pub fn set_screen_types(&mut self, screen_types: &[ScreenType]) -> &mut Self {
-        jni_utils::attach_current_thread(|env| -> Result<(), jni::errors::Error> {
-            let screen_types_arr_list = env.new_object(
-                jni_utils::ARRAY_LIST_CONSTOR.0,
-                jni_utils::ARRAY_LIST_CONSTOR.1,
-                &[],
-            )?;
-            for screen_type in screen_types {
+    pub fn set_screen_types(&mut self, env: &mut Env, screen_types: &[ScreenType]) -> &mut Self {
+        jni_set_obj_list_field!(
+            &self.plugin,
+            env,
+            FIELD_SUPPORTED_SCREEN_TYPES,
+            screen_types,
+            |env: &mut Env, screen_type: &ScreenType| {
                 let mut jni_screen_type = JniScreenType::new();
-                let screen_type_obj = jni_screen_type.screen_type_to_java_object(screen_type);
-                env.call_method(
-                    &screen_types_arr_list,
-                    jni_utils::LIST_ADD.0,
-                    jni_utils::LIST_ADD.1,
-                    &[JValue::Object(&screen_type_obj)],
-                )?;
-                // env.delete_local_ref(screen_type_obj);
+                jni_screen_type.screen_type_to_java_object(env, screen_type)
             }
-            env.set_field(
-                &self.plugin,
-                FIELD_SUPPORTED_SCREEN_TYPES.0,
-                FIELD_SUPPORTED_SCREEN_TYPES.1,
-                JValue::Object(&screen_types_arr_list),
-            )?;
-            env.delete_local_ref(screen_types_arr_list);
-
-            Ok(())
-        }).expect("Error in set_screen_type");
+        );
         self
     }
 
-    pub fn set_datasets(&mut self, datasets: &[Dataset]) -> &mut Self {
-        jni_utils::attach_current_thread(|env| -> Result<(), jni::errors::Error> {
-            let datasets_arr_list = env.new_object(
-                jni_utils::ARRAY_LIST_CONSTOR.0,
-                jni_utils::ARRAY_LIST_CONSTOR.1,
-                &[],
-            )?;
-            for dataset in datasets {
-                let dataset_obj = JniDataset::clone_from_dataset(dataset);
-                env.call_method(
-                    &datasets_arr_list,
-                    jni_utils::LIST_ADD.0,
-                    jni_utils::LIST_ADD.1,
-                    &[JValue::Object(&dataset_obj.jobject_ref())],
-                )?;
-                // self.handler.delete_local_ref(dataset_obj);
-            }
-            env.set_field(
-                &self.plugin,
-                FIELD_DATASETS.0,
-                FIELD_DATASETS.1,
-                JValue::Object(&datasets_arr_list),
-            )?;
-            env.delete_local_ref(datasets_arr_list);
-            Ok(())
-        })
-        .expect("Failed to set datasets");
+    pub fn set_datasets(&mut self, env: &mut Env, datasets: &[Dataset]) -> &mut Self {
+        jni_set_obj_list_field!(
+            &self.plugin,
+            env,
+            FIELD_DATASETS,
+            datasets,
+            |env: &mut Env, dataset: &Dataset| JniDataset::clone_from_dataset(env, dataset)
+                .new_global_ref(env)
+        );
         self
     }
 }
 
 impl JniPlugin {
-    pub fn clone_from_plugin(plugin: &Plugin) -> Self {
+    pub fn clone_from_plugin(env: &mut Env, plugin: &Plugin) -> Self {
         let mut obj = JniPlugin::new();
-        obj.set_id(&plugin.id);
-        obj.set_name(&plugin.name);
+        obj.set_id(env, &plugin.id);
+        obj.set_name(env, &plugin.name);
         if let Some(author) = &plugin.author {
-            obj.set_author(author);
+            obj.set_author(env, author);
         }
-        obj.set_version(&plugin.version);
-        obj.set_runtime_version(&plugin.runtime_version);
+        obj.set_version(env, &plugin.version);
+        obj.set_runtime_version(env, &plugin.runtime_version);
         if let Some(description) = &plugin.description {
-            obj.set_description(description);
+            obj.set_description(env, description);
         }
-        obj.set_tag_list(&plugin.tags);
-        obj.set_screen_types(&plugin.supported_screen_types);
-        obj.set_datasets(&plugin.datasets);
+        obj.set_tag_list(env, &plugin.tags);
+        obj.set_screen_types(env, &plugin.supported_screen_types);
+        obj.set_datasets(env, &plugin.datasets);
         obj
     }
 }

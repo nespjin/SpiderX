@@ -220,7 +220,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
         .with_env(|env| -> Result<jobject, jni::errors::Error> {
             let ret = jni_utils::throw_java_exception_if_error(env, installed_plugin)
                 .flatten()
-                .map(|e| JniPlugin::clone_from_plugin(&e))
+                .map(|e| JniPlugin::clone_from_plugin(env, &e))
                 .map(|e| e.into_raw_jobject())
                 .unwrap_or(JObject::null().into_raw());
 
@@ -254,7 +254,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
             )?;
 
             for plugin in plugins {
-                let jni_plugin = JniPlugin::clone_from_plugin(&plugin);
+                let jni_plugin = JniPlugin::clone_from_plugin(env, &plugin);
                 let plugin_obj = jni_plugin.jobject_ref();
                 env.call_method(
                     &arr_list,
