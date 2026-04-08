@@ -99,6 +99,15 @@ where
         .or(self.value.as_mut())
     }
 
+    pub fn into_value(self, screen_type: &ScreenType) -> Option<T> {
+        match screen_type {
+            ScreenType::Compact => self.compact,
+            ScreenType::Medium => self.medium,
+            ScreenType::Expanded => self.expanded,
+        }
+        .or(self.value)
+    }
+
     pub fn into_inner(self) -> Option<T> {
         self.value
     }
