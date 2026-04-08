@@ -298,6 +298,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
     url: JString,
     timeout: jshort,
     r#type: jint,
+    urlPlaceholders: JObject,
     listener: JObject,
 ) -> jstring {
     unowned_env
@@ -308,6 +309,13 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
                 None
             } else {
                 Some(url.to_string())
+            };
+
+            let url_placeholders = if urlPlaceholders.is_null() {
+                None
+            } else {
+                let hash_map = jni_utils::from_string_hash_map(env, urlPlaceholders)?;
+                Some(hash_map)
             };
 
             let data = {
@@ -345,6 +353,7 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
                 options
                     .with_type(request_type)
                     .with_opt_url(url)
+                    .with_opt_url_placeholders(url_placeholders)
                     .with_timeout(timeout as u16)
                     .with_opt_listener(listener);
                 plugin_manager.request_dataset(&plugin_id, &dataset_id, options)

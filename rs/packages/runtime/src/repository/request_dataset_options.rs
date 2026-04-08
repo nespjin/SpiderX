@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashMap;
+
 use crate::{
     constants::DEFAULT_REQUEST_TIMEOUT,
     executor::{
@@ -25,6 +27,7 @@ pub struct RequestDatasetOptions {
     pub timeout: u16,
     pub req_type: RequestType,
     pub url: Option<String>,
+    pub url_placeholders: Option<HashMap<String, String>>,
     pub listener: Option<RequestDatasetListenerWrpper>,
     pub config: Option<RequestJavaScriptDatasetConfigArc>,
 }
@@ -35,6 +38,7 @@ impl RequestDatasetOptions {
             timeout: DEFAULT_REQUEST_TIMEOUT,
             req_type: RequestType::Auto,
             url: None,
+            url_placeholders: None,
             listener: None,
             config: None,
         }
@@ -52,6 +56,11 @@ impl RequestDatasetOptions {
 
     pub fn with_opt_url(&mut self, url: Option<String>) -> &mut Self {
         self.url = url;
+        self
+    }
+
+    pub fn with_opt_url_placeholders(&mut self, url_placeholders: Option<HashMap<String, String>>) -> &mut Self {
+        self.url_placeholders = url_placeholders;
         self
     }
 

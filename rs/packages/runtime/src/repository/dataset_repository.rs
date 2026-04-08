@@ -25,7 +25,7 @@ use crate::{
     },
     plugin_manager::RequestType,
     repository::{model::dataset, request_dataset_options::RequestDatasetOptions},
-    utils::screen_typed_value::ScreenTypedValue,
+    utils::{screen_typed_value::ScreenTypedValue, url_utils},
 };
 
 macro_rules! new_javascript_executor {
@@ -279,6 +279,7 @@ impl DatasetRepository {
             listener,
             config,
             req_type,
+            url_placeholders,
             // ..
         } = options;
 
@@ -299,7 +300,12 @@ impl DatasetRepository {
         if url_str.is_none() {
             return Err("The url is empty".to_string());
         };
-        let url_str = &url_str.expect("The url is empty");
+        let url_str = url_str.expect("The url is empty");
+        let url_str = &if let Some(placeholders) = url_placeholders {
+            url_utils::url_replace_placeholders(&url_str, &placeholders)
+        } else {
+            url_str
+        };
 
         let js = ScreenTypedValue::new()
             .with_option_value(dataset.js.clone())
