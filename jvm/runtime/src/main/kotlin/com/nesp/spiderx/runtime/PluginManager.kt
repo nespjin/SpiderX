@@ -114,6 +114,7 @@ class PluginManager private constructor() {
         url: String? = null,
         timeout: UShort = 20u,
         type: RequestType = RequestType.AUTO,
+        urlPlaceholders: Map<String, String>? = null,
         listener: RequestDatasetListener? = null,
     ): String? {
         if (listener != null) {
@@ -127,6 +128,7 @@ class PluginManager private constructor() {
             url,
             timeout.toShort(),
             type.value,
+            urlPlaceholders,
             listener
         )
     }
@@ -157,6 +159,7 @@ class PluginManager private constructor() {
         url: String?,
         timeout: Short,
         type: Int,
+        urlPlaceholders: Map<String, String>?,
         listener: RequestDatasetListener?
     ): String?
 
