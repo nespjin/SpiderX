@@ -38,7 +38,7 @@
     const newVariety = querySectionMovies('body > div.page > div > div.page-row > div:nth-child(8) > div.panel-bd > ul > li');
     const newAnim = querySectionMovies('body > div.page > div > div.page-row > div:nth-child(6) > div.panel-bd > ul > li');
 
-    const page = {
+    return {
         slideMovies: sliderMovies,
         newPlay: newPlayMovies,
         newMovie: newMovies,
@@ -46,6 +46,4 @@
         newVariety: newVariety,
         newAnim: newAnim
     };
-
-    return page;
 })()
