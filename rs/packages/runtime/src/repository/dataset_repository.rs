@@ -12,9 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use serde_json::Value;
 use spiderx_core::{
     data::plugin::Dataset,
-    utils::{json_utils::{self, ArrayStrategy, PrimitiveStrategy}, url_utils},
+    utils::{
+        json_utils::{self, ArrayStrategy, PrimitiveStrategy},
+        url_utils,
+    },
 };
 use std::collections::HashMap;
 
@@ -273,6 +277,9 @@ impl DatasetRepository {
         let mut curr_dataset_id = Some(dataset_id.to_string());
 
         let mut result: Option<String> = None;
+        let mut url_override: Option<String> = None;
+        let mut options = options;
+
         while let Some(dataset_id) = curr_dataset_id {
             let dataset = self.get_dataset_in_plugin(plugin_id, &dataset_id)?;
             let dataset = match dataset {
@@ -282,29 +289,51 @@ impl DatasetRepository {
                 }
             };
             let previous_result = result;
+
+            if let Some(url) = url_override {
+                options.with_url(url);
+            }
+            url_override = None;
+
             result = Some(self.do_request_dataset(&dataset, &options)?);
 
             log::debug!("{} {} result is {:?}", plugin_id, dataset_id, result);
 
             curr_dataset_id = dataset.next_dataset_id;
-
-            if let (Some(prev), Some(curr)) = (&previous_result, &result) {
-                let prev_json = serde_json::from_str::<serde_json::Value>(prev)
-                    .map_err(|_| "Failed to parse prev json")?;
-                let curr_json = serde_json::from_str::<serde_json::Value>(curr)
+            if let Some(curr) = result.take() {
+                let curr_json = serde_json::from_str::<serde_json::Value>(&curr)
                     .map_err(|_| "Failed to parse curr json")?;
-                log::debug!("merge json: {:?} and {:?}", prev_json, curr_json);
 
-                let merged = json_utils::merge_values(
-                    &prev_json,
-                    &curr_json,
-                    PrimitiveStrategy::Skip,
-                    ArrayStrategy::MergeDeduplicate,
-                )
-                .map(|e| serde_json::to_string(&e))
-                .map_err(|e| format!("Failed to merge json: {}", e))?
-                .map_err(|e| format!("Failed to serialize merged json value {}", e))?;
-                result = Some(merged);
+                if let Value::Object(obj) = &curr_json {
+                    match obj.get("_nextDatasetUrl") {
+                        Some(Value::String(url)) => url_override = Some(url.clone()),
+                        Some(_) => {
+                            return Err(
+                                "Invalid _nextDatasetUrl value, expected string".to_string()
+                            );
+                        }
+                        None => {}
+                    }
+                }
+
+                if let Some(prev) = &previous_result {
+                    let prev_json = serde_json::from_str::<serde_json::Value>(prev)
+                        .map_err(|_| "Failed to parse prev json")?;
+                    log::debug!("merge json: {:?} and {:?}", prev_json, curr_json);
+
+                    let merged_value = json_utils::merge_values(
+                        &prev_json,
+                        &curr_json,
+                        PrimitiveStrategy::Skip,
+                        ArrayStrategy::MergeDeduplicate,
+                    )
+                    .map_err(|e| format!("Failed to merge json: {}", e))?;
+
+                    let merged_str = serde_json::to_string(&merged_value)
+                        .map_err(|e| format!("Failed to serialize merged json value {}", e))?;
+
+                    result = Some(merged_str);
+                }
             }
         }
 

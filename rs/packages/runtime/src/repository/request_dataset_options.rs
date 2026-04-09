@@ -59,7 +59,15 @@ impl RequestDatasetOptions {
         self
     }
 
-    pub fn with_opt_url_placeholders(&mut self, url_placeholders: Option<HashMap<String, String>>) -> &mut Self {
+    pub fn with_url(&mut self, url: String) -> &mut Self {
+        self.url.replace(url);
+        self
+    }
+
+    pub fn with_opt_url_placeholders(
+        &mut self,
+        url_placeholders: Option<HashMap<String, String>>,
+    ) -> &mut Self {
         self.url_placeholders = url_placeholders;
         self
     }
