@@ -153,7 +153,7 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
                     WebEngineEvent::PageFinished(url, _document) => {
                         if url_utils::url_equals(&url, &self.url) {
                             let ret = webengine.write().unwrap().evaluate(self.js)?;
-                            log::debug!("JavaScriptDatasetExecutor::request evaluate {}", ret);
+                            log::debug!("request evaluate {} {}", self.js, ret);
                             result = Ok(ret.into());
                             break;
                         }
@@ -167,13 +167,13 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
                     _ => (),
                 },
                 Err(RecvTimeoutError::Timeout) => {
-                    log::debug!("JavaScriptDatasetExecutor::request timeout");
-                    result = Err("JavaScriptDatasetExecutor::request timeout".to_string());
+                    log::debug!("request timeout");
+                    result = Err("request timeout".to_string());
                     break;
                 }
                 Err(RecvTimeoutError::Disconnected) => {
-                    log::debug!("JavaScriptDatasetExecutor::request disconnected");
-                    result = Err("JavaScriptDatasetExecutor::request disconnected".to_string());
+                    log::debug!("request disconnected");
+                    result = Err("request disconnected".to_string());
                     break;
                 }
             }
@@ -183,12 +183,7 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
         let id = { webengine.read().unwrap().id() };
         wm.remove_webengine(id)?;
 
-        log::debug!(
-            "JavaScriptDatasetExecutor::request end {} {} {:?}",
-            self.id,
-            self.url,
-            result
-        );
+        log::debug!("request end {} {} {:?}", self.id, self.url, result);
 
         return result;
     }
