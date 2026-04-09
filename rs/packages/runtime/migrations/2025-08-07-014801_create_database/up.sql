@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS "dataset" (
    "dsl_compact"  text,
    "dsl_medium"   text,
    "dsl_expanded" text,
+   "next_dataset_id" text,
 	PRIMARY KEY ( "id" , "plugin_id" )
 );
 
