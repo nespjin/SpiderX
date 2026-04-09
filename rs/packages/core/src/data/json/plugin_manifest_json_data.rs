@@ -67,6 +67,11 @@ pub struct DatasetJsonData {
     /// The dsl for `Expanded` screen type.
     #[serde(rename = "dsl@expanded")]
     pub dsl_expanded: Option<serde_json::Value>,
+
+    /// If set to true, the plugin will request the next dataset when
+    /// the current dataset is finished, and merge the data with the next dataset.
+    #[serde(rename = "nextDataset")]
+    pub next_dataset: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -166,6 +171,7 @@ mod tests {
                 dsl_compact: None,
                 dsl_medium: None,
                 dsl_expanded: None,
+                next_dataset: None,
             }],
         };
 
@@ -207,6 +213,7 @@ mod tests {
                 dsl_compact: None,
                 dsl_medium: None,
                 dsl_expanded: None,
+                next_dataset: None,
             }],
         };
 
@@ -337,6 +344,7 @@ mod tests {
                     "parser@expanded": "json",
                     "fields@expanded": ["name", "age"]
                 })),
+                next_dataset: None,
             },
             DatasetJsonData {
                 id: "product_data".to_string(),
@@ -355,6 +363,7 @@ mod tests {
                 dsl_compact: None,
                 dsl_medium: None,
                 dsl_expanded: None,
+                next_dataset: None,
             },
         ];
 

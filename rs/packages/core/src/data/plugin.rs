@@ -29,6 +29,7 @@ pub struct Dataset {
     pub dsl_compact: Option<serde_json::Value>,
     pub dsl_medium: Option<serde_json::Value>,
     pub dsl_expanded: Option<serde_json::Value>,
+    pub next_dataset: Option<String>,
 }
 
 /// The struct that represents a plugin.
