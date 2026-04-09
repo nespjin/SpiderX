@@ -16,6 +16,7 @@ diesel::table! {
         dsl_compact -> Nullable<Text>,
         dsl_medium -> Nullable<Text>,
         dsl_expanded -> Nullable<Text>,
+        next_dataset -> Nullable<Text>,
     }
 }
 

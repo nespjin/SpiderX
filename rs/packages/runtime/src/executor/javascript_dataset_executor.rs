@@ -21,6 +21,8 @@ use std::{
     time::Duration,
 };
 
+use spiderx_core::utils::url_utils;
+
 use crate::{
     constants::DEFAULT_REQUEST_TIMEOUT,
     executor::{
@@ -28,7 +30,6 @@ use crate::{
         request_dataset_listener::RequestJavaScriptDatasetListenerArc,
         request_javascript_dataset_config::RequestJavaScriptDatasetConfigArc,
     },
-    utils::url_utils,
     web_engine::{
         web_engine::{WebEngineListener, WebEngineMut},
         web_engine_manager::WebEngineManager,
@@ -71,7 +72,7 @@ type WebEngineCallback = Box<dyn Fn(WebEngineEvent) + Send + Sync>;
 
 pub struct JavaScriptDatasetExecutor<'local> {
     id: &'local str,
-    timeout: u16,
+    timeout: &'local u16,
     url: &'local str,
     js: &'local str,
     listener: Option<RequestJavaScriptDatasetListenerArc>,
@@ -82,7 +83,7 @@ impl<'local> JavaScriptDatasetExecutor<'local> {
     pub fn new(id: &'local str, url: &'local str, js: &'local str) -> Self {
         Self {
             id,
-            timeout: DEFAULT_REQUEST_TIMEOUT,
+            timeout: &DEFAULT_REQUEST_TIMEOUT,
             url,
             js,
             listener: None,
@@ -90,7 +91,7 @@ impl<'local> JavaScriptDatasetExecutor<'local> {
         }
     }
 
-    pub fn with_timeout(&mut self, timeout: u16) -> &mut Self {
+    pub fn with_timeout(&mut self, timeout: &'local u16) -> &mut Self {
         self.timeout = timeout;
         self
     }
@@ -147,7 +148,7 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
         let result: Result<String, String>;
 
         loop {
-            match rx.recv_timeout(Duration::from_secs(self.timeout as u64)) {
+            match rx.recv_timeout(Duration::from_secs((*self.timeout) as u64)) {
                 Ok(received) => match received {
                     WebEngineEvent::PageFinished(url, _document) => {
                         if url_utils::url_equals(&url, &self.url) {

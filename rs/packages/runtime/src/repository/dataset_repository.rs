@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use spiderx_core::data::plugin::Dataset;
+use spiderx_core::{
+    data::plugin::Dataset,
+    utils::{json_utils::{self, ArrayStrategy, PrimitiveStrategy}, url_utils},
+};
 use std::collections::HashMap;
 
 use crate::{
@@ -25,7 +28,7 @@ use crate::{
     },
     plugin_manager::RequestType,
     repository::{model::dataset, request_dataset_options::RequestDatasetOptions},
-    utils::{screen_typed_value::ScreenTypedValue, url_utils},
+    utils::screen_typed_value::ScreenTypedValue,
 };
 
 macro_rules! new_javascript_executor {
@@ -267,11 +270,54 @@ impl DatasetRepository {
         dataset_id: &str,
         options: RequestDatasetOptions,
     ) -> Result<String, String> {
-        let dataset = self.get_dataset_in_plugin(plugin_id, dataset_id)?;
-        let dataset = match dataset {
-            Some(dataset) => dataset,
-            None => return Err(format!("Dataset {}.{} not found", plugin_id, dataset_id)),
-        };
+        let mut curr_dataset_id = Some(dataset_id.to_string());
+
+        let mut result: Option<String> = None;
+        while let Some(dataset_id) = curr_dataset_id {
+            let dataset = self.get_dataset_in_plugin(plugin_id, &dataset_id)?;
+            let dataset = match dataset {
+                Some(dataset) => dataset,
+                None => {
+                    return Err(format!("Dataset {}.{} not found", plugin_id, &dataset_id));
+                }
+            };
+            let previous_result = result;
+            result = Some(self.do_request_dataset(&dataset, &options)?);
+
+            log::debug!("{} {} result is {:?}", plugin_id, dataset_id, result);
+
+            curr_dataset_id = dataset.next_dataset;
+            if let (Some(prev), Some(curr)) = (&previous_result, &result) {
+                let prev_json = serde_json::from_str::<serde_json::Value>(prev)
+                    .map_err(|_| "Failed to parse prev json")?;
+                let curr_json = serde_json::from_str::<serde_json::Value>(curr)
+                    .map_err(|_| "Failed to parse curr json")?;
+                log::debug!("merge json: {:?} and {:?}", prev_json, curr_json);
+
+                let merged = json_utils::merge_values(
+                    &prev_json,
+                    &curr_json,
+                    PrimitiveStrategy::Skip,
+                    ArrayStrategy::MergeDeduplicate,
+                )
+                .map(|e| serde_json::to_string(&e))
+                .map_err(|e| format!("Failed to merge json: {}", e))?
+                .map_err(|e| format!("Failed to serialize merged json value {}", e))?;
+                result = Some(merged);
+            }
+        }
+
+        log::debug!("{} {} final result is {:?}", plugin_id, dataset_id, result);
+
+        result.ok_or("Failed to request dataset".to_string())
+    }
+
+    fn do_request_dataset(
+        &self,
+        dataset: &Dataset,
+        options: &RequestDatasetOptions,
+    ) -> Result<String, String> {
+        let dataset_id = &dataset.id;
 
         let RequestDatasetOptions {
             timeout: req_timeout,
@@ -288,7 +334,7 @@ impl DatasetRepository {
             &dm.screen_type().ok_or("Screen type is not set")?
         };
 
-        let url_str = url_override.or_else(|| {
+        let url_str = url_override.clone().or_else(|| {
             ScreenTypedValue::new()
                 .with_value(dataset.url.clone())
                 .with_option_compact(dataset.url_compact.clone())
@@ -326,6 +372,7 @@ impl DatasetRepository {
             .flatten();
 
         let js_dataset_listener = listener
+            .as_ref()
             .map(|e| match e {
                 RequestDatasetListenerWrpper::JavaScriptDataset(l) => Some(l.clone()),
                 _ => None,
@@ -341,7 +388,7 @@ impl DatasetRepository {
                     &js,
                     req_timeout,
                     js_dataset_listener,
-                    config
+                    config.clone()
                 )
             }
             RequestType::JavaScript => {
@@ -351,7 +398,7 @@ impl DatasetRepository {
                     js,
                     req_timeout,
                     js_dataset_listener,
-                    config
+                    config.clone()
                 );
                 match ret {
                     Some(executor) => executor,
@@ -367,19 +414,12 @@ impl DatasetRepository {
                     "",
                     req_timeout,
                     js_dataset_listener,
-                    config
+                    config.clone()
                 )
             }
         };
 
         let result = dataset_executor.request();
-
-        log::debug!(
-            "DatasetRepository::request_dataset {} {} {:?}",
-            plugin_id,
-            dataset_id,
-            result
-        );
 
         result
     }

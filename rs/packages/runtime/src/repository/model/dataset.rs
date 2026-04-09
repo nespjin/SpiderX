@@ -68,6 +68,7 @@ pub(crate) fn dataset_to_entity(
         dsl_compact: dsl_compact,
         dsl_medium: dsl_medium,
         dsl_expanded: dsl_expanded,
+        next_dataset: dataset.next_dataset,
     })
 }
 
@@ -117,5 +118,6 @@ pub(crate) fn dataset_entity_to_external_model(entity: DatasetEntity) -> Result<
         dsl_compact: dsl_compact,
         dsl_medium: dsl_medium,
         dsl_expanded: dsl_expanded,
+        next_dataset: entity.next_dataset,
     })
 }
