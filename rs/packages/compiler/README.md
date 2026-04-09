@@ -1,0 +1,2 @@
+- Resolve variable reference
+- Preprocessing JavaScript and obfuscator with [OXC](https://oxc.rs/)
