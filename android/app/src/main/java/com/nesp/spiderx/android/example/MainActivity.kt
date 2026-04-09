@@ -53,6 +53,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvResult: TextView
     private lateinit var etReqPluginId: EditText
     private lateinit var etReqDatasetId: EditText
+    private lateinit var etReqParams: EditText
     private lateinit var etUninstallPluginId: EditText
     // private lateinit var wvTest: WebView
 
@@ -101,11 +102,13 @@ class MainActivity : AppCompatActivity() {
         // initWebView()
         etReqPluginId = findViewById(R.id.et_req_plugin_id)
         etReqDatasetId = findViewById(R.id.et_req_dataset_id)
+        etReqParams = findViewById(R.id.et_req_params)
         etUninstallPluginId = findViewById(R.id.et_uninstall_plugin_id)
 
         val sharPer = sharedPreferences
         etReqPluginId.setText(sharPer.getString(SHAR_PER_KEY_REQ_PLUGIN_ID, ""))
         etReqDatasetId.setText(sharPer.getString(SHAR_PER_KEY_REQ_DATASET_ID, ""))
+        etReqParams.setText(sharPer.getString(SHAR_PER_KEY_REQ_PARAMS, ""))
         etUninstallPluginId.setText(sharPer.getString(SHAR_PER_KEY_UNINSTALL_PLUGIN_ID, ""))
     }
 
@@ -166,19 +169,33 @@ class MainActivity : AppCompatActivity() {
     private fun request() {
         val pluginId = etReqPluginId.text.toString()
         val datasetId = etReqDatasetId.text.toString()
+        val params = etReqParams.text.toString()
         // wvTest.loadUrl("https://www.kkcechi.com")
 
         sharedPreferences.edit {
             putString(SHAR_PER_KEY_REQ_PLUGIN_ID, pluginId)
             putString(SHAR_PER_KEY_REQ_DATASET_ID, datasetId)
+            putString(SHAR_PER_KEY_REQ_PARAMS, params)
+        }
+
+        var urlPlaceholders: Map<String, String>? = null
+        if (params.contains(":")) {
+            val array = params.split(":")
+            if (array.size % 2 == 0) {
+                urlPlaceholders = mutableMapOf()
+                for (i in array.indices step 2) {
+                    urlPlaceholders[array[i]] = array[i + 1]
+                }
+            }
         }
 
         backgroundExecutor.execute {
-            Log.d(TAG, "request: dataset $pluginId $datasetId")
+            Log.d(TAG, "request: dataset $pluginId $datasetId $urlPlaceholders")
             try {
                 val result = pluginManager.requestDataset(
                     pluginId,
                     datasetId,
+                    urlPlaceholders = urlPlaceholders,
                     type = PluginManager.RequestType.JavaScript,
                     listener = requestJavaScriptDatasetListener
                 )
@@ -216,6 +233,7 @@ class MainActivity : AppCompatActivity() {
         private const val SHAR_PER_KEY_UNINSTALL_PLUGIN_ID = "uninstall_plugin_id"
         private const val SHAR_PER_KEY_REQ_PLUGIN_ID = "req_plugin_id"
         private const val SHAR_PER_KEY_REQ_DATASET_ID = "req_dataset_id"
+        private const val SHAR_PER_KEY_REQ_PARAMS = "req_params"
 
         init {
             System.loadLibrary("spiderx_runtime")
