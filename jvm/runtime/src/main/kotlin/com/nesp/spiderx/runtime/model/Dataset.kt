@@ -5,7 +5,7 @@ package com.nesp.spiderx.runtime.model
  **/
 data class Dataset @JvmOverloads constructor(
     val id: String = "",
-    val url: String = "",
+    val url: String? = null,
     val urlCompact: String? = null,
     val urlMedium: String? = null,
     val urlExpanded: String? = null,
