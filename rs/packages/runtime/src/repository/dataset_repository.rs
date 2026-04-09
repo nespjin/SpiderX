@@ -300,13 +300,16 @@ impl DatasetRepository {
             log::debug!("{} {} result is {:?}", plugin_id, dataset_id, result);
 
             curr_dataset_id = dataset.next_dataset_id;
-            if let Some(curr) = result.take() {
+            if let Some(curr) = result {
                 let curr_json = serde_json::from_str::<serde_json::Value>(&curr)
                     .map_err(|_| "Failed to parse curr json")?;
 
                 if let Value::Object(obj) = &curr_json {
                     match obj.get("_nextDatasetUrl") {
-                        Some(Value::String(url)) => url_override = Some(url.clone()),
+                        Some(Value::String(url)) => {
+                           log::debug!("{} {} next dataset url is {:?}", plugin_id, dataset_id, url);
+                           url_override = Some(url.clone())
+                        }
                         Some(_) => {
                             return Err(
                                 "Invalid _nextDatasetUrl value, expected string".to_string()
@@ -333,6 +336,9 @@ impl DatasetRepository {
                         .map_err(|e| format!("Failed to serialize merged json value {}", e))?;
 
                     result = Some(merged_str);
+                } else {
+                    // Restore result to current if previous_result is None
+                    result = Some(curr);
                 }
             }
         }
