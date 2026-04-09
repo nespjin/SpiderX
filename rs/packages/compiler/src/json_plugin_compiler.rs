@@ -61,6 +61,7 @@ impl PluginCompiler for JsonPluginCompiler {
                 dsl_compact: json_dataset.dsl_compact.clone(),
                 dsl_medium: json_dataset.dsl_medium.clone(),
                 dsl_expanded: json_dataset.dsl_expanded.clone(),
+                next_dataset: json_dataset.next_dataset.clone(),
             })
             .collect::<Vec<_>>();
 
