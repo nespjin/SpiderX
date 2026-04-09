@@ -17,4 +17,5 @@ data class Dataset @JvmOverloads constructor(
     val dslCompact: Map<String, Any> = mapOf(),
     val dslMedium: Map<String, Any> = mapOf(),
     val dslExpanded: Map<String, Any> = mapOf(),
+    val nextDatasetId: String? = null,
 )
