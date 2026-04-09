@@ -14,4 +14,3 @@
 
 pub mod log_utils;
 pub mod screen_typed_value;
-pub mod url_utils;
