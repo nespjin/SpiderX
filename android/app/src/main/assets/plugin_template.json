@@ -47,7 +47,8 @@
           "age"
         ],
         "parser@expanded": "json"
-      }
+      },
+      "nextDatasetId": ""
     },
     {
       "id": "product_data",
