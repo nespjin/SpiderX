@@ -70,8 +70,8 @@ pub struct DatasetJsonData {
 
     /// If set to true, the plugin will request the next dataset when
     /// the current dataset is finished, and merge the data with the next dataset.
-    #[serde(rename = "nextDataset")]
-    pub next_dataset: Option<String>,
+    #[serde(rename = "nextDatasetId")]
+    pub next_dataset_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -171,7 +171,7 @@ mod tests {
                 dsl_compact: None,
                 dsl_medium: None,
                 dsl_expanded: None,
-                next_dataset: None,
+                next_dataset_id: None,
             }],
         };
 
@@ -213,7 +213,7 @@ mod tests {
                 dsl_compact: None,
                 dsl_medium: None,
                 dsl_expanded: None,
-                next_dataset: None,
+                next_dataset_id: None,
             }],
         };
 
@@ -344,7 +344,7 @@ mod tests {
                     "parser@expanded": "json",
                     "fields@expanded": ["name", "age"]
                 })),
-                next_dataset: None,
+                next_dataset_id: None,
             },
             DatasetJsonData {
                 id: "product_data".to_string(),
@@ -363,7 +363,7 @@ mod tests {
                 dsl_compact: None,
                 dsl_medium: None,
                 dsl_expanded: None,
-                next_dataset: None,
+                next_dataset_id: None,
             },
         ];
 

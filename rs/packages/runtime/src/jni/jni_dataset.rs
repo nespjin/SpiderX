@@ -80,6 +80,10 @@ pub const FIELD_DSL_EXPANDED: JniFieldDetail = (
     jni_str!("dslExpanded"),
     jni_sig!(java.util.Map), // Ljava/util/Map;
 );
+pub const FIELD_NEXT_DATASET_ID: JniFieldDetail = (
+    jni_str!("nextDatasetId"),
+    jni_sig!(java.lang.String), // Ljava/lang/String;
+);
 
 pub struct JniDataset {
     dataset: Global<JObject<'static>>,
@@ -166,6 +170,10 @@ impl JniDataset {
         jni_set_json_value_field!(&self.dataset, env, FIELD_DSL_EXPANDED, dsl);
         self
     }
+    pub fn set_next_dataset_id(&mut self, env: &mut Env, next_dataset_id: &str) -> &mut Self {
+        jni_set_str_field!(&self.dataset, env, FIELD_NEXT_DATASET_ID, next_dataset_id);
+        self
+    }
 }
 
 impl JniDataset {
@@ -205,6 +213,9 @@ impl JniDataset {
         }
         if let Some(dsl_expanded) = &dataset.dsl_expanded {
             obj.set_dsl_expanded(env, dsl_expanded);
+        }
+        if let Some(next_dataset_id) = &dataset.next_dataset_id {
+            obj.set_next_dataset_id(env, next_dataset_id);
         }
         obj
     }

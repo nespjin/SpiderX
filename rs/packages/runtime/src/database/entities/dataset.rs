@@ -32,5 +32,5 @@ pub struct DatasetEntity {
     pub dsl_compact: Option<String>,
     pub dsl_medium: Option<String>,
     pub dsl_expanded: Option<String>,
-    pub next_dataset: Option<String>,
+    pub next_dataset_id: Option<String>,
 }

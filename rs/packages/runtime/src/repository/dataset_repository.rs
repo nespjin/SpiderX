@@ -286,7 +286,7 @@ impl DatasetRepository {
 
             log::debug!("{} {} result is {:?}", plugin_id, dataset_id, result);
 
-            curr_dataset_id = dataset.next_dataset;
+            curr_dataset_id = dataset.next_dataset_id;
             if let (Some(prev), Some(curr)) = (&previous_result, &result) {
                 let prev_json = serde_json::from_str::<serde_json::Value>(prev)
                     .map_err(|_| "Failed to parse prev json")?;
