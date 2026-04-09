@@ -30,4 +30,4 @@ manual_strip = "warn"
 match_like_matches_macro = "warn"
 
 [workspace.lints.rust]
-dead_code = "allow"
+# dead_code = "allow"
