@@ -131,10 +131,18 @@
         android:autofillHints="text"
         android:inputType="text"
         android:hint="params"
-        app:layout_constraintBottom_toTopOf="@id/et_req_url"
+        app:layout_constraintBottom_toTopOf="@id/cb_req_url"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         tools:text="Params" />
+
+    <CheckBox
+        android:id="@+id/cb_req_url"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/et_req_url"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <EditText
         android:id="@+id/et_req_url"
@@ -143,9 +151,9 @@
         android:autofillHints="text"
         android:inputType="text"
         android:hint="url"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toBottomOf="@id/cb_req_url"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@id/cb_req_url"
         tools:text="URL" />
 
 

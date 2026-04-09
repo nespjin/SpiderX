@@ -25,6 +25,7 @@ import android.util.Log
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -55,6 +56,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var etReqDatasetId: EditText
     private lateinit var etReqParams: EditText
     private lateinit var etReqUrl: EditText
+    private lateinit var cbReqUrl: CheckBox
     private lateinit var etUninstallPluginId: EditText
     // private lateinit var wvTest: WebView
 
@@ -105,6 +107,7 @@ class MainActivity : AppCompatActivity() {
         etReqDatasetId = findViewById(R.id.et_req_dataset_id)
         etReqParams = findViewById(R.id.et_req_params)
         etReqUrl = findViewById(R.id.et_req_url)
+        cbReqUrl = findViewById(R.id.cb_req_url)
         etUninstallPluginId = findViewById(R.id.et_uninstall_plugin_id)
 
         val sharPer = sharedPreferences
@@ -200,7 +203,7 @@ class MainActivity : AppCompatActivity() {
                 val result = pluginManager.requestDataset(
                     pluginId,
                     datasetId,
-                    url = url.ifEmpty { null },
+                    url = if (cbReqUrl.isChecked) url.ifEmpty { null } else null,
                     urlPlaceholders = urlPlaceholders,
                     type = PluginManager.RequestType.JavaScript,
                     listener = requestJavaScriptDatasetListener
