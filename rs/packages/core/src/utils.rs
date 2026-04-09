@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod data;
-pub mod utils;
+pub mod json_utils;
+pub mod url_utils;
