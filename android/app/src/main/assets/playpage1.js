@@ -6,6 +6,6 @@
         name: detailsEle.querySelector('h1').innerText,
         introduction: detailsPanelEle.querySelector('p').innerText,
         detail: [...detailsPanelEle.querySelectorAll('div:not(.hr)')].map(ele => ele.innerText).join('\n'),
-        _nextPageUrl: episodesEle.length > 0 ? episodesEle[episodesEle.length - 1].href : null,
+        _nextDatasetUrl: episodesEle.length > 0 ? episodesEle[episodesEle.length - 1].href : null,
     };
 })()
