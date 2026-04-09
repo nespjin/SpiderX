@@ -9,6 +9,10 @@ license = "Apache-2.0"
 authors = ["NESP"]
 repository = "https://github.com/nespjin/SpiderX"
 
+[workspace.dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
 [profile.release]
 strip = true
 opt-level = "z"
