@@ -54,6 +54,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var etReqPluginId: EditText
     private lateinit var etReqDatasetId: EditText
     private lateinit var etReqParams: EditText
+    private lateinit var etReqUrl: EditText
     private lateinit var etUninstallPluginId: EditText
     // private lateinit var wvTest: WebView
 
@@ -103,12 +104,14 @@ class MainActivity : AppCompatActivity() {
         etReqPluginId = findViewById(R.id.et_req_plugin_id)
         etReqDatasetId = findViewById(R.id.et_req_dataset_id)
         etReqParams = findViewById(R.id.et_req_params)
+        etReqUrl = findViewById(R.id.et_req_url)
         etUninstallPluginId = findViewById(R.id.et_uninstall_plugin_id)
 
         val sharPer = sharedPreferences
         etReqPluginId.setText(sharPer.getString(SHAR_PER_KEY_REQ_PLUGIN_ID, ""))
         etReqDatasetId.setText(sharPer.getString(SHAR_PER_KEY_REQ_DATASET_ID, ""))
         etReqParams.setText(sharPer.getString(SHAR_PER_KEY_REQ_PARAMS, ""))
+        etReqUrl.setText(sharPer.getString(SHAR_PER_KEY_REQ_URL, ""))
         etUninstallPluginId.setText(sharPer.getString(SHAR_PER_KEY_UNINSTALL_PLUGIN_ID, ""))
     }
 
@@ -170,12 +173,14 @@ class MainActivity : AppCompatActivity() {
         val pluginId = etReqPluginId.text.toString()
         val datasetId = etReqDatasetId.text.toString()
         val params = etReqParams.text.toString()
+        val url = etReqUrl.text.toString()
         // wvTest.loadUrl("https://www.kkcechi.com")
 
         sharedPreferences.edit {
             putString(SHAR_PER_KEY_REQ_PLUGIN_ID, pluginId)
             putString(SHAR_PER_KEY_REQ_DATASET_ID, datasetId)
             putString(SHAR_PER_KEY_REQ_PARAMS, params)
+            putString(SHAR_PER_KEY_REQ_URL, url)
         }
 
         var urlPlaceholders: Map<String, String>? = null
@@ -195,6 +200,7 @@ class MainActivity : AppCompatActivity() {
                 val result = pluginManager.requestDataset(
                     pluginId,
                     datasetId,
+                    url = url.ifEmpty { null },
                     urlPlaceholders = urlPlaceholders,
                     type = PluginManager.RequestType.JavaScript,
                     listener = requestJavaScriptDatasetListener
@@ -234,6 +240,7 @@ class MainActivity : AppCompatActivity() {
         private const val SHAR_PER_KEY_REQ_PLUGIN_ID = "req_plugin_id"
         private const val SHAR_PER_KEY_REQ_DATASET_ID = "req_dataset_id"
         private const val SHAR_PER_KEY_REQ_PARAMS = "req_params"
+        private const val SHAR_PER_KEY_REQ_URL = "req_url"
 
         init {
             System.loadLibrary("spiderx_runtime")
