@@ -180,7 +180,9 @@ impl JniDataset {
     pub fn clone_from_dataset(env: &mut Env, dataset: &Dataset) -> Self {
         let mut obj = JniDataset::new();
         obj.set_id(env, &dataset.id);
-        obj.set_url(env, &dataset.url);
+        if let Some(url) = &dataset.url {
+            obj.set_url(env, url);
+        }
         if let Some(url_compact) = &dataset.url_compact {
             obj.set_url_compact(env, url_compact);
         }

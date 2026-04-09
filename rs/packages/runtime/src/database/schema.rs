@@ -4,7 +4,7 @@ diesel::table! {
     dataset (id, plugin_id) {
         id -> Text,
         plugin_id -> Text,
-        url -> Text,
+        url -> Nullable<Text>,
         url_compact -> Nullable<Text>,
         url_medium -> Nullable<Text>,
         url_expanded -> Nullable<Text>,

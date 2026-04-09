@@ -17,7 +17,7 @@ use crate::data::screen_type::ScreenType;
 #[derive(Debug, Clone)]
 pub struct Dataset {
     pub id: String,
-    pub url: String,
+    pub url: Option<String>,
     pub url_compact: Option<String>,
     pub url_medium: Option<String>,
     pub url_expanded: Option<String>,

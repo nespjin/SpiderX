@@ -20,7 +20,7 @@ use diesel::prelude::*;
 pub struct DatasetEntity {
     pub id: String,
     pub plugin_id: String,
-    pub url: String,
+    pub url: Option<String>,
     pub url_compact: Option<String>,
     pub url_medium: Option<String>,
     pub url_expanded: Option<String>,

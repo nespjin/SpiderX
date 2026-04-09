@@ -366,7 +366,7 @@ impl DatasetRepository {
 
         let url_str = url_override.clone().or_else(|| {
             ScreenTypedValue::new()
-                .with_value(dataset.url.clone())
+                .with_option_value(dataset.url.clone())
                 .with_option_compact(dataset.url_compact.clone())
                 .with_option_medium(dataset.url_medium.clone())
                 .with_option_expanded(dataset.url_expanded.clone())

@@ -24,7 +24,7 @@ pub struct DatasetJsonData {
     pub id: String,
 
     /// The url will be used to request data.
-    pub url: String,
+    pub url: Option<String>,
 
     /// The url for `Compact` screen type.
     #[serde(rename = "url@compact")]
@@ -159,7 +159,7 @@ mod tests {
             variables: serde_json::json!({}),
             dataset: vec![DatasetJsonData {
                 id: "test_dataset".to_string(),
-                url: "https://api.example.com/data".to_string(),
+                url: Some("https://api.example.com/data".to_string()),
                 url_compact: None,
                 url_medium: None,
                 url_expanded: None,
@@ -199,7 +199,7 @@ mod tests {
             }),
             dataset: vec![DatasetJsonData {
                 id: "data1".to_string(),
-                url: "https://api.example.com/data1".to_string(),
+                url: Some("https://api.example.com/data1".to_string()),
                 url_compact: None,
                 url_medium: None,
                 url_expanded: None,
@@ -314,7 +314,7 @@ mod tests {
         let complex_dataset = vec![
             DatasetJsonData {
                 id: "user_data".to_string(),
-                url: "https://api.example.com/users".to_string(),
+                url: Some("https://api.example.com/users".to_string()),
                 url_compact: Some("https://api.example.com/users/compact".to_string()),
                 url_medium: Some("https://api.example.com/users/medium".to_string()),
                 url_expanded: Some("https://api.example.com/users/expanded".to_string()),
@@ -348,7 +348,7 @@ mod tests {
             },
             DatasetJsonData {
                 id: "product_data".to_string(),
-                url: "https://api.example.com/products".to_string(),
+                url: Some("https://api.example.com/products".to_string()),
                 url_compact: None,
                 url_medium: None,
                 url_expanded: None,

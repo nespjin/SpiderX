@@ -17,7 +17,7 @@ CREATE INDEX IF NOT EXISTS "plugin_index_0" ON
 CREATE TABLE IF NOT EXISTS "dataset" (
    "id"           varchar NOT NULL,
    "plugin_id"    varchar NOT NULL,
-   "url"          varchar NOT NULL,
+   "url"          varchar,
    "url_compact"  varchar,
    "url_medium"   varchar,
    "url_expanded" varchar,
