@@ -74,18 +74,20 @@ pub struct JavaScriptDatasetExecutor<'local> {
     id: &'local str,
     timeout: &'local u16,
     url: &'local str,
-    js: &'local str,
+    pre_js: Option<&'local str>,
+    js: Option<&'local str>,
     listener: Option<RequestJavaScriptDatasetListenerArc>,
     config: Option<RequestJavaScriptDatasetConfigArc>,
 }
 
 impl<'local> JavaScriptDatasetExecutor<'local> {
-    pub fn new(id: &'local str, url: &'local str, js: &'local str) -> Self {
+    pub fn new(id: &'local str, url: &'local str) -> Self {
         Self {
             id,
             timeout: &DEFAULT_REQUEST_TIMEOUT,
             url,
-            js,
+            pre_js: None,
+            js: None,
             listener: None,
             config: None,
         }
@@ -93,6 +95,21 @@ impl<'local> JavaScriptDatasetExecutor<'local> {
 
     pub fn with_timeout(&mut self, timeout: &'local u16) -> &mut Self {
         self.timeout = timeout;
+        self
+    }
+
+    pub fn with_js(&mut self, js: &'local str) -> &mut Self {
+        self.js.replace(js);
+        self
+    }
+
+    pub fn with_opt_js(&mut self, js: Option<&'local str>) -> &mut Self {
+        self.js = js;
+        self
+    }
+
+    pub fn with_opt_pre_js(&mut self, pre_js: Option<&'local str>) -> &mut Self {
+        self.pre_js = pre_js;
         self
     }
 
@@ -150,10 +167,25 @@ impl<'local> DatasetExecutor for JavaScriptDatasetExecutor<'local> {
         loop {
             match rx.recv_timeout(Duration::from_secs((*self.timeout) as u64)) {
                 Ok(received) => match received {
+                    WebEngineEvent::PageStarted(url) => {
+                        if url_utils::url_equals(&url, &self.url)
+                            && !self.pre_js.unwrap_or("").is_empty()
+                        {
+                            webengine
+                                .write()
+                                .unwrap()
+                                .evaluate(self.pre_js.unwrap_or(""))?;
+                        }
+                        log::debug!("request page started {}", url);
+                    }
                     WebEngineEvent::PageFinished(url, _document) => {
                         if url_utils::url_equals(&url, &self.url) {
-                            let ret = webengine.write().unwrap().evaluate(self.js)?;
-                            log::debug!("request evaluate {} {}", self.js, ret);
+                            let ret = if self.js.is_none_or(|s| s.is_empty()) {
+                                "".to_string()
+                            } else {
+                                webengine.write().unwrap().evaluate(self.js.unwrap_or(""))?
+                            };
+                            log::debug!("request evaluate {} {}", self.js.unwrap_or(""), ret);
                             result = Ok(ret.into());
                             break;
                         }
