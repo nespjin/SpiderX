@@ -41,6 +41,7 @@ use crate::plugin_manager::PluginManagerConfig;
 use crate::plugin_manager::PluginSource;
 use crate::plugin_manager::RequestType;
 use crate::repository::request_dataset_options::RequestDatasetOptions;
+use crate::repository::request_website_options::RequestWebsiteOptions;
 use crate::web_engine::web_engine_manager::WebEngineManager;
 
 pub const JNI_PLUGIN_SOURCE_TYPE_MANIFEST_JSON: jint = 0;
@@ -287,6 +288,54 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
             Ok::<(), jni::errors::Error>(())
         })
         .resolve::<jni::errors::ThrowRuntimeExAndDefault>();
+}
+
+#[unsafe(no_mangle)]
+pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_nativeRequestWebsite(
+    mut unowned_env: EnvUnowned,
+    _this: JObject,
+    url: JString,
+    timeout: jshort,
+    preExecuteJs: JString,
+    postExecuteJs: JString,
+    listener: JObject,
+) -> jstring {
+    unowned_env
+        .with_env(|env| -> Result<jstring, jni::errors::Error> {
+            let data = {
+                let url = url.to_string();
+                let timeout = timeout as u16;
+                let pre_execute_javascript = preExecuteJs.to_string();
+                let post_execute_javascript = postExecuteJs.to_string();
+                let jni_listener = env.new_global_ref(listener)?;
+                let listener = {
+                    let data = JniRequestJavaScriptDatasetListener::new(jni_listener);
+                    let arc: Arc<dyn RequestJavaScriptDatasetListener> = Arc::new(data);
+                    Some(arc)
+                };
+
+                let options = RequestWebsiteOptions {
+                    timeout: timeout,
+                    pre_execute_javascript: Some(pre_execute_javascript),
+                    post_execute_javascript: Some(post_execute_javascript),
+                    listener: listener,
+                    config: None,
+                };
+
+                let pluging_manager = PluginManager::get_instance();
+                pluging_manager.request_website(&url, options)
+            };
+
+            let ret = jni_utils::throw_java_exception_if_error(env, data)
+                .map(|e| JString::new(env, e))
+                .map(|e| e.map(|e| e.into_raw()))
+                .map(|e| e.ok())
+                .flatten()
+                .unwrap_or(JObject::null().into_raw());
+
+            Ok(ret)
+        })
+        .resolve::<jni::errors::ThrowRuntimeExAndDefault>()
 }
 
 #[unsafe(no_mangle)]
