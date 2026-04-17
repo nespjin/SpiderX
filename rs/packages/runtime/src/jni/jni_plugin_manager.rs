@@ -305,10 +305,20 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
             let data = {
                 let url = url.to_string();
                 let timeout = timeout as u16;
-                let pre_execute_javascript = preExecuteJs.to_string();
-                let post_execute_javascript = postExecuteJs.to_string();
+                let pre_execute_javascript = if preExecuteJs.is_null() {
+                    None
+                } else {
+                    Some(preExecuteJs.to_string())
+                };
+                let post_execute_javascript = if postExecuteJs.is_null() {
+                    None
+                } else {
+                    Some(postExecuteJs.to_string())
+                };
                 let jni_listener = env.new_global_ref(listener)?;
-                let listener = {
+                let listener = if jni_listener.is_null() {
+                    None
+                } else {
                     let data = JniRequestJavaScriptDatasetListener::new(jni_listener);
                     let arc: Arc<dyn RequestJavaScriptDatasetListener> = Arc::new(data);
                     Some(arc)
@@ -316,8 +326,8 @@ pub unsafe extern "system" fn Java_com_nesp_spiderx_runtime_PluginManager_native
 
                 let options = RequestWebsiteOptions {
                     timeout: timeout,
-                    pre_execute_javascript: Some(pre_execute_javascript),
-                    post_execute_javascript: Some(post_execute_javascript),
+                    pre_execute_javascript: pre_execute_javascript,
+                    post_execute_javascript: post_execute_javascript,
                     listener: listener,
                     config: None,
                 };
