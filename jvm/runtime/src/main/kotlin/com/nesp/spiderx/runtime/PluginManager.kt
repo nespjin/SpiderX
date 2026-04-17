@@ -108,6 +108,17 @@ class PluginManager private constructor() {
     }
 
     @JvmOverloads
+    fun requestWebsite(
+        url: String,
+        timeout: UShort = 20u,
+        preExecuteJs: String? = null,
+        postExecuteJs: String? = null,
+        listener: RequestJavaScriptDatasetListener? = null
+    ): String? {
+        return nativeRequestWebsite(url, timeout.toShort(), preExecuteJs, postExecuteJs, listener)
+    }
+
+    @JvmOverloads
     fun requestDataset(
         pluginId: String,
         datasetId: String,
@@ -152,6 +163,14 @@ class PluginManager private constructor() {
     private external fun nativeGetInstalledPlugins(): List<Plugin>?
 
     private external fun nativeUninstallPlugin(id: String)
+
+    private external fun nativeRequestWebsite(
+        url: String,
+        timeout: Short,
+        preExecuteJs: String?,
+        postExecuteJs: String?,
+        listener: RequestJavaScriptDatasetListener?
+    ): String?
 
     private external fun nativeRequestDataset(
         pluginId: String,
