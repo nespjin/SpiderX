@@ -37,9 +37,10 @@ use crate::{
 
 macro_rules! new_javascript_executor {
     ($dataset_id:expr, $url_str:expr, $js:expr, $req_timeout:expr, $js_dataset_listener:expr, $config:expr) => {{
-        let mut executor = JavaScriptDatasetExecutor::new($dataset_id, $url_str, $js);
+        let mut executor = JavaScriptDatasetExecutor::new($dataset_id, $url_str);
         executor
             .with_timeout($req_timeout)
+            .with_js($js)
             .with_opt_listener($js_dataset_listener)
             .with_opt_config($config);
         Box::new(executor)
@@ -47,16 +48,19 @@ macro_rules! new_javascript_executor {
 }
 
 macro_rules! new_option_javascript_executor {
-    ($dataset_id:expr, $url_str:expr, $js:expr, $req_timeout:expr, $js_dataset_listener:expr, $config:expr) => {
-        $js.as_ref().map(|js| {
-            let mut executor = JavaScriptDatasetExecutor::new($dataset_id, $url_str, js);
+    ($dataset_id:expr, $url_str:expr, $js:expr, $req_timeout:expr, $js_dataset_listener:expr, $config:expr) => {{
+        if $js.is_none_or(|s| s.is_empty()) {
+            None
+        } else {
+            let mut executor = JavaScriptDatasetExecutor::new($dataset_id, $url_str);
             executor
                 .with_timeout($req_timeout)
+                .with_opt_js($js)
                 .with_opt_listener($js_dataset_listener)
                 .with_opt_config($config);
-            Box::new(executor)
-        })
-    };
+            Some(Box::new(executor))
+        }
+    }};
 }
 
 macro_rules! new_auto_executor {
@@ -307,8 +311,13 @@ impl DatasetRepository {
                 if let Value::Object(obj) = &curr_json {
                     match obj.get("_nextDatasetUrl") {
                         Some(Value::String(url)) => {
-                           log::debug!("{} {} next dataset url is {:?}", plugin_id, dataset_id, url);
-                           url_override = Some(url.clone())
+                            log::debug!(
+                                "{} {} next dataset url is {:?}",
+                                plugin_id,
+                                dataset_id,
+                                url
+                            );
+                            url_override = Some(url.clone())
                         }
                         Some(_) => {
                             return Err(
@@ -431,7 +440,7 @@ impl DatasetRepository {
                 let ret = new_option_javascript_executor!(
                     dataset_id,
                     url_str,
-                    js,
+                    js.as_deref(),
                     req_timeout,
                     js_dataset_listener,
                     config.clone()
