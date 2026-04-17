@@ -14,8 +14,7 @@
 
 use spiderx_core::data::plugin::Plugin;
 use std::{
-    fs,
-    path::Path,
+    fs, path::Path,
     sync::{OnceLock, RwLock},
 };
 
@@ -24,10 +23,14 @@ use compiler::{json_plugin_compiler::JsonPluginCompiler, plugin_compiler::Plugin
 use crate::{
     cache::CacheManager,
     database::connection_pool::DatabasePool,
-    executor::request_javascript_dataset_config::RequestJavaScriptDatasetConfigArc,
+    executor::{
+        dataset_executor::DatasetExecutor, javascript_dataset_executor::JavaScriptDatasetExecutor,
+        request_javascript_dataset_config::RequestJavaScriptDatasetConfigArc,
+    },
     repository::{
         dataset_repository::DatasetRepository, plugin_repository::PluginRepository,
         request_dataset_options::RequestDatasetOptions,
+        request_website_options::RequestWebsiteOptions,
     },
 };
 
@@ -371,6 +374,32 @@ impl PluginManager {
 
         log::info!("Plugin uninstalled successfully: {}", id);
         Ok(())
+    }
+
+    pub fn request_website(
+        &self,
+        url: &str,
+        options: RequestWebsiteOptions,
+    ) -> Result<String, PluginManagerError> {
+        self.ensure_initialized()?;
+
+        let config = self.get_request_javascript_dataset_config();
+        let pre_execute_js: Option<&str> =
+            options.pre_execute_javascript.as_ref().map(|s| s.as_str());
+        let post_execute_js = options.post_execute_javascript.as_ref().map(|s| s.as_str());
+
+        let mut executor = JavaScriptDatasetExecutor::new("request_website", url);
+        let executor = executor
+            .with_opt_pre_js(pre_execute_js)
+            .with_timeout(&options.timeout)
+            .with_opt_js(pre_execute_js)
+            .with_opt_pre_js(post_execute_js)
+            .with_opt_config(options.config.or(config))
+            .with_opt_listener(options.listener);
+
+        executor
+            .request()
+            .map_err(PluginManagerError::DatabaseError)
     }
 
     /// Request a dataset from a plugin

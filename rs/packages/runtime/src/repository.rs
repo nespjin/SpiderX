@@ -16,3 +16,4 @@ pub(crate) mod dataset_repository;
 pub(crate) mod model;
 pub(crate) mod plugin_repository;
 pub(crate) mod request_dataset_options;
+pub(crate) mod request_website_options;
